@@ -26,6 +26,7 @@ user_sessions = {}
 
 @app.route("/callback", methods=['POST'])
 def callback():
+    print("✅ 收到 LINE Webhook POST 請求！")
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
 
