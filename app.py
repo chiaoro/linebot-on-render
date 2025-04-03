@@ -57,7 +57,7 @@ def handle_message(event):
             followup = "請問您要調整到哪一天（例如：5/13 上午診）？" if req_type == "我要調診" else "請問您希望如何處理？（例如：整天休診、由XXX醫師代診、加開下午診）"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=followup))
         elif step == 2:
-            session["new_date_or_plan"] = text
+            session["new_date"] = text
             print("📝 處理方式接收到：", text)
             session["step"] = 3
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
@@ -66,7 +66,7 @@ def handle_message(event):
 
             # 若有欄位未填寫，自動補為「未填寫」
             session.setdefault("original_date", "未填寫")
-            session.setdefault("new_date_or_plan", "未填寫")
+            session.setdefault("new_date", "未填寫")
             session.setdefault("reason", "未填寫")
 
 
@@ -77,7 +77,7 @@ def handle_message(event):
                 "user_id": user_id,
                 "request_type": req_type,
                 "original_date": session["original_date"],
-                "new_date_or_plan": session["new_date_or_plan"],
+                "new_date": session["new_date"],
                 "reason": session["reason"]
             }
             print("🔄 傳送內容：", data_to_send)
@@ -88,7 +88,7 @@ def handle_message(event):
             result = f"""✅ 已收到您的申請：
 申請類型：{req_type}
 原門診：{session['original_date']}
-處理方式：{session['new_date_or_plan']}
+處理方式：{session['new_date']}
 原因：{session['reason']}"""
 
             del user_sessions[user_id]
