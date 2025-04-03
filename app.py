@@ -4,12 +4,22 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 import requests
+import os
 
 app = Flask(__name__)
 
 # 請填入你的 Channel Access Token 和 Secret
 line_bot_api = LineBotApi('P/mPYhb4OFQiFRUQAltm0u520BesCQ6q38lv6krt/muIqyfCr3LH3XTdQEo9TyMyC9XnieVKrQPPUSS1Qp9Eeb6orbDYFO7r4byA52aC2OvI4xnu4nnR9J6FWds+r28kFNsR1VNdmjwa/k2MgIBysgdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('adba7944fb5d5f596cad271add96b177')
+
+
+#首頁顯示用
+@app.route("/", methods=["GET"])
+def index():
+    return "LINE Bot is running on Render!"
+
+
+
 
 # 暫存使用者對話進度
 user_sessions = {}
