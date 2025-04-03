@@ -12,6 +12,12 @@ app = Flask(__name__)
 line_bot_api = LineBotApi('P/mPYhb4OFQiFRUQAltm0u520BesCQ6q38lv6krt/muIqyfCr3LH3XTdQEo9TyMyC9XnieVKrQPPUSS1Qp9Eeb6orbDYFO7r4byA52aC2OvI4xnu4nnR9J6FWds+r28kFNsR1VNdmjwa/k2MgIBysgdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('adba7944fb5d5f596cad271add96b177')
 
+# ✅ 請填入你自己的 LINE 使用者 ID（用來接收通知）
+ADMIN_USER_ID = 'U73e85174c46b688e1744741d1fc1d520'
+
+
+
+
 
 #首頁顯示用
 @app.route("/", methods=["GET"])
@@ -35,6 +41,16 @@ def callback():
         abort(400)
 
     return 'OK'
+
+# 🔔 管理員推播通知：有新使用者
+def notify_admin_new_user(user_id):
+    message = f"📌 有新使用者首次申請調診，請到『使用者對照表』補上姓名：\n使用者ID：{user_id}"
+    line_bot_api.push_message(
+        ADMIN_USER_ID,
+        TextSendMessage(text=message)
+    )
+
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -82,6 +98,10 @@ def handle_message(event):
             }
             print("🔄 傳送內容：", data_to_send)
 
+            # ✅ 自動推播通知管理員
+            notify_admin_new_user(user_id)
+
+            
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
             requests.post(webhook_url, json=data_to_send)
 
@@ -95,6 +115,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result))
         return
 
+    # 顯示 Flex Message 選單
     if text == "選單" or text == "menu":
         flex_message = FlexSendMessage(
             alt_text="醫師服務選單",
@@ -157,11 +178,13 @@ def handle_message(event):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
         return
-
+        
+    # 其他文字提示
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請點選『選單』來開始操作。"))
 
 import os
 
+# ✅ 啟動 Flask 應用（Render 用）
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render 會提供環境變數 PORT
     app.run(host="0.0.0.0", port=port)
