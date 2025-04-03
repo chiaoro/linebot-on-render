@@ -44,7 +44,7 @@ def handle_message(event):
 
     if text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": text}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 早診）？"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 上午診）？"))
         return
 
     if user_id in user_sessions:
@@ -55,7 +55,7 @@ def handle_message(event):
         if step == 1:
             session["original_date"] = text
             session["step"] = 2
-            followup = "請問您要調整到哪一天（例如：5/13 早診）？" if req_type == "我要調診" else "請問您希望如何處理？（例如：整天休診、由張醫師代診、加開下午診）"
+            followup = "請問您要調整到哪一天（例如：5/13 上午診）？" if req_type == "我要調診" else "請問您希望如何處理？（例如：整天休診、由XXX醫師代診、加開下午診）"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=followup))
         elif step == 2:
             session["new_date_or_plan"] = text
