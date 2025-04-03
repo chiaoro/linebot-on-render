@@ -92,14 +92,24 @@ def handle_message(event):
             data_to_send = {
                 "user_id": user_id,
                 "request_type": req_type,
-                "original_date": session["original_date"],
-                "new_date": session["new_date"],
-                "reason": session["reason"]
+                "original_date": session.get("original_date", "未填寫"),
+                "new_date": session.get("new_date", "未填寫"),
+                "reason": session.get("reason", "未填寫")
             }
+
             print("🔄 傳送內容：", data_to_send)
 
             # ✅ 自動推播通知管理員
             notify_admin_new_user(user_id)
+
+            # ✅ 先檢查是否首次出現的 ID → 如果對照表沒這 ID 才通知
+            notify_check_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            check_response = requests.post(notify_check_url + "?check_only=1", json={"user_id": user_id})
+            if check_response.status_code == 200 and check_response.text == "new_user":
+                notify_admin_new_user(user_id)
+
+            # ✅ 正式送資料
+            requests.post(notify_check_url, json=data_to_send)
 
             
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
