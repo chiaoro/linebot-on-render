@@ -26,7 +26,6 @@ user_sessions = {}
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    print("✅ 收到 LINE Webhook POST 請求！")
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
 
@@ -59,11 +58,20 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=followup))
         elif step == 2:
             session["new_date_or_plan"] = text
+            print("📝 處理方式接收到：", text)
             session["step"] = 3
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
         elif step == 3:
             session["reason"] = text
 
+            # 若有欄位未填寫，自動補為「未填寫」
+            session.setdefault("original_date", "未填寫")
+            session.setdefault("new_date_or_plan", "未填寫")
+            session.setdefault("reason", "未填寫")
+
+
+
+            
             # 傳送資料到 Google Apps Script
             data_to_send = {
                 "user_id": user_id,
@@ -72,6 +80,7 @@ def handle_message(event):
                 "new_date_or_plan": session["new_date_or_plan"],
                 "reason": session["reason"]
             }
+            print("🔄 傳送內容：", data_to_send)
 
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
             requests.post(webhook_url, json=data_to_send)
