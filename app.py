@@ -124,7 +124,7 @@ def handle_text(event):
                 "reason": session["reason"]
             })
             line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"✅ 已收到您的申請：
+                text=f"""✅ 已收到您的申請：
 申請類型：{session['type']}
 原門診：{session['original_date']}
 處理方式：{session['new_date']}
