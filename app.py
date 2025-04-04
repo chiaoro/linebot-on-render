@@ -75,7 +75,7 @@ def handle_message(event):
             # ✅ 傳送到 Google Apps Script（只送一次）
             data_to_send = {
                 "user_id": user_id,
-                "doctorName":doctorName,
+                "doctorName":session["doctorName"],
                 "request_type": req_type,
                 "original_date": session["original_date"],
                 "new_date": session["new_date"],
