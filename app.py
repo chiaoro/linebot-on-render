@@ -73,7 +73,7 @@ def handle_all_message(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
             elif step == 3:
                 session["reason"] = text
-                webhook_url = "你的 Webhook URL"
+                webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
                 requests.post(webhook_url, json={
                     "user_id": user_id,
                     "request_type": session["type"],
