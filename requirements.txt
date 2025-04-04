@@ -1,2 +1,7 @@
 Flask
 line-bot-sdk==2.4.1
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
+requests
