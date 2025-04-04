@@ -11,8 +11,9 @@ import os, json, datetime, tempfile
 app = Flask(__name__)
 
 # ✅ LINE Bot 憑證
-line_bot_api = LineBotApi(os.environ.get("P/mPYhb4OFQiFRUQAltm0u520BesCQ6q38lv6krt/muIqyfCr3LH3XTdQEo9TyMyC9XnieVKrQPPUSS1Qp9Eeb6orbDYFO7r4byA52aC2OvI4xnu4nnR9J6FWds+r28kFNsR1VNdmjwa/k2MgIBysgdB04t89/1O/w1cDnyilFU="))
-handler = WebhookHandler(os.environ.get("adba7944fb5d5f596cad271add96b177"))
+line_bot_api = LineBotApi(os.environ.get("LINE_CHANNEL_ACCESS_TOKEN"))
+handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET"))
+
 
 # ✅ 暫存對話流程
 user_sessions = {}
