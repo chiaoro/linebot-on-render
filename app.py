@@ -1,5 +1,8 @@
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
@@ -15,6 +18,36 @@ handler = WebhookHandler('adba7944fb5d5f596cad271add96b177')
 
 # ✅ 暫存對話流程
 user_sessions = {}
+
+# 初始化 Google Drive 服務
+def init_drive_service():
+    creds = service_account.Credentials.from_service_account_file(
+        "firm-retina-455813-f8-d980fd377fc3.json",  # ⬅️ 這是你的金鑰 JSON 檔名
+        scopes=["https://www.googleapis.com/auth/drive"]
+    )
+    service = build("drive", "v3", credentials=creds)
+    return service
+
+# 上傳檔案到特定資料夾
+def upload_file_to_drive(local_file_path, filename):
+    drive_service = init_drive_service()
+    folder_id = "14LThiRWDO8zW7C0qrtobAVPrO_sAQtCW"  # ⬅️ 你提供的雲端硬碟資料夾 ID
+
+    file_metadata = {
+        "name": filename,
+        "parents": [folder_id]
+    }
+    media = MediaFileUpload(local_file_path, resumable=True)
+    uploaded_file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+    print(f"✅ 檔案已上傳到 Google Drive，ID：{uploaded_file.get('id')}")
+
+
+
+
 
 # ✅ 主選單 Flex Message
 main_menu = FlexSendMessage(
