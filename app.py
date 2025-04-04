@@ -43,7 +43,7 @@ def callback():
 
 # 🔔 管理員推播通知：有新使用者
 def notify_admin_new_user(user_id):
-    message = f"📌 有新使用者首次申請調診，請到『使用者對照表』補上姓名：\n使用者ID：{user_id}"
+    message = f"📌 有使用者申請調診：\n使用者ID：{user_id}"
     line_bot_api.push_message(
         ADMIN_USER_ID,
         TextSendMessage(text=message)
