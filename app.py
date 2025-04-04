@@ -72,7 +72,7 @@ def handle_message(event):
             session.setdefault("new_date", "未填寫")
             session.setdefault("reason", "未填寫")
 
-            # 傳送資料到 Google Apps Script
+            # ✅ 傳送到 Google Apps Script（只送一次）
             data_to_send = {
                 "user_id": user_id,
                 "request_type": req_type,
