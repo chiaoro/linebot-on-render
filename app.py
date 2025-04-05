@@ -88,6 +88,27 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
 
 
+# ✅Google Sheets 授權
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+    json.loads(os.environ['GOOGLE_CREDENTIALS']),
+    scope
+)
+gc = gspread.authorize(credentials)
+spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
+worksheet = spreadsheet.worksheet("名冊")  # 或者用 sheet1 也行
+
+# 檢查是否已存在
+def is_user_registered(user_id):
+    all_ids = worksheet.col_values(2)
+    return user_id in all_ids
+
+# 加入使用者資料
+def register_user(name, user_id):
+    worksheet.append_row([name, user_id])
+
+
+
 
 
 
@@ -180,6 +201,17 @@ def handle_text(event):
     user_id = event.source.user_id
     text = event.message.text.strip()
 
+
+    # ⬇️ 加在這裡：檢查是否為第一次輸入姓名的使用者
+    if not is_user_registered(user_id):
+        register_user(text, user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ 您好 {text}，已完成綁定！"))
+        return
+
+
+
+
+    
     if text == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
     elif text == "門診調整服務":
@@ -250,6 +282,7 @@ def handle_file(event):
     # ✅ 回覆使用者
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"""✅ 檔案已成功上傳至雲端"""))
 
+    
 
 
 
