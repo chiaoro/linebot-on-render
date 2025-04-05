@@ -41,15 +41,38 @@ gc = gspread.authorize(creds)
 spreadsheet_url = 'https://docs.google.com/spreadsheets/d/1_i-sQDdRGkuQSqTfUV4AZNcijY4xr8sukmh5mURFrAA/edit'
 sheet = gc.open_by_url(spreadsheet_url).worksheet('line_users')
 
+
+
+
+
 @app.route("/callback", methods=['POST'])
 def callback():
-    signature = request.headers['X-Line-Signature']
+    # 嘗試解析 JSON，如果是 Apps Script 傳來的 push 請求
+    try:
+        data = request.get_json(force=True)
+    except:
+        data = {}
+
+    if data.get("mode") == "push":
+        user_id = data.get("userId")
+        message = data.get("message", "（無訊息內容）")
+        line_bot_api.push_message(user_id, TextSendMessage(text=message))
+        return "Pushed message to user."
+
+    # 否則，當成 LINE 官方事件處理
+    signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-    return 'OK'
+
+    return "OK"
+
+
+
+
 
 
 @app.route("/submit", methods=["POST"])
