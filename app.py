@@ -23,10 +23,22 @@ UPLOAD_FOLDER_ID = '14LThiRWDO8zW7C0qrtobAVPrO_sAQtCW'
 
 # ✅ 上傳檔案至 Google Drive
 def upload_to_drive(file_path, file_name):
-    file_metadata = {'name': file_name, 'parents': [UPLOAD_FOLDER_ID]}
-    media = MediaFileUpload(file_path, resumable=True)
-    uploaded = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-    return uploaded.get('id')
+    folder_id = 'GOOGLE_FOLDER_ID'  # 請確認這裡
+    file_metadata = {
+        'name': file_name,
+        'parents': [folder_id]
+    }
+    mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
+    media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
+
+    uploaded_file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id'
+    ).execute()
+
+    return uploaded_file.get('id')
+
 
 # ✅ 使用者對話暫存
 user_sessions = {}
