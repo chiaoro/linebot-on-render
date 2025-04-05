@@ -6,6 +6,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import tempfile, os, json, datetime, requests
+import mimetypes
+from googleapiclient.http import MediaFileUpload
+from googleapiclient.errors import HttpError
 
 app = Flask(__name__)
 
@@ -23,21 +26,29 @@ UPLOAD_FOLDER_ID = '14LThiRWDO8zW7C0qrtobAVPrO_sAQtCW'
 
 # ✅ 上傳檔案至 Google Drive
 def upload_to_drive(file_path, file_name):
-    folder_id = os.environ.get("GOOGLE_FOLDER_ID")  # 請確認這裡
+    folder_id = os.environ.get("GOOGLE_FOLDER_ID")
+    if not folder_id:
+        raise ValueError("Missing GOOGLE_FOLDER_ID environment variable.")
+
     file_metadata = {
         'name': file_name,
         'parents': [folder_id]
     }
+
+    # 自動偵測 mimetype
     mimetype = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
     media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
 
-    uploaded_file = drive_service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields='id'
-    ).execute()
-
-    return uploaded_file.get('id')
+    try:
+        uploaded_file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+        return uploaded_file.get('id')
+    except HttpError as error:
+        print(f"❌ 上傳失敗：{error}")
+        return None
 
 
 # ✅ 使用者對話暫存
