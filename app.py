@@ -23,7 +23,7 @@ UPLOAD_FOLDER_ID = '14LThiRWDO8zW7C0qrtobAVPrO_sAQtCW'
 
 # ✅ 上傳檔案至 Google Drive
 def upload_to_drive(file_path, file_name):
-    folder_id = 'GOOGLE_FOLDER_ID'  # 請確認這裡
+    folder_id = os.environ.get("GOOGLE_FOLDER_ID")  # 請確認這裡
     file_metadata = {
         'name': file_name,
         'parents': [folder_id]
