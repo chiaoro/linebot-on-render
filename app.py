@@ -28,8 +28,8 @@ def upload_to_drive(file_path, file_name):
         'name': file_name,
         'parents': [folder_id]
     }
-    mime_type = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
-    media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
+    mimetype = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
 
     uploaded_file = drive_service.files().create(
         body=file_metadata,
