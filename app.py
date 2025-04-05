@@ -17,6 +17,10 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from utils.line_push import push_text_to_user
+from utils.schedule_utils import handle_submission, send_form_to_all_users, check_unsubmitted, remind_unsubmitted
+from utils.google_auth import get_gspread_client
+
 
 
 
@@ -53,6 +57,8 @@ def handle_message(event):
     name = event.message.text.strip()
 
     # 取得所有已綁定姓名
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).worksheet('line_users')
     existing_names = sheet.col_values(2)
 
     if name in existing_names:
