@@ -89,7 +89,10 @@ newcomer_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "必填資料", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScUn1Bm83wZ7SSTYCl8fj7z3b_sq7tscrZiXSt_AXOHf0SKPw/viewform"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "新進須知", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSfH7139NRH2SbV8BjRBioXHtD_6KLMYtfmktJxEBxUc7OW3Kg/viewform"}, "style": "secondary", "margin": "md"}
 ]
-other_buttons = [{"type": "button", "action": {"type": "message", "label": "Temp 傳檔(此功能尚在測試中)", "text": "我要上傳檔案"}, "style": "secondary", "margin": "md"}]
+other_buttons = [
+    {"type": "button", "action": {"type": "message", "label": "Temp 傳檔(此功能尚在測試中)", "text": "我要上傳檔案"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "uri", "label": "NP服務量表單", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"}
+                ]
 
 @app.route("/", methods=["GET"])
 def home():
