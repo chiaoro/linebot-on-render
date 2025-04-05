@@ -6,13 +6,7 @@ from utils.line_push import push_text_to_user
 
 form_url = os.getenv("FORM_URL")
 
-def send_form_to_all_users():
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).worksheet("line_users")
-    users = sheet.get_all_values()[1:]
-    for user_id, name in users:
-        msg = f"{name} 醫師您好，請填寫下個月休假登記表單：\n{form_url}"
-        push_text_to_user(user_id, msg)
+
 
 def check_unsubmitted():
     gc = get_gspread_client()
