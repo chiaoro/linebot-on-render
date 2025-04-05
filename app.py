@@ -18,7 +18,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from utils.line_push import push_text_to_user
-from utils.schedule_utils import handle_submission, check_unsubmitted, remind_unsubmitted
+from utils.schedule_utils import handle_submission
 from utils.google_auth import get_gspread_client
 
 
