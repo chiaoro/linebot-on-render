@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
@@ -50,6 +50,24 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     return 'OK'
+
+
+@app.route("/submit", methods=["POST"])
+def receive_form_submission():
+    data = request.get_json()
+    name = data.get("name")
+    off_days = data.get("off_days")
+    if not name or not off_days:
+        return jsonify({"status": "error", "message": "缺少欄位"}), 400
+
+    try:
+        from utils.schedule_utils import handle_submission
+        handle_submission(name, off_days)
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
