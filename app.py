@@ -227,6 +227,9 @@ def handle_text(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
 
+
+
+
 @handler.add(MessageEvent, message=FileMessage)
 def handle_file(event):
     message_content = line_bot_api.get_message_content(event.message.id)
@@ -235,8 +238,23 @@ def handle_file(event):
         for chunk in message_content.iter_content():
             tf.write(chunk)
         temp_path = tf.name
+
     upload_to_drive(temp_path, file_name)
+
+    # ✅ 通知管理員有人傳檔
+    admin_user_id = os.environ.get("LINE_ADMIN_USER_ID")
+    if admin_user_id:
+        notify = f"📎 有使用者傳送檔案：\n👤 使用者 ID：{event.source.user_id}\n📄 檔名：{file_name}"
+        line_bot_api.push_message(admin_user_id, TextSendMessage(text=notify))
+
+    # ✅ 回覆使用者
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"""✅ 檔案已成功上傳至雲端"""))
+
+
+
+
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
