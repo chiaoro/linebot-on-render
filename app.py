@@ -7,8 +7,18 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import tempfile, os, json, datetime, requests
 import mimetypes
+import json
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
+from flask import Flask, request, abort
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
+
+
 
 app = Flask(__name__)
 
@@ -16,6 +26,46 @@ app = Flask(__name__)
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 ADMIN_USER_ID = os.environ['LINE_ADMIN_USER_ID']
+
+# ✅Google Sheets 認證與初始化（休假登記表）
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+gc = gspread.authorize(creds)
+
+# ✅開啟 Google 試算表與工作表
+spreadsheet_url = 'https://docs.google.com/spreadsheets/d/1_i-sQDdRGkuQSqTfUV4AZNcijY4xr8sukmh5mURFrAA/edit'
+sheet = gc.open_by_url(spreadsheet_url).worksheet('line_users')
+
+@app.route("/callback", methods=['POST'])
+def callback():
+    signature = request.headers['X-Line-Signature']
+    body = request.get_data(as_text=True)
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+    return 'OK'
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    user_id = event.source.user_id
+    name = event.message.text.strip()
+
+    # 取得所有已綁定姓名
+    existing_names = sheet.col_values(2)
+
+    if name in existing_names:
+        reply = f"✅ {name} 已綁定過囉！"
+    else:
+        sheet.append_row([user_id, name, datetime.now().strftime("%Y/%m/%d %H:%M:%S")])
+        reply = f"✅ 綁定成功！您好，{name}。"
+
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+
+
+
+
 
 # ✅ Google Drive 上傳初始化
 SERVICE_ACCOUNT_INFO = json.loads(os.environ['GOOGLE_CREDENTIALS'])
