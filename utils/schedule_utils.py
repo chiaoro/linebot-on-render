@@ -1,9 +1,9 @@
 import os
+import re
 from datetime import datetime
 from utils.google_auth import get_gspread_client
 from utils.line_push import push_text_to_user
 
-# 設定
 form_url = os.getenv("FORM_URL")
 
 def send_form_to_all_users():
@@ -23,12 +23,11 @@ def check_unsubmitted():
     all_users = bind_sheet.get_all_values()[1:]
     unsubmitted = [name for uid, name in all_users if name not in submitted_names]
 
-    # 回報名單
     if unsubmitted:
         msg = "以下醫師尚未填寫表單：\n" + "\n".join(unsubmitted)
     else:
         msg = "✅ 所有醫師皆已填寫完畢！"
-    # 推播給管理員（請填上你的 LINE User ID）
+
     push_text_to_user("你的LINE_USER_ID", msg)
 
 def remind_unsubmitted():
@@ -47,25 +46,38 @@ def remind_unsubmitted():
             push_text_to_user(uid, msg)
 
 def handle_submission(name, off_text):
-    import re
     gc = get_gspread_client()
     sched = gc.open_by_url(os.getenv("DOCTOR_SCHEDULE_SHEET_URL")).sheet1
-    # 解析 like "5/10-12,15,18-20"
-    days = []
-    for part in re.split(r"[，,]", off_text):
-        part = part.strip()
-        if "-" in part:
-            start, end = part.replace("5/", "").split("-")
-            days += list(range(int(start), int(end)+1))
-        elif part:
-            days.append(int(part))
 
-    row = [name]
     headers = sched.row_values(1)
-    for col in headers[1:]:
-        try:
-            day = int(col)
-            row.append("off" if day in days else "")
-        except:
-            row.append("")
-    sched.append_row(row)
+    date_cols = {int(day): idx for idx, day in enumerate(headers[1:], start=2) if day.isdigit()}
+
+    raw_parts = re.split(r"[，,\s\n]+", off_text)
+    days = set()
+    for part in raw_parts:
+        part = part.strip().replace("5/", "").replace("05/", "")
+        if "-" in part:
+            try:
+                start, end = map(int, part.split("-"))
+                days.update(range(start, end + 1))
+            except:
+                continue
+        elif part.isdigit():
+            days.add(int(part))
+
+    existing = sched.get_all_values()
+    name_col = [row[0] for row in existing]
+    if name in name_col:
+        row_idx = name_col.index(name) + 1
+        row_data = sched.row_values(row_idx)
+        for d in days:
+            if d in date_cols:
+                col_idx = date_cols[d]
+                if len(row_data) < col_idx or row_data[col_idx - 1] == "":
+                    sched.update_cell(row_idx, col_idx, "off")
+    else:
+        new_row = [name] + ["" for _ in range(len(headers) - 1)]
+        for d in days:
+            if d in date_cols:
+                new_row[date_cols[d] - 1] = "off"
+        sched.append_row(new_row)
