@@ -92,7 +92,7 @@ newcomer_buttons = [
 other_buttons = [
     {"type": "button", "action": {"type": "message", "label": "Temp 傳檔(此功能尚在測試中)", "text": "我要上傳檔案"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "NP服務量表單", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"}
-                ]
+]
 
 @app.route("/", methods=["GET"])
 def home():
