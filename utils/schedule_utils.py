@@ -4,40 +4,8 @@ from datetime import datetime
 from utils.google_auth import get_gspread_client
 from utils.line_push import push_text_to_user
 
-form_url = os.getenv("FORM_URL")
 
 
-
-def check_unsubmitted():
-    gc = get_gspread_client()
-    response_sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).sheet1
-    bind_sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).worksheet("line_users")
-
-    submitted_names = [row[1] for row in response_sheet.get_all_values()[1:] if row[1]]
-    all_users = bind_sheet.get_all_values()[1:]
-    unsubmitted = [name for uid, name in all_users if name not in submitted_names]
-
-    if unsubmitted:
-        msg = "以下醫師尚未填寫表單：\n" + "\n".join(unsubmitted)
-    else:
-        msg = "✅ 所有醫師皆已填寫完畢！"
-
-    push_text_to_user("你的LINE_USER_ID", msg)
-
-def remind_unsubmitted():
-    today = datetime.now()
-    if today.day < 10:
-        return
-    gc = get_gspread_client()
-    response_sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).sheet1
-    bind_sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).worksheet("line_users")
-
-    submitted_names = [row[1] for row in response_sheet.get_all_values()[1:] if row[1]]
-    all_users = bind_sheet.get_all_values()[1:]
-    for uid, name in all_users:
-        if name not in submitted_names:
-            msg = f"{name} 醫師提醒您：請盡快填寫表單，謝謝您！\n{form_url}"
-            push_text_to_user(uid, msg)
 
 def handle_submission(name, off_text):
     gc = get_gspread_client()
