@@ -20,6 +20,8 @@ from datetime import datetime
 from utils.line_push import push_text_to_user
 from utils.schedule_utils import handle_submission
 from utils.google_auth import get_gspread_client
+import smtplib
+from email.mime.text import MIMEText
 
 
 
@@ -40,6 +42,23 @@ gc = gspread.authorize(creds)
 # ✅開啟 Google 試算表與工作表
 spreadsheet_url = 'https://docs.google.com/spreadsheets/d/1_i-sQDdRGkuQSqTfUV4AZNcijY4xr8sukmh5mURFrAA/edit'
 sheet = gc.open_by_url(spreadsheet_url).worksheet('line_users')
+
+# 🧾 設定 Email 寄件資訊
+EMAIL_SENDER = "surry318@gmail.com"
+EMAIL_RECEIVER = "surry318@gmail.com"
+EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # ⬅ 記得設為環境變數
+
+def send_email(subject, body):
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = EMAIL_SENDER
+    msg["To"] = EMAIL_RECEIVER
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(EMAIL_SENDER, EMAIL_APP_PASSWORD)
+        server.send_message(msg)
+
+
 
 
 
@@ -89,6 +108,22 @@ def receive_form_submission():
         return jsonify({"status": "success"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+def submit_data():
+    data = request.get_json()
+    name = data.get("name", "未填")
+    department = data.get("department", "未填")
+    status = data.get("status", "未填")
+
+    # ✅ 寫入 Google Sheets（gspread / API 寫法略）
+    worksheet.append_row([name, department, status])
+
+    # ✅ 寄 Email 通知
+    msg = f"📥 新資料紀錄：\n👤 姓名：{name}\n🏥 科別：{department}\n📌 狀態：{status}"
+    send_email(subject="📬 有新資料寫入 Google Sheets", body=msg)
+
+    return "Data saved & email sent!"
+
 
 
 
