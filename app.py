@@ -128,7 +128,7 @@ def handle_text(event):
 申請類型：{session['type']}
 原門診：{session['original_date']}
 處理方式：{session['new_date']}
-原因：{session['reason']}"
+原因：{session['reason']}"""
             ))
             del user_sessions[user_id]
     else:
@@ -143,7 +143,7 @@ def handle_file(event):
             tf.write(chunk)
         temp_path = tf.name
     upload_to_drive(temp_path, file_name)
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 檔案已成功上傳至雲端"))
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"""✅ 檔案已成功上傳至雲端"""))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
