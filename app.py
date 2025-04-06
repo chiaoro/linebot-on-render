@@ -106,6 +106,31 @@ def callback():
 
 
 
+# ✅Google Sheets 授權
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+    json.loads(os.environ['GOOGLE_CREDENTIALS']),
+    scope
+)
+gc = gspread.authorize(credentials)
+spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
+worksheet = spreadsheet.worksheet("名冊")
+
+# 檢查使用者是否已註冊
+def is_user_registered(user_id):
+    all_ids = worksheet.col_values(2)
+    return user_id in all_ids
+
+# 加入使用者資料（若尚未存在）
+def register_user(name, user_id):
+    if not is_user_registered(user_id):
+        worksheet.append_row([name, user_id])
+
+
+
+
+
+
 
 @app.route("/submit", methods=["POST"])
 def receive_form_submission():
@@ -160,25 +185,7 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
 
 
-# ✅Google Sheets 授權
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-    json.loads(os.environ['GOOGLE_CREDENTIALS']),
-    scope
-)
-gc = gspread.authorize(credentials)
-spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
-worksheet = spreadsheet.worksheet("名冊")
 
-# 檢查使用者是否已註冊
-def is_user_registered(user_id):
-    all_ids = worksheet.col_values(2)
-    return user_id in all_ids
-
-# 加入使用者資料（若尚未存在）
-def register_user(name, user_id):
-    if not is_user_registered(user_id):
-        worksheet.append_row([name, user_id])
 
 
 
