@@ -48,6 +48,19 @@ EMAIL_SENDER = "surry318@gmail.com"
 EMAIL_RECEIVER = "surry318@gmail.com"
 EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # ⬅ 記得設為環境變數
 
+# ✅ 名冊 Google Sheets 初始化
+REGISTER_SHEET_ID = os.environ.get("REGISTER_SHEET_ID")
+register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("名冊")
+
+def is_user_registered(user_id):
+    user_ids = register_sheet.col_values(2)
+    return user_id in user_ids
+
+def register_user(name, user_id):
+    register_sheet.append_row([name, user_id])
+
+
+
 def send_email(subject, body):
     msg = MIMEText(body)
     msg["Subject"] = subject
@@ -124,6 +137,25 @@ def submit_data():
 
     return "Data saved & email sent!"
 
+# ✅Google Sheets 授權
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+    json.loads(os.environ['GOOGLE_CREDENTIALS']),
+    scope
+)
+gc = gspread.authorize(credentials)
+spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
+worksheet = spreadsheet.worksheet("名冊")
+
+# 檢查使用者是否已註冊
+def is_user_registered(user_id):
+    all_ids = worksheet.col_values(2)
+    return user_id in all_ids
+
+# 加入使用者資料（若尚未存在）
+def register_user(name, user_id):
+    if not is_user_registered(user_id):
+        worksheet.append_row([name, user_id])
 
 
 
@@ -146,24 +178,6 @@ def handle_message(event):
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
 
 
-# ✅Google Sheets 授權
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-    json.loads(os.environ['GOOGLE_CREDENTIALS']),
-    scope
-)
-gc = gspread.authorize(credentials)
-spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
-worksheet = spreadsheet.worksheet("名冊")  # 或者用 sheet1 也行
-
-# 檢查是否已存在
-def is_user_registered(user_id):
-    all_ids = worksheet.col_values(2)
-    return user_id in all_ids
-
-# 加入使用者資料
-def register_user(name, user_id):
-    worksheet.append_row([name, user_id])
 
 
 
