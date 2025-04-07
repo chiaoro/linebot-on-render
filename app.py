@@ -111,7 +111,7 @@ def handle_message(event):
     # ✅ 院務會議請假流程
     if user_msg == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否能出席？請輸入 Y 或 N"))
         return
 
     if get_state(user_id) == "ASK_LEAVE":
