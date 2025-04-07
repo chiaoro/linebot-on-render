@@ -108,13 +108,15 @@ def callback():
 
 # ✅Google Sheets 授權
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-    json.loads(os.environ['GOOGLE_CREDENTIALS']),
-    scope
-)
-gc = gspread.authorize(credentials)
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+gc = gspread.authorize(creds)
 spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
-worksheet = spreadsheet.worksheet("名冊")
+mapping_sheet = spreadsheet.worksheet("使用者對照表")
+
+
+
+
+
 
 # 檢查使用者是否已註冊
 def is_user_registered(user_id):
@@ -169,60 +171,43 @@ def submit_data():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    name = event.message.text.strip()
+    user_msg = event.message.text.strip()
 
-    # 取得所有已綁定姓名
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(os.getenv("FORM_RESPONSES_SHEET_URL")).worksheet('line_users')
-    existing_names = sheet.col_values(2)
+    # 綁定格式：「綁定 張巧柔 外科」
+    if user_msg.startswith("綁定"):
+        parts = user_msg.split()
+        if len(parts) == 3:
+            name = parts[1]
+            dept = parts[2]
 
-    if name in existing_names:
-        reply = f"✅ {name} 已綁定過囉！"
-    else:
-        sheet.append_row([user_id, name, datetime.now().strftime("%Y/%m/%d %H:%M:%S")])
-        reply = f"✅ 綁定成功！您好，{name}。"
+            # 檢查是否已綁定
+            existing = mapping_sheet.col_values(1)
+            if user_id in existing:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已綁定過囉～"))
+                return
 
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+            # 加入對照表
+            mapping_sheet.append_row([user_id, name, dept])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"✅ 綁定成功！歡迎 {name} 醫師（{dept}）"
+            ))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text="請依格式輸入：\n綁定 張巧柔 醫療部"
+            ))
+        return
 
 
 
 
+def get_user_info(user_id):
+    records = mapping_sheet.get_all_records()
+    for row in records:
+        if row['LINE_USER_ID'] == user_id:
+            return row['姓名'], row['科別']
+    return None, None
 
 
-
-
-# ✅ Google Drive 上傳初始化
-SERVICE_ACCOUNT_INFO = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
-credentials = service_account.Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
-drive_service = build('drive', 'v3', credentials=credentials)
-UPLOAD_FOLDER_ID = '14LThiRWDO8zW7C0qrtobAVPrO_sAQtCW'
-
-# ✅ 上傳檔案至 Google Drive
-def upload_to_drive(file_path, file_name):
-    folder_id = os.environ.get("GOOGLE_FOLDER_ID")
-    if not folder_id:
-        raise ValueError("Missing GOOGLE_FOLDER_ID environment variable.")
-
-    file_metadata = {
-        'name': file_name,
-        'parents': [folder_id]
-    }
-
-    # 自動偵測 mimetype
-    mimetype = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
-    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
-
-    try:
-        uploaded_file = drive_service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id'
-        ).execute()
-        return uploaded_file.get('id')
-    except HttpError as error:
-        print(f"❌ 上傳失敗：{error}")
-        return None
 
 
 # ✅ 使用者對話暫存
@@ -275,10 +260,7 @@ def home():
 
 
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_text(event):
-    user_id = event.source.user_id
-    text = event.message.text.strip()
+
 
 
     # ⬇️ 加在這裡：檢查是否為第一次輸入姓名的使用者
@@ -351,15 +333,6 @@ def handle_file(event):
         temp_path = tf.name
 
     upload_to_drive(temp_path, file_name)
-
-    # ✅ 通知管理員有人傳檔
-    admin_user_id = os.environ.get("LINE_ADMIN_USER_ID")
-    if admin_user_id:
-        notify = f"📎 有使用者傳送檔案：\n👤 使用者 ID：{event.source.user_id}\n📄 檔名：{file_name}"
-        line_bot_api.push_message(admin_user_id, TextSendMessage(text=notify))
-
-    # ✅ 回覆使用者
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"""✅ 檔案已成功上傳至雲端"""))
 
     
 
