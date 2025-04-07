@@ -265,8 +265,10 @@ def handle_message(event):
         elif text == "N":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您這禮拜院務會議無法出席的請假原因是？"))
+            return
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入有效選項：Y 或 N"))
+            return
     elif get_state(user_id) == "ASK_REASON":
         reason = original_text
         clear_state(user_id)
