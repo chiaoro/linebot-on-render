@@ -24,7 +24,7 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
-
+from linebot.exceptions import LineBotApiError
 
 
 
@@ -223,12 +223,18 @@ def handle_message(event):
     elif "其他表單服務" in original_text:
         with open("utils/flex_menu.json", "r") as f:
             flex_data = json.load(f)
+
+    
     try:
+        with open("utils/flex_menu.json", "r") as f:
+            flex_data = json.load(f)
         flex_msg = FlexSendMessage(alt_text="其他表單服務", contents=flex_data)
         line_bot_api.reply_message(event.reply_token, flex_msg)
-    except LineBotApiError as e:
-        # fallback 推播方式
+    except LineBotApiError:
+        # fallback: reply_token 錯誤時用 push 推播
         line_bot_api.push_message(user_id, flex_msg)
+    except Exception as e:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"發生錯誤：{str(e)}"))
 
 
 
