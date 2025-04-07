@@ -1,4 +1,3 @@
-
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
@@ -20,68 +19,24 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
-ADMIN_USER_ID = os.environ['LINE_ADMIN_USER_ID']
+
+EMAIL_SENDER = "surry318@gmail.com"
+EMAIL_RECEIVER = "surry318@gmail.com"
+EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
-spreadsheet_url = 'https://docs.google.com/spreadsheets/d/1_i-sQDdRGkuQSqTfUV4AZNcijY4xr8sukmh5mURFrAA/edit'
-sheet = gc.open_by_url(spreadsheet_url).worksheet('line_users')
-
-EMAIL_SENDER = "surry318@gmail.com"
-EMAIL_RECEIVER = "surry318@gmail.com"
-EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
-
+# 相關試算表
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
 mapping_sheet = spreadsheet.worksheet("UserMapping")
 
-def send_email(subject, body):
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_SENDER
-    msg["To"] = EMAIL_RECEIVER
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(EMAIL_SENDER, EMAIL_APP_PASSWORD)
-        server.send_message(msg)
-
-@app.route("/callback", methods=['POST'])
-def callback():
-    try:
-        data = request.get_json(force=True)
-    except:
-        data = {}
-    if data.get("mode") == "push":
-        user_id = data.get("userId")
-        message = data.get("message", "（無訊息內容）")
-        line_bot_api.push_message(user_id, TextSendMessage(text=message))
-        return "Pushed message to user."
-
-    signature = request.headers.get("X-Line-Signature")
-    body = request.get_data(as_text=True)
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    return "OK"
-
-@app.route("/submit", methods=["POST"])
-def receive_form_submission():
-    data = request.get_json()
-    name = data.get("name")
-    off_days = data.get("off_days")
-    if not name or not off_days:
-        return jsonify({"status": "error", "message": "缺少欄位"}), 400
-    try:
-        handle_submission(name, off_days)
-        return jsonify({"status": "success"}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
 user_sessions = {}
+
 
 def get_main_menu():
     return FlexSendMessage("主選單", {
@@ -116,18 +71,22 @@ newcomer_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "新進須知", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSfH7139NRH2SbV8BjRBioXHtD_6KLMYtfmktJxEBxUc7OW3Kg/viewform"}, "style": "secondary", "margin": "md"}
 ]
 other_buttons = [
-    {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform?usp=header"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "專師每日服務量填寫", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"},
-    {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"},  "style": "secondary",  "margin": "md"}
 ]
+
+
+
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
-    # ✅ 主選單最優先判斷
+    # ✅ 主選單
     if user_msg == "主選單":
         try:
             line_bot_api.reply_message(event.reply_token, get_main_menu())
@@ -135,16 +94,21 @@ def handle_message(event):
             line_bot_api.push_message(user_id, get_main_menu())
         return
 
-    if user_msg in ["門診調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]:
-        submenu_map = {
-            "門診調整服務": clinic_buttons,
-            "支援醫師服務": support_buttons,
-            "新進醫師服務": newcomer_buttons,
-            "其他表單服務": other_buttons
-        }
-        line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
+    # ✅ 四大選單分類
+    submenu_map = {
+        "門診調整服務": clinic_buttons,
+        "支援醫師服務": support_buttons,
+        "新進醫師服務": newcomer_buttons,
+        "其他表單服務": other_buttons
+    }
+    if user_msg in submenu_map:
+        try:
+            line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
+        except LineBotApiError:
+            line_bot_api.push_message(user_id, get_submenu(user_msg, submenu_map[user_msg]))
         return
 
+    # ✅ 院務會議請假流程
     if user_msg == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
@@ -152,9 +116,9 @@ def handle_message(event):
 
     if get_state(user_id) == "ASK_LEAVE":
         if user_msg.upper() == "Y":
-            clear_state(user_id)
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "出席")
+            clear_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="收到您的回覆，您即將出席這禮拜院務會議，請當日準時與會。"))
         elif user_msg.upper() == "N":
             set_state(user_id, "ASK_REASON")
@@ -170,13 +134,94 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
         return
 
+    # ✅ 調診三步驟流程
+    if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 1, "type": user_msg}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天？（例如 5/6 上午診）"))
+        return
+
+    if user_id in user_sessions:
+        session = user_sessions[user_id]
+        step = session["step"]
+        if step == 1:
+            session["original_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您要調整到哪一天？（或希望如何處理）"))
+        elif step == 2:
+            session["new_date"] = user_msg
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
+        elif step == 3:
+            session["reason"] = user_msg
+            # 傳送到 Apps Script webhook（請改為你的）
+            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            requests.post(webhook_url, json={
+                "user_id": user_id,
+                "request_type": session["type"],
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            })
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請：
+申請類型：{session['type']}
+原門診：{session['original_date']}
+處理方式：{session['new_date']}
+原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+        return
+
+    # 其餘預設訊息
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
+
+
+
+
+
+
+
+@app.route("/callback", methods=['POST'])
+def callback():
+    try:
+        data = request.get_json(force=True)
+    except:
+        data = {}
+
+    if data.get("mode") == "push":
+        user_id = data.get("userId")
+        message = data.get("message", "（無訊息內容）")
+        line_bot_api.push_message(user_id, TextSendMessage(text=message))
+        return "Pushed message to user."
+
+    signature = request.headers.get("X-Line-Signature")
+    body = request.get_data(as_text=True)
+
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return "OK"
+
+
+@app.route("/submit", methods=["POST"])
+def receive_form_submission():
+    data = request.get_json()
+    name = data.get("name")
+    off_days = data.get("off_days")
+    if not name or not off_days:
+        return jsonify({"status": "error", "message": "缺少欄位"}), 400
+    try:
+        handle_submission(name, off_days)
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot is running"
-
-
 
 
 if __name__ == "__main__":
