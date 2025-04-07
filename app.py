@@ -50,7 +50,7 @@ EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # ⬅ 記得設為環境�
 
 # ✅ 名冊 Google Sheets 初始化
 REGISTER_SHEET_ID = os.environ.get("REGISTER_SHEET_ID")
-register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("使用者對照表")
+register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("UserMapping")
 
 def is_user_registered(user_id):
     user_ids = register_sheet.col_values(2)
