@@ -221,6 +221,8 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(
             text=f"收到您的回覆。\n你這禮拜無法出席會議。\n原因：{reason}"))
     elif "其他表單服務" in original_text:
+        with open("utils/flex_menu.json", "r") as f:
+            flex_data = json.load(f)
         flex_msg = FlexSendMessage(alt_text="其他表單服務", contents=flex_data)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
@@ -304,17 +306,17 @@ def home():
 
 
     
-    if text == "主選單":
-        try:
-            line_bot_api.reply_message(event.reply_token, get_main_menu())
-        except LineBotApiError:
-            line_bot_api.push_message(user_id, get_main_menu())
     elif text == "門診調整服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
     elif text == "支援醫師服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("支援醫師服務", support_buttons))
     elif text == "新進醫師服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("新進醫師服務", newcomer_buttons))
+    elif text == "主選單":
+        try:
+            line_bot_api.reply_message(event.reply_token, get_main_menu())
+        except LineBotApiError:
+            line_bot_api.push_message(user_id, get_main_menu())
     elif text == "其他表單服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
     elif text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
