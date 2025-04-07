@@ -173,7 +173,7 @@ def handle_message(event):
         return
 
     # 其餘預設訊息
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『功能說明』來開始操作。"))
 
 
 
