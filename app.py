@@ -311,6 +311,7 @@ def home():
             line_bot_api.reply_message(event.reply_token, get_main_menu())
         except LineBotApiError:
             line_bot_api.push_message(user_id, get_main_menu())
+        return
     elif text == "門診調整服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
     elif text == "支援醫師服務":
