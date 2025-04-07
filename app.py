@@ -13,7 +13,7 @@ from googleapiclient.errors import HttpError
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
@@ -22,10 +22,14 @@ from utils.schedule_utils import handle_submission
 from utils.google_auth import get_gspread_client
 import smtplib
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
+from utils.google_sheets import log_meeting_reply, get_doctor_name
+from utils.state_manager import set_state, get_state, clear_state
 
 
 
 
+load_dotenv()
 app = Flask(__name__)
 
 # ✅ LINE 憑證
@@ -51,6 +55,10 @@ EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # ⬅ 記得設為環境�
 # ✅ 名冊 Google Sheets 初始化
 # REGISTER_SHEET_ID = os.environ.get("REGISTER_SHEET_ID")
 # register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("UserMapping")
+
+# ✅院務會議請假
+DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 
 # ✅Google Sheets 授權
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -159,6 +167,8 @@ def submit_data():
 def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
+    
+
 
     # 綁定格式：「綁定 張巧柔 外科」
     if user_msg.startswith("綁定"):
@@ -183,6 +193,42 @@ def handle_message(event):
                 text="請依格式輸入：\n綁定 張巧柔 醫療部"
             ))
         return
+
+
+
+# ✅ 院務會議請假   
+    original_text = event.message.text.strip()
+    text = original_text.upper()
+
+    if "院務會議請假" in original_text:
+        set_state(user_id, "ASK_LEAVE")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
+    elif get_state(user_id) == "ASK_LEAVE":
+        if text == "Y":
+            clear_state(user_id)
+            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+            log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "出席")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="收到您的回覆，\n您即將出席這禮拜院務會議。\n請當日準時與會。"))
+        elif text == "N":
+            set_state(user_id, "ASK_REASON")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您這禮拜院務會議無法出席的請假原因是？"))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入有效選項：Y 或 N"))
+    elif get_state(user_id) == "ASK_REASON":
+        reason = original_text
+        clear_state(user_id)
+        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+        log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "請假", reason)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(
+            text=f"收到您的回覆。\n你這禮拜無法出席會議。\n原因：{reason}"))
+    elif "其他表單服務" in original_text:
+        with open("utils/flex_menu.json", "r") as f:
+            flex_data = json.load(f)
+        flex_msg = FlexSendMessage(alt_text="其他表單服務", contents=flex_data)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
+
+
+
 
 
 
