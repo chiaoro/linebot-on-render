@@ -12,7 +12,6 @@ from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
