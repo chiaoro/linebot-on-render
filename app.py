@@ -245,13 +245,25 @@ def handle_message(event):
         
     
     elif text == "門診調整服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
+          try:
+             line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
+          except LineBotApiError:
+             line_bot_api.push_message(user_id, get_submenu("門診調整選單", clinic_buttons))
+
+    
     elif text == "支援醫師服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("支援醫師服務", support_buttons))
     elif text == "新進醫師服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("新進醫師服務", newcomer_buttons))
     elif text == "其他表單服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
+          try:
+             line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
+          except LineBotApiError:
+             line_bot_api.push_message(user_id, get_submenu("其他表單服務", other_buttons))
+   
+    
+    
+    
     elif text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": text}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 上午診）？"))
