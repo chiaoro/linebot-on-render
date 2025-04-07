@@ -237,11 +237,11 @@ def handle_message(event):
 
 
 
-if text == "主選單":
-    try:
-        line_bot_api.reply_message(event.reply_token, get_main_menu())
-    except LineBotApiError:
-        line_bot_api.push_message(user_id, get_main_menu())
+    if text == "主選單":
+        try:
+           line_bot_api.reply_message(event.reply_token, get_main_menu())
+        except LineBotApiError:
+           line_bot_api.push_message(user_id, get_main_menu())
         
     
     elif text == "門診調整服務":
