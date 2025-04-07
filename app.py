@@ -166,6 +166,7 @@ def submit_data():
 def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
+    text = user_msg.upper()  # 加這行也比較穩定（讓判斷變不區分大小寫）
     
 
 
@@ -196,7 +197,7 @@ def handle_message(event):
 
 
 # ✅ 主選單       
-    if text == "主選單":
+    if user_msg == "主選單":
         try:
             line_bot_api.reply_message(event.reply_token, get_main_menu())
         except LineBotApiError:
