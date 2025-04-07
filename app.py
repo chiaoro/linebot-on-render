@@ -50,7 +50,7 @@ EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # ⬅ 記得設為環境�
 
 # ✅ 名冊 Google Sheets 初始化
 REGISTER_SHEET_ID = os.environ.get("REGISTER_SHEET_ID")
-register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("名冊")
+register_sheet = gc.open_by_key(REGISTER_SHEET_ID).worksheet("使用者對照表")
 
 def is_user_registered(user_id):
     user_ids = register_sheet.col_values(2)
@@ -112,8 +112,6 @@ creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", sco
 gc = gspread.authorize(creds)
 spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
 mapping_sheet = spreadsheet.worksheet("使用者對照表")
-
-
 
 
 
