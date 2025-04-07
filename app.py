@@ -307,7 +307,10 @@ def home():
 
     
     if text == "主選單":
-        line_bot_api.reply_message(event.reply_token, get_main_menu())
+        try:
+            line_bot_api.reply_message(event.reply_token, get_main_menu())
+        except LineBotApiError:
+            line_bot_api.push_message(user_id, get_main_menu())
     elif text == "門診調整服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
     elif text == "支援醫師服務":
