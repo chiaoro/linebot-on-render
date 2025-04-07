@@ -283,7 +283,8 @@ newcomer_buttons = [
 other_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform?usp=header"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "專師每日服務量填寫", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"},
-    {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"}, "style": "secondary", "margin": "md"}
+    {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"},  "style": "secondary",  "margin": "md"}
 ]
 
 @app.route("/", methods=["GET"])
@@ -315,8 +316,6 @@ def home():
         line_bot_api.reply_message(event.reply_token, get_submenu("新進醫師服務", newcomer_buttons))
     elif text == "其他表單服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
-    elif text == "我要上傳檔案":
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📎 請直接傳送檔案，我會幫您儲存至雲端硬碟。"))
     elif text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": text}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 上午診）？"))
