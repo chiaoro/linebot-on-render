@@ -1,0 +1,43 @@
+
+{
+  "type": "bubble",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "contents": [
+      {
+        "type": "text",
+        "text": "其他表單服務",
+        "weight": "bold",
+        "size": "lg"
+      },
+      {
+        "type": "button",
+        "action": {
+          "type": "message",
+          "label": "新進醫師 - 必填資料",
+          "text": "新進醫師 - 必填資料"
+        }
+      },
+      {
+        "type": "button",
+        "action": {
+          "type": "message",
+          "label": "支援醫師 - 必填資料",
+          "text": "支援醫師 - 必填資料"
+        }
+      },
+      {
+        "type": "button",
+        "action": {
+          "type": "message",
+          "label": "院務會議請假",
+          "text": "院務會議請假"
+        },
+        "style": "primary",
+        "color": "#905c44"
+      }
+    ]
+  }
+}
