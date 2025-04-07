@@ -221,8 +221,6 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(
             text=f"收到您的回覆。\n你這禮拜無法出席會議。\n原因：{reason}"))
     elif "其他表單服務" in original_text:
-        with open("utils/flex_menu.json", "r") as f:
-            flex_data = json.load(f)
         flex_msg = FlexSendMessage(alt_text="其他表單服務", contents=flex_data)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
