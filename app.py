@@ -24,7 +24,6 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
-from linebot.exceptions import LineBotApiError
 
 
 
@@ -226,7 +225,12 @@ def handle_message(event):
             flex_data = json.load(f)
         flex_msg = FlexSendMessage(alt_text="其他表單服務", contents=flex_data)
         line_bot_api.reply_message(event.reply_token, flex_msg)
-    
+
+
+
+
+
+
 
 def get_user_info(user_id):
     records = mapping_sheet.get_all_records()
@@ -234,6 +238,8 @@ def get_user_info(user_id):
         if row['LINE_USER_ID'] == user_id:
             return row['姓名'], row['科別']
     return None, None
+
+
 
 
 # ✅ 使用者對話暫存
@@ -275,51 +281,20 @@ newcomer_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "新進須知", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSfH7139NRH2SbV8BjRBioXHtD_6KLMYtfmktJxEBxUc7OW3Kg/viewform"}, "style": "secondary", "margin": "md"}
 ]
 other_buttons = [
-    {
-        "type": "button",
-        "action": {
-            "type": "uri",
-            "label": "Temp傳檔",
-            "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform?usp=header"
-        },
-        "style": "secondary",
-        "margin": "md"
-    },
-    {
-        "type": "button",
-        "action": {
-            "type": "uri",
-            "label": "專師每日服務量填寫",
-            "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"
-        },
-        "style": "secondary",
-        "margin": "md"
-    },
-    {
-        "type": "button",
-        "action": {
-            "type": "uri",
-            "label": "外科醫師休假登記表",
-            "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"
-        },
-        "style": "secondary",
-        "margin": "md"
-    },
-    {
-        "type": "button",
-        "action": {
-            "type": "message",
-            "label": "院務會議請假",
-            "text": "院務會議請假"
-        },
-        "style": "primary",
-        "margin": "md"
-    }
+    {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform?usp=header"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "uri", "label": "專師每日服務量填寫", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"},  "style": "secondary",  "margin": "md"}
 ]
 
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot is running"
+
+
+
+
+
 
     # ⬇️ 加在這裡：檢查是否為第一次輸入姓名的使用者
     if not is_user_registered(user_id):
@@ -329,8 +304,9 @@ def home():
 
 
 
+
     
-   if text == "主選單":
+    if text == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
     elif text == "門診調整服務":
         line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
@@ -374,28 +350,6 @@ def home():
             del user_sessions[user_id]
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
 
 
 
