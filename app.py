@@ -199,7 +199,7 @@ def handle_message(event):
     original_text = event.message.text.strip()
     text = original_text.upper()
 
-    if "院務會議請假" in original_text:
+    if "院務會議" in original_text:
         set_state(user_id, "ASK_LEAVE")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
     elif get_state(user_id) == "ASK_LEAVE":
@@ -228,7 +228,50 @@ def handle_message(event):
 
 
 
-
+    if text == "主選單":
+        line_bot_api.reply_message(event.reply_token, get_main_menu())
+    elif text == "門診調整服務":
+        line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
+    elif text == "支援醫師服務":
+        line_bot_api.reply_message(event.reply_token, get_submenu("支援醫師服務", support_buttons))
+    elif text == "新進醫師服務":
+        line_bot_api.reply_message(event.reply_token, get_submenu("新進醫師服務", newcomer_buttons))
+    elif text == "其他表單服務":
+        line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
+    elif text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 1, "type": text}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 上午診）？"))
+    elif user_id in user_sessions:
+        session = user_sessions[user_id]
+        if session["step"] == 1:
+            session["original_date"] = text
+            session["step"] = 2
+            ask = "請問您要調整到哪一天？（例如：5/12 上午診）" if session["type"] == "我要調診" else "請問您希望如何處理？(例如休診、XXX醫師代診)"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=ask))
+        elif session["step"] == 2:
+            session["new_date"] = text
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
+        elif session["step"] == 3:
+            session["reason"] = text
+            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            requests.post(webhook_url, json={
+                "user_id": user_id,
+                "request_type": session["type"],
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            })
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請：
+申請類型：{session['type']}
+原門診：{session['original_date']}
+處理方式：{session['new_date']}
+原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+    else:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
 
 
 
@@ -306,50 +349,7 @@ def home():
 
 
     
-    if text == "主選單":
-        line_bot_api.reply_message(event.reply_token, get_main_menu())
-    elif text == "門診調整服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("門診調整選單", clinic_buttons))
-    elif text == "支援醫師服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("支援醫師服務", support_buttons))
-    elif text == "新進醫師服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("新進醫師服務", newcomer_buttons))
-    elif text == "其他表單服務":
-        line_bot_api.reply_message(event.reply_token, get_submenu("其他表單服務", other_buttons))
-    elif text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        user_sessions[user_id] = {"step": 1, "type": text}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天（例如：5/6 上午診）？"))
-    elif user_id in user_sessions:
-        session = user_sessions[user_id]
-        if session["step"] == 1:
-            session["original_date"] = text
-            session["step"] = 2
-            ask = "請問您要調整到哪一天？（例如：5/12 上午診）" if session["type"] == "我要調診" else "請問您希望如何處理？(例如休診、XXX醫師代診)"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=ask))
-        elif session["step"] == 2:
-            session["new_date"] = text
-            session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
-        elif session["step"] == 3:
-            session["reason"] = text
-            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
-            requests.post(webhook_url, json={
-                "user_id": user_id,
-                "request_type": session["type"],
-                "original_date": session["original_date"],
-                "new_date": session["new_date"],
-                "reason": session["reason"]
-            })
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請：
-申請類型：{session['type']}
-原門診：{session['original_date']}
-處理方式：{session['new_date']}
-原因：{session['reason']}"""
-            ))
-            del user_sessions[user_id]
-    else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『主選單』來開始操作。"))
+
 
 
 
