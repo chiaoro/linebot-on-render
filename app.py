@@ -255,6 +255,7 @@ def handle_message(event):
     if "院務會議" in original_text:
         set_state(user_id, "ASK_LEAVE")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
+        return  # ← 這是重點！！！！
     elif get_state(user_id) == "ASK_LEAVE":
         if text == "Y":
             clear_state(user_id)
