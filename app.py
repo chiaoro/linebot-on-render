@@ -147,7 +147,7 @@ def handle_message(event):
         if step == 1:
             session["original_date"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您要調整到哪一天？（或希望如何處理）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？例如:(5/23 下午診)(休診)(5/23 下午加診)(XXX代診)"))
         elif step == 2:
             session["new_date"] = user_msg
             session["step"] = 3
