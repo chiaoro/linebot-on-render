@@ -117,7 +117,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
         elif session["step"] == 3:
             session["reason"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/AKfycbw-zcC912rPhWM7Wfh0QFPNUVCeP-PCfv5YOrW10YocztjGz-Bz0JOZb_g2jX5VeZ0yog/exec"
+            webhook_url = "https://script.google.com/macros/s/AKfycbyE2eNVvph3arKUPLf7-2qWhv0Px9iak715n2gQPfr8B0Xq-5USdev6SPFRHc3WcR-V/exec"
             requests.post(webhook_url, json={
                 "user_id": user_id,
                 "request_type": "支援醫師調診單",
