@@ -110,11 +110,11 @@ def handle_message(event):
         if session["step"] == 1:
             session["original_date"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：加診、取消、代診）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：5/20加診、休診、調整至5/16上午診）"))
         elif session["step"] == 2:
             session["new_date"] = user_msg
             session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議重疊）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
         elif session["step"] == 3:
             session["reason"] = user_msg
             webhook_url = "https://script.google.com/macros/s/AKfycbw-zcC912rPhWM7Wfh0QFPNUVCeP-PCfv5YOrW10YocztjGz-Bz0JOZb_g2jX5VeZ0yog/exec"
