@@ -206,37 +206,7 @@ def handle_message(event):
             del user_sessions[user_id]
         return
 
-    # ✅ 門診調整三步驟流程
-    if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        session = user_sessions[user_id]
-        step = session["step"]
-        if step == 1:
-            session["original_date"] = user_msg
-            session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？例如:(5/23 下午診)(休診)(5/23 下午加診)(XXX代診)"))
-        elif step == 2:
-            session["new_date"] = user_msg
-            session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原因是什麼？"))
-        elif step == 3:
-            session["reason"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
-            requests.post(webhook_url, json={
-                "user_id": user_id,
-                "request_type": session["type"],
-                "original_date": session["original_date"],
-                "new_date": session["new_date"],
-                "reason": session["reason"]
-            })
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請：
-申請類型：{session['type']}
-原門診：{session['original_date']}
-處理方式：{session['new_date']}
-原因：{session['reason']}"""
-            ))
-            del user_sessions[user_id]
-        return
+
 
 
 
