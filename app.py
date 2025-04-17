@@ -65,7 +65,8 @@ def get_submenu(title, buttons):
     })
 
 clinic_buttons = [{"type": "button", "action": {"type": "message", "label": txt, "text": txt}, "style": "primary", "margin": "md"} for txt in ["我要調診", "我要休診", "我要代診", "我要加診"]]
-support_buttons = [{"type": "button", "action": {"type": "uri", "label": "必填資料", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSe0uYZEF2-bBY14_nKlykFuV__CEeEeOaGVrQJiai9cVoZWLQ/viewform"}, "style": "secondary", "margin": "md"}]
+support_buttons = [{"type": "button", "action": {"type": "uri", "label": "必填資料", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSe0uYZEF2-bBY14_nKlykFuV__CEeEeOaGVrQJiai9cVoZWLQ/viewform"}, "style": "secondary", "margin": "md"}
+                   {"type": "button", "action": {"type": "message", "label": "支援醫師調診單", "text": "支援醫師調診單"},"style": "primary", "margin": "md"}]
 newcomer_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "必填資料", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScUn1Bm83wZ7SSTYCl8fj7z3b_sq7tscrZiXSt_AXOHf0SKPw/viewform"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "新進須知", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSfH7139NRH2SbV8BjRBioXHtD_6KLMYtfmktJxEBxUc7OW3Kg/viewform"}, "style": "secondary", "margin": "md"}
@@ -172,6 +173,46 @@ def handle_message(event):
             ))
             del user_sessions[user_id]
         return
+
+    # ✅ 支援醫師調診單 三步驟流程
+    if user_msg == "支援醫師調診單":
+        user_sessions[user_id] = {"step": 1, "type": "支援醫師調診單"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        return
+
+    if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
+        session = user_sessions[user_id]
+        step = session["step"]
+        if step == 1:
+            session["original_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：加診、取消、代診）"))
+        elif step == 2:
+            session["new_date"] = user_msg
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議重疊）"))
+        elif step == 3:
+            session["reason"] = user_msg
+            webhook_url = "https://script.google.com/macros/s/AKfycbw-zcC912rPhWM7Wfh0QFPNUVCeP-PCfv5YOrW10YocztjGz-Bz0JOZb_g2jX5VeZ0yog/exec"
+            requests.post(webhook_url, json={
+                "user_id": user_id,
+                "request_type": "支援醫師調診單",
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            })
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請（支援醫師調診單）：
+原門診：{session['original_date']}
+處理方式：{session['new_date']}
+原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+        return
+
+
+
+
 
     # 其餘預設訊息
 #    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入『功能說明』來開始操作。"))
