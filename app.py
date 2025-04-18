@@ -107,27 +107,27 @@ def handle_message(event):
             user_votes[group_id] = {}
             stat_active[group_id] = False
 
-        if text == "\u958b\u555f\u7d71\u8a08":
+        if text == "開啟統計":
             user_votes[group_id] = {}
             stat_active[group_id] = True
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\ud83d\udfe2 \u7d71\u8a08\u529f\u80fd\u5df2\u958b\u555f\uff01\u8acb\u5927\u5bb6\u8e0f\u8e87 +1 \uff5e"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～"))
             return
 
-        if text == "\u7d50\u675f\u7d71\u8a08":
+        if text == "結束統計":
             if stat_active[group_id]:
                 total = sum(user_votes[group_id].values())
                 stat_active[group_id] = False
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"\ud83d\udd34 \u7d71\u8a08\u5df2\u7d50\u675f\uff0c\u7e3d\u4eba\u6578\u70ba\uff1a{total} \u4eba \ud83d\ude4c"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計已結束，總人數為：{total} 人 🙌"))
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\u26a0\ufe0f \u5c1a\u672a\u958b\u555f\u7d71\u8a08\u529f\u80fd\u3002"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
             return
 
-        if text == "\u7d71\u8a08\u4eba\u6578":
+        if text == "統計人數":
             if stat_active[group_id]:
                 total = sum(user_votes[group_id].values())
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"\ud83d\udcca \u7d71\u8a08\u9032\u884c\u4e2d\ff0c\u76ee\u524d\u70ba {total} \u4eba\u3002"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"📊 統計進行中，目前為 {total} 人。"))
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\u26a0\ufe0f \u5c1a\u672a\u958b\u555f\u7d71\u8a08\u529f\u80fd\u3002"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
             return
 
         if stat_active[group_id]:
