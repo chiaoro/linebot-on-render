@@ -17,18 +17,12 @@ from utils.state_manager import set_state, get_state, clear_state
 #✅ 各群組的投票記錄與統計開關
 user_votes = {}
 stat_active = {}  # 紀錄哪些群組開啟了統計功能
+user_sessions = {}
 
 
-
+# ✅ 環境設定與 Flask 啟動
 load_dotenv()
 app = Flask(__name__)
-
-
-
-
-
-
-
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 
@@ -48,7 +42,7 @@ mapping_sheet = spreadsheet.worksheet("UserMapping")
 
 user_sessions = {}
 
-
+# ✅ Flex Menu 設定
 def get_main_menu():
     return FlexSendMessage("主選單", {
         "type": "bubble",
@@ -107,64 +101,42 @@ def handle_message(event):
     
 
     # ✅ 統計功能 - 僅處理群組中的訊息
-    if event.source.type != "group":
-        return
-
-    group_id = event.source.group_id
-
-    if group_id not in user_votes:
-        user_votes[group_id] = {}
-        stat_active[group_id] = False
-
-    # 🔵 開啟統計
-    if text == "開啟統計":
-        user_votes[group_id] = {}
-        stat_active[group_id] = True
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～")
-        )
-        return
-
-    # 🔴 結束統計
-    if text == "結束統計":
-        if stat_active[group_id]:
-            total = sum(user_votes[group_id].values())
+    if event.source.type == "group":
+        group_id = event.source.group_id
+        if group_id not in user_votes:
+            user_votes[group_id] = {}
             stat_active[group_id] = False
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"🔴 統計已結束，總人數為：{total} 人 🙌")
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="⚠️ 尚未開啟統計功能，請先輸入【開啟統計】。")
-            )
-        return
 
-    # 📊 查詢統計人數
-    if text == "統計人數":
+        if text == "\u958b\u555f\u7d71\u8a08":
+            user_votes[group_id] = {}
+            stat_active[group_id] = True
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\ud83d\udfe2 \u7d71\u8a08\u529f\u80fd\u5df2\u958b\u555f\uff01\u8acb\u5927\u5bb6\u8e0f\u8e87 +1 \uff5e"))
+            return
+
+        if text == "\u7d50\u675f\u7d71\u8a08":
+            if stat_active[group_id]:
+                total = sum(user_votes[group_id].values())
+                stat_active[group_id] = False
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"\ud83d\udd34 \u7d71\u8a08\u5df2\u7d50\u675f\uff0c\u7e3d\u4eba\u6578\u70ba\uff1a{total} \u4eba \ud83d\ude4c"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\u26a0\ufe0f \u5c1a\u672a\u958b\u555f\u7d71\u8a08\u529f\u80fd\u3002"))
+            return
+
+        if text == "\u7d71\u8a08\u4eba\u6578":
+            if stat_active[group_id]:
+                total = sum(user_votes[group_id].values())
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"\ud83d\udcca \u7d71\u8a08\u9032\u884c\u4e2d\ff0c\u76ee\u524d\u70ba {total} \u4eba\u3002"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\u26a0\ufe0f \u5c1a\u672a\u958b\u555f\u7d71\u8a08\u529f\u80fd\u3002"))
+            return
+
         if stat_active[group_id]:
-            total = sum(user_votes[group_id].values())
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"📊 統計進行中，目前為 {total} 人。")
-            )
-        else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="⚠️ 尚未開啟統計功能。")
-            )
-        return
-
-    # ➕ 統計過程中靜默處理 +1 / -1
-    if stat_active[group_id]:
-        if text == "+1":
-            user_votes[group_id][user_id] = 1
-            return
-        elif text == "-1":
-            user_votes[group_id].pop(user_id, None)
-            return
+            if text == "+1":
+                user_votes[group_id][user_id] = 1
+                return
+            elif text == "-1":
+                user_votes[group_id].pop(user_id, None)
+                return
 
 
 
@@ -177,7 +149,7 @@ def handle_message(event):
 
 
 
-     # ✅主選單
+     # ✅主選單叫出來
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
         return
