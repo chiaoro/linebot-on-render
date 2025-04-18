@@ -119,27 +119,51 @@ def handle_message(event):
             session["reason"] = user_msg
         
             webhook_url = "https://script.google.com/macros/s/AKfycbyE2eNVvph3arKUPLf7-2qWhv0Px9iak715n2gQPfr8B0Xq-5USdev6SPFRHc3WcR-V/exec"
-        
-            response = requests.post(
-                webhook_url,
-                data=json.dumps({
-                    "user_id": user_id,
-                    "request_type": "支援醫師調診單",
-                    "original_date": session["original_date"],
-                    "new_date": session["new_date"],
-                    "reason": session["reason"]
-                }),
-                headers={"Content-Type": "application/json"}
-            )
-        
-            print("🔁 Webhook status:", response.status_code)
-            print("🔁 Webhook response:", response.text)
-        
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-            ))
-            del user_sessions[user_id]
 
+            payload = {
+                "user_id": user_id,
+                "request_type": "支援醫師調診單",
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            }
+            
+            print("📤 準備送出 payload：", payload)
+            
+            try:
+                response = requests.post(
+                    webhook_url,
+                    data=json.dumps(payload),
+                    headers={"Content-Type": "application/json"}
+                )
+                print("✅ Webhook status:", response.status_code)
+                print("✅ Webhook response:", response.text)
+            except Exception as e:
+                print("❌ webhook 送出失敗：", str(e))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+                 ))
+                del user_sessions[user_id]
+             return
+            
+            
+#            response = requests.post(
+#                webhook_url,
+#                data=json.dumps({
+#                    "user_id": user_id,
+#                    "request_type": "支援醫師調診單",
+#                    "original_date": session["original_date"],
+#                    "new_date": session["new_date"],
+#                    "reason": session["reason"]
+#                }),
+#                headers={"Content-Type": "application/json"}
+#            )
+        
+#            print("🔁 Webhook status:", response.status_code)
+#            print("🔁 Webhook response:", response.text)
+        
+
+            
 
 
 
@@ -159,7 +183,7 @@ def handle_message(event):
 #                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
 #            ))
 #            del user_sessions[user_id]
-        return
+        
 
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": user_msg}
