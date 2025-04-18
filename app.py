@@ -185,7 +185,7 @@ def handle_message(event):
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(
             event.reply_token, 
-            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？（這欄將取代 userId 對應的預設姓名）")
+            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？")
         )
         return
     
@@ -205,7 +205,7 @@ def handle_message(event):
             session["step"] = 2
             line_bot_api.reply_message(
                 event.reply_token, 
-                TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16上午診）")
+                TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）")
             )
     
         elif session["step"] == 2:
