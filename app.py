@@ -112,8 +112,8 @@ def handle_message(event):
         user_votes[group_id] = {}
         stat_active[group_id] = False
 
-    # 🔵 控制統計開關
-    if text == "【開啟統計】":
+# 🔵 開啟統計（支援有無中括號）
+    if text in ["開啟統計", "【開啟統計】"]:
         user_votes[group_id] = {}       # 清空舊資料
         stat_active[group_id] = True    # 開啟統計開關
         line_bot_api.reply_message(
@@ -121,8 +121,8 @@ def handle_message(event):
             TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～")
         )
         return
-
-    if text == "【結束統計】":
+# 🔴 結束統計（支援有無中括號）
+    if text in ["結束統計", "【結束統計】"]:
         if stat_active[group_id]:
             total = sum(user_votes[group_id].values())
             stat_active[group_id] = False
@@ -137,33 +137,8 @@ def handle_message(event):
             )
         return
 
-    # 🧮 統計過程
-    if stat_active[group_id]:
-        if text == "+1":
-            user_votes[group_id][user_id] = 1
-            total = sum(user_votes[group_id].values())
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f"✅ 已記錄 +1，目前共 {total} 人。")
-            )
-            return
-        elif text == "-1":
-            if user_id in user_votes[group_id]:
-                user_votes[group_id].pop(user_id)
-                total = sum(user_votes[group_id].values())
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text=f"❌ 已取消 +1，目前共 {total} 人。")
-                )
-            else:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="⚠️ 您尚未登記 +1，無需取消。")
-                )
-            return
-
-    # 📊 查詢目前統計
-    if text == "【統計人數】":
+        # 📊 統計查詢
+    if text in ["統計人數", "【統計人數】"]:
         if stat_active[group_id]:
             total = sum(user_votes[group_id].values())
             line_bot_api.reply_message(
@@ -173,9 +148,19 @@ def handle_message(event):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="⚠️ 目前尚未開啟統計功能。")
+                TextSendMessage(text="⚠️ 尚未開啟統計功能。")
             )
         return
+    
+    # 🔕 統計期間靜默處理 +1 / -1
+    if stat_active[group_id]:
+        if text == "+1":
+            user_votes[group_id][user_id] = 1
+            return
+        elif text == "-1":
+            user_votes[group_id].pop(user_id, None)
+            return
+
     # ✅統計  僅處理群組中的訊息 +1-1功能
 
 
