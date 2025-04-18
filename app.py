@@ -138,8 +138,10 @@ def handle_message(event):
                 print(f"⚠️ 無法取得使用者名稱: {e}")
                 return
 
-            if text == "+1":
-                user_votes[group_id][name] = 1
+            plus_match = re.match(r"\+(\d+)", text)
+            if plus_match:
+                count = int(plus_match.group(1))
+                user_votes[group_id][name] = user_votes[group_id].get(name, 0) + count
                 return
             elif text == "-1":
                 user_votes[group_id].pop(name, None)
