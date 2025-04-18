@@ -254,12 +254,12 @@ def handle_message(event):
 
 
     # 在 handle_message 函數中加入這段程式碼
-    if user_msg == "院務會議請假":
-        user_sessions[user_id] = {"step": 1, "type": "院務會議請假"}
+    if user_msg == "院務會議":
+        user_sessions[user_id] = {"step": 1, "type": "院務會議"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問您要請假的院務會議日期？（例如：5/6）"))
         return
     
-    if user_id in user_sessions and user_sessions[user_id].get("type") == "院務會議請假":
+    if user_id in user_sessions and user_sessions[user_id].get("type") == "院務會議":
         session = user_sessions[user_id]
         if session["step"] == 1:
             session["meeting_date"] = user_msg
@@ -274,7 +274,7 @@ def handle_message(event):
                 # 準備要送出的資料
                 payload = {
                     "user_id": user_id,
-                    "request_type": "院務會議請假",
+                    "request_type": "院務會議",
                     "sheet_url": "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit",
                     "meeting_date": session["meeting_date"],
                     "reason": session["reason"],
