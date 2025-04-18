@@ -97,36 +97,37 @@ other_buttons = [
 def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
-    global user_votes, stat_active     #✅統計用
-    text = event.message.text.strip()   #✅統計用
+    global user_votes, stat_active
+
+    # 統一處理訊息，去除中括號與空白（避免格式不一致）
+    text = user_msg.replace("【", "").replace("】", "").strip()
 
 
 
     
 
-    # ✅統計  僅處理群組中的訊息 +1-1功能
+    # ✅ 統計功能 - 僅處理群組中的訊息
     if event.source.type != "group":
         return
-    
+
     group_id = event.source.group_id
-    user_id = event.source.user_id
-    
-    # 初始化該群組的資料
+
     if group_id not in user_votes:
         user_votes[group_id] = {}
         stat_active[group_id] = False
 
-# 🔵 開啟統計（支援有無中括號）
-    if text in ["開啟統計", "【開啟統計】"]:
-        user_votes[group_id] = {}       # 清空舊資料
-        stat_active[group_id] = True    # 開啟統計開關
+    # 🔵 開啟統計
+    if text == "開啟統計":
+        user_votes[group_id] = {}
+        stat_active[group_id] = True
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～")
         )
         return
-# 🔴 結束統計（支援有無中括號）
-    if text in ["結束統計", "【結束統計】"]:
+
+    # 🔴 結束統計
+    if text == "結束統計":
         if stat_active[group_id]:
             total = sum(user_votes[group_id].values())
             stat_active[group_id] = False
@@ -141,8 +142,8 @@ def handle_message(event):
             )
         return
 
-        # 📊 統計查詢
-    if text in ["統計人數", "【統計人數】"]:
+    # 📊 查詢統計人數
+    if text == "統計人數":
         if stat_active[group_id]:
             total = sum(user_votes[group_id].values())
             line_bot_api.reply_message(
@@ -155,8 +156,8 @@ def handle_message(event):
                 TextSendMessage(text="⚠️ 尚未開啟統計功能。")
             )
         return
-    
-    # 🔕 統計期間靜默處理 +1 / -1
+
+    # ➕ 統計過程中靜默處理 +1 / -1
     if stat_active[group_id]:
         if text == "+1":
             user_votes[group_id][user_id] = 1
@@ -165,7 +166,6 @@ def handle_message(event):
             user_votes[group_id].pop(user_id, None)
             return
 
-    # ✅統計  僅處理群組中的訊息 +1-1功能
 
 
 
