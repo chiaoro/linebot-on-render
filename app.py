@@ -111,7 +111,7 @@ def handle_message(event):
         if text == "開啟統計":
             user_votes[group_id] = {}
             stat_active[group_id] = True
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～如果臨時要取消請喊 -1 ～"))
             return
 
         if text == "結束統計":
