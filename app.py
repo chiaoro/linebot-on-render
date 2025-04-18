@@ -246,65 +246,31 @@ def handle_message(event):
 
 
 
-    # 在 handle_message 函數中加入這段程式碼
-    if user_msg == "院務會議":
-        user_sessions[user_id] = {"step": 1, "type": "院務會議"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問您要請假的院務會議日期？（例如：5/6）"))
+    # ✅ 院務會議請假流程
+    if "院務會議" in user_msg:
+        set_state(user_id, "ASK_LEAVE")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要請假？請輸入 Y 或 N"))
         return
-    
-    if user_id in user_sessions and user_sessions[user_id].get("type") == "院務會議":
-        session = user_sessions[user_id]
-        if session["step"] == 1:
-            session["meeting_date"] = user_msg
-            session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入請假原因"))
-        elif session["step"] == 2:
-            session["reason"] = user_msg
-            # 使用適合院務會議請假的 webhook URL
-            webhook_url = "https://script.google.com/macros/s/AKfycbyk8tqbMREdzaWpwJ5ZE0CJsC_0JmsE1QRW1-S0ALvYVYuCQxlVELCI8GrvpUjF6pPg/exec"
-            
-            try:
-                # 準備要送出的資料
-                payload = {
-                    "user_id": user_id,
-                    "request_type": "院務會議",
-                    "sheet_url": "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit",
-                    "meeting_date": session["meeting_date"],
-                    "reason": session["reason"],
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                
-                print(f"📤 準備送出院務會議請假資料：{payload}")
-                
-                response = requests.post(
-                    webhook_url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                print(f"✅ Webhook status: {response.status_code}")
-                print(f"✅ Webhook response: {response.text}")
-                
-                if response.status_code == 200:
-                    result_message = f"""✅ 已成功送出您的院務會議請假申請：
-    會議日期：{session['meeting_date']}
-    請假原因：{session['reason']}"""
-                else:
-                    result_message = f"""⚠️ 申請已收到，但系統處理時發生問題 (錯誤碼:{response.status_code})
-    請聯繫管理員確認是否成功記錄。
-    會議日期：{session['meeting_date']}
-    請假原因：{session['reason']}"""
-                    
-            except Exception as e:
-                print(f"❌ webhook 送出失敗：{str(e)}")
-                result_message = f"""⚠️ 申請已收到，但網路連線發生問題：
-    請聯繫管理員確認是否成功記錄。
-    會議日期：{session['meeting_date']}
-    請假原因：{session['reason']}"""
-                
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result_message))
-            del user_sessions[user_id]
-            return
+
+    if get_state(user_id) == "ASK_LEAVE":
+        if user_msg.upper() == "Y":
+            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+            log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "出席")
+            clear_state(user_id)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="收到您的回覆，您即將出席這禮拜院務會議，請當日準時與會。"))
+        elif user_msg.upper() == "N":
+            set_state(user_id, "ASK_REASON")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您無法出席的原因是？"))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入 Y 或 N"))
+        return
+
+    if get_state(user_id) == "ASK_REASON":
+        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+        log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "請假", user_msg)
+        clear_state(user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
+        return
 
 
 
