@@ -267,16 +267,30 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入請假原因"))
         elif session["step"] == 2:
             session["reason"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            # 使用適合院務會議請假的 webhook URL
+            webhook_url = "https://script.google.com/macros/s/AKfycbzNvYrlp5zNJgJivs_EcjKXG-MoZRIi_yk5NiRGVMM5ufAlnIUdCmqO9Zx5UDHkscwy/exec"
             
             try:
-                response = requests.post(webhook_url, json={
+                # 準備要送出的資料
+                payload = {
                     "user_id": user_id,
                     "request_type": "院務會議請假",
+                    "sheet_url": "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit",
                     "meeting_date": session["meeting_date"],
-                    "reason": session["reason"]
-                })
+                    "reason": session["reason"],
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                
+                print(f"📤 準備送出院務會議請假資料：{payload}")
+                
+                response = requests.post(
+                    webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                
                 print(f"✅ Webhook status: {response.status_code}")
+                print(f"✅ Webhook response: {response.text}")
                 
                 if response.status_code == 200:
                     result_message = f"""✅ 已成功送出您的院務會議請假申請：
