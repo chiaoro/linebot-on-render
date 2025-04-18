@@ -407,7 +407,7 @@ def handle_message(event):
                 }
 
                 try:
-                    webhook_url = "https://script.google.com/macros/s/你的值班調換Webhook網址/exec"
+                    webhook_url = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
                     requests.post(webhook_url, data=data)
                     confirm = "\n".join([f"{k}：{data[k]}" for k in key_list])
                     line_bot_api.push_message(user_id, TextSendMessage(text=f"✅ 值班{swap_type}資料已提交成功：\n{confirm}"))
