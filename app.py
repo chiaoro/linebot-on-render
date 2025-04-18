@@ -136,10 +136,14 @@ def handle_message(event):
                 print("✅ Webhook response:", response.text)
             except Exception as e:
                 print("❌ webhook 送出失敗：", str(e))
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-                 ))
-                del user_sessions[user_id]
+
+            
+            # ✅ 這兩行應該永遠都執行（不論 try 成功或失敗）
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+            
             return
             
 
