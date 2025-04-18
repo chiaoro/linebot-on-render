@@ -13,6 +13,7 @@ from utils.schedule_utils import handle_submission
 from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
+import re
 
 #✅ 各群組的投票記錄與統計開關
 user_votes = {}
