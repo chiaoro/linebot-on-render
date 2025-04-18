@@ -125,6 +125,8 @@ def handle_message(event):
                 "new_date": session["new_date"],
                 "reason": session["reason"]
             }
+
+            print("📤 準備送出 payload：", payload)
             
             try:
                 response = requests.post(
@@ -135,33 +137,24 @@ def handle_message(event):
                 print(f"✅ Webhook status: {response.status_code}")
                 print(f"✅ Webhook response: {response.text}")
                 
-
-
-
-
-                
-                
-                if response.status_code == 200:
-                    result_message = f"""✅ 已成功送出您的申請（支援醫師調診單）：
-        原門診：{session['original_date']}
-        處理方式：{session['new_date']}
-        原因：{session['reason']}"""
-                else:
-                    result_message = f"""⚠️ 申請已收到，但系統處理時發生問題 (錯誤碼:{response.status_code})
-        請聯繫管理員確認是否成功記錄。
-        原門診：{session['original_date']}
-        處理方式：{session['new_date']}
-        原因：{session['reason']}"""
-            
+     # 無論成功或失敗，都提供回應
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=f"""✅ 已收到您的申請（支援醫師調診單）：
+    原門診：{session['original_date']}
+    處理方式：{session['new_date']}
+    原因：{session['reason']}"""
+                ))
             except Exception as e:
-                print(f"❌ webhook 送出失敗：{str(e)}")
-                result_message = f"""⚠️ 申請已收到，但網路連線發生問題：
-        請聯繫管理員確認是否成功記錄。
-        原門診：{session['original_date']}
-        處理方式：{session['new_date']}
-        原因：{session['reason']}"""
+                print("❌ webhook 送出失敗：", str(e))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=f"""⚠️ 申請已收到，但系統處理時發生問題：
+    原門診：{session['original_date']}
+    處理方式：{session['new_date']}
+    原因：{session['reason']}
+    請聯繫管理員確認是否成功記錄。"""
+                ))
             
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result_message))
+            # 清除 session
             del user_sessions[user_id]
             return
 
