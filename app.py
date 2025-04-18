@@ -14,12 +14,16 @@ from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 
-load_dotenv()
-app = Flask(__name__)
-
 #✅ 各群組的投票記錄與統計開關
 user_votes = {}
 stat_active = {}  # 紀錄哪些群組開啟了統計功能
+
+
+
+load_dotenv()
+app = Flask(__name__)
+
+
 
 
 
