@@ -268,7 +268,7 @@ def handle_message(event):
         elif session["step"] == 2:
             session["reason"] = user_msg
             # 使用適合院務會議請假的 webhook URL
-            webhook_url = "https://script.google.com/macros/s/AKfycbzNvYrlp5zNJgJivs_EcjKXG-MoZRIi_yk5NiRGVMM5ufAlnIUdCmqO9Zx5UDHkscwy/exec"
+            webhook_url = "https://script.google.com/macros/s/AKfycbyk8tqbMREdzaWpwJ5ZE0CJsC_0JmsE1QRW1-S0ALvYVYuCQxlVELCI8GrvpUjF6pPg/exec"
             
             try:
                 # 準備要送出的資料
