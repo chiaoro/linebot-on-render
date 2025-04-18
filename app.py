@@ -125,6 +125,9 @@ def handle_message(event):
                 "new_date": session["new_date"],
                 "reason": session["reason"]
             })
+            print("🔁 Webhook status:", response.status_code)
+            print("🔁 Webhook response:", response.text)
+
             line_bot_api.reply_message(event.reply_token, TextSendMessage(
                 text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
             ))
