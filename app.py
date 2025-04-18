@@ -17,6 +17,14 @@ from utils.state_manager import set_state, get_state, clear_state
 load_dotenv()
 app = Flask(__name__)
 
+#✅ 各群組的投票記錄與統計開關
+user_votes = {}
+stat_active = {}  # 紀錄哪些群組開啟了統計功能
+
+
+
+
+
 line_bot_api = LineBotApi(os.environ['LINE_CHANNEL_ACCESS_TOKEN'])
 handler = WebhookHandler(os.environ['LINE_CHANNEL_SECRET'])
 
@@ -85,7 +93,102 @@ other_buttons = [
 def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
+    global user_votes, stat_active     #✅統計用
+    text = event.message.text.strip()   #✅統計用
 
+
+
+    
+
+    # ✅統計  僅處理群組中的訊息 +1-1功能
+    if event.source.type != "group":
+        return
+    
+    group_id = event.source.group_id
+    user_id = event.source.user_id
+    
+    # 初始化該群組的資料
+    if group_id not in user_votes:
+        user_votes[group_id] = {}
+        stat_active[group_id] = False
+
+    # 🔵 控制統計開關
+    if text == "【開啟統計】":
+        user_votes[group_id] = {}       # 清空舊資料
+        stat_active[group_id] = True    # 開啟統計開關
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～")
+        )
+        return
+
+    if text == "【結束統計】":
+        if stat_active[group_id]:
+            total = sum(user_votes[group_id].values())
+            stat_active[group_id] = False
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"🔴 統計已結束，總人數為：{total} 人 🙌")
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚠️ 尚未開啟統計功能，請先輸入【開啟統計】。")
+            )
+        return
+
+    # 🧮 統計過程
+    if stat_active[group_id]:
+        if text == "+1":
+            user_votes[group_id][user_id] = 1
+            total = sum(user_votes[group_id].values())
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"✅ 已記錄 +1，目前共 {total} 人。")
+            )
+            return
+        elif text == "-1":
+            if user_id in user_votes[group_id]:
+                user_votes[group_id].pop(user_id)
+                total = sum(user_votes[group_id].values())
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f"❌ 已取消 +1，目前共 {total} 人。")
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="⚠️ 您尚未登記 +1，無需取消。")
+                )
+            return
+
+    # 📊 查詢目前統計
+    if text == "【統計人數】":
+        if stat_active[group_id]:
+            total = sum(user_votes[group_id].values())
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"📊 統計進行中，目前為 {total} 人。")
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚠️ 目前尚未開啟統計功能。")
+            )
+        return
+    # ✅統計  僅處理群組中的訊息 +1-1功能
+
+
+
+
+
+
+
+
+
+
+
+     # ✅主選單
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
         return
@@ -99,8 +202,15 @@ def handle_message(event):
     if user_msg in submenu_map:
         line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
         return
+     # ✅主選單
 
 
+
+
+
+
+
+    
 
     
 # ✅ 支援醫師調診單流程（四步驟）
