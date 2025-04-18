@@ -105,10 +105,10 @@ def handle_message(event):
     
 # ✅ 支援醫師調診單流程（四步驟）
     if user_msg == "支援醫師調診單":
-        user_sessions[doctor_name] = {"step": 0, "type": "支援醫師調診單"}
+        user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(
             event.reply_token, 
-            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？")
+            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？（這欄將取代 userId 對應的預設姓名）")
         )
         return
     
@@ -191,6 +191,7 @@ def handle_message(event):
             # 清除狀態
             del user_sessions[user_id]
             return
+
 
 
 
