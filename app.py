@@ -111,7 +111,7 @@ def handle_message(event):
         if text == "開啟統計":
             user_votes[group_id] = {}
             stat_active[group_id] = True
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～如果臨時要取消請喊 -1 ～"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～"))
             return
 
         if text == "結束統計":
@@ -132,21 +132,18 @@ def handle_message(event):
             return
 
         if stat_active[group_id]:
-            try:
-                profile = line_bot_api.get_group_member_profile(group_id, user_id)
-                name = profile.display_name
-            except LineBotApiError as e:
-                print(f"⚠️ 無法取得使用者名稱: {e}")
-                return
-
-            plus_match = re.match(r"\+(\d+)", text)
+                # ➕ 捕捉 +1 ~ +99 等加票
+            plus_match = re.match(r"^\+(\d+)$", text)
             if plus_match:
                 count = int(plus_match.group(1))
-                user_votes[group_id][name] = user_votes[group_id].get(name, 0) + count
+                user_votes[group_id][len(user_votes[group_id])] = count
                 return
+              # ➖ 撤銷最後一筆
             elif text == "-1":
-                user_votes[group_id].pop(name, None)
+                if user_votes[group_id]:
+                    user_votes[group_id].popitem()
                 return
+
 
 
 
