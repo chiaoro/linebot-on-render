@@ -125,26 +125,58 @@ def handle_message(event):
                 "new_date": session["new_date"],
                 "reason": session["reason"]
             }
-            print("📤 準備送出 payload：", payload)
+            
             try:
                 response = requests.post(
                     webhook_url,
-                    data=json.dumps(payload),
+                    json=payload,
                     headers={"Content-Type": "application/json"}
                 )
-                print("✅ Webhook status:", response.status_code)
-                print("✅ Webhook response:", response.text)
-            except Exception as e:
-                print("❌ webhook 送出失敗：", str(e))
+                print(f"✅ Webhook status: {response.status_code}")
+                print(f"✅ Webhook response: {response.text}")
+                
 
+
+
+
+                
+                
+                if response.status_code == 200:
+                    result_message = f"""✅ 已成功送出您的申請（支援醫師調診單）：
+        原門診：{session['original_date']}
+        處理方式：{session['new_date']}
+        原因：{session['reason']}"""
+                else:
+                    result_message = f"""⚠️ 申請已收到，但系統處理時發生問題 (錯誤碼:{response.status_code})
+        請聯繫管理員確認是否成功記錄。
+        原門診：{session['original_date']}
+        處理方式：{session['new_date']}
+        原因：{session['reason']}"""
+            
+            except Exception as e:
+                print(f"❌ webhook 送出失敗：{str(e)}")
+                result_message = f"""⚠️ 申請已收到，但網路連線發生問題：
+        請聯繫管理員確認是否成功記錄。
+        原門診：{session['original_date']}
+        處理方式：{session['new_date']}
+        原因：{session['reason']}"""
+            
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result_message))
+            del user_sessions[user_id]
+            return
+
+
+
+
+    
             
             # ✅ 這兩行應該永遠都執行（不論 try 成功或失敗）
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-            ))
-            del user_sessions[user_id]
+#            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+#                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+#            ))
+#            del user_sessions[user_id]
             
-            return
+#           return
             
 
 
@@ -218,6 +250,66 @@ def handle_message(event):
             ))
             del user_sessions[user_id]
         return
+
+
+
+    # 在 handle_message 函數中加入這段程式碼
+    if user_msg == "院務會議請假":
+        user_sessions[user_id] = {"step": 1, "type": "院務會議請假"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問您要請假的院務會議日期？（例如：5/6）"))
+        return
+    
+    if user_id in user_sessions and user_sessions[user_id].get("type") == "院務會議請假":
+        session = user_sessions[user_id]
+        if session["step"] == 1:
+            session["meeting_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入請假原因"))
+        elif session["step"] == 2:
+            session["reason"] = user_msg
+            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            
+            try:
+                response = requests.post(webhook_url, json={
+                    "user_id": user_id,
+                    "request_type": "院務會議請假",
+                    "meeting_date": session["meeting_date"],
+                    "reason": session["reason"]
+                })
+                print(f"✅ Webhook status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    result_message = f"""✅ 已成功送出您的院務會議請假申請：
+    會議日期：{session['meeting_date']}
+    請假原因：{session['reason']}"""
+                else:
+                    result_message = f"""⚠️ 申請已收到，但系統處理時發生問題 (錯誤碼:{response.status_code})
+    請聯繫管理員確認是否成功記錄。
+    會議日期：{session['meeting_date']}
+    請假原因：{session['reason']}"""
+                    
+            except Exception as e:
+                print(f"❌ webhook 送出失敗：{str(e)}")
+                result_message = f"""⚠️ 申請已收到，但網路連線發生問題：
+    請聯繫管理員確認是否成功記錄。
+    會議日期：{session['meeting_date']}
+    請假原因：{session['reason']}"""
+                
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result_message))
+            del user_sessions[user_id]
+            return
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
