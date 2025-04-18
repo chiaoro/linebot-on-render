@@ -88,6 +88,10 @@ other_buttons = [
 ]
 
 
+
+
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
@@ -338,6 +342,87 @@ def handle_message(event):
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
         return
+
+
+
+
+
+
+
+
+
+    
+
+
+    # ✅啟動值班調整流程
+    if user_msg == "值班調換":
+        user_sessions[user_id] = {"step": 0, "type": "值班調換"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如內科急診白班、骨科會診值班）"))
+        return
+
+    if user_msg == "值班代理":
+        user_sessions[user_id] = {"step": 0, "type": "值班代理"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如內科急診白班、骨科會診值班）"))
+        return
+
+    # 值班調換與代理處理流程
+    if user_id in user_sessions:
+        session = user_sessions[user_id]
+        step = session["step"]
+        swap_type = session["type"]
+
+        if swap_type == "值班調換":
+            questions = [
+                "🟡 請問原本值班醫師是誰？",
+                "🟡 請問原本的值班日期是？（例如5/2 (0800-2000)）",
+                "🟡 請問調換值班醫師是誰？",
+                "🟡 請問調換的值班日期是？（例如5/3 (0800-2000)）",
+                "🟡 請問調換原因是？"
+            ]
+            key_list = ["班別", "原值班醫師", "原值班日期", "對方醫師", "對方值班日期", "原因"]
+
+        elif swap_type == "值班代理":
+            questions = [
+                "🟡 請問原本值班醫師是誰？",
+                "🟡 請問原本的值班日期是？（例如5/2 (0800-2000)）",
+                "🟡 請問代理值班醫師是誰？",
+                "🟡 請問代理原因是？"
+            ]
+            key_list = ["班別", "原值班醫師", "原值班日期", "代理醫師", "原因"]
+
+        if step < len(key_list):
+            session[key_list[step]] = user_msg
+            session["step"] += 1
+
+            if session["step"] < len(key_list):
+                next_question = questions[session["step"] - 1]
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=next_question))
+            else:
+                # 組裝資料送出至 Google Apps Script Webhook
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📨 資料提交中，請稍候..."))
+
+                data = {
+                    "swap_type": swap_type,
+                    **{k: session.get(k, "") for k in key_list}
+                }
+
+                try:
+                    webhook_url = "https://script.google.com/macros/s/你的值班調換Webhook網址/exec"
+                    requests.post(webhook_url, data=data)
+                    confirm = "\n".join([f"{k}：{data[k]}" for k in key_list])
+                    line_bot_api.push_message(user_id, TextSendMessage(text=f"✅ 值班{swap_type}資料已提交成功：\n{confirm}"))
+                except Exception as e:
+                    line_bot_api.push_message(user_id, TextSendMessage(text=f"❌ 發送失敗：{str(e)}"))
+
+                user_sessions.pop(user_id)
+        return
+
+
+
+
+
+
+
 
 
 
