@@ -100,6 +100,10 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
         return
 
+
+
+    
+    # ✅ 支援醫師調診單流程
     if user_msg == "支援醫師調診單":
         user_sessions[user_id] = {"step": 1, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
@@ -159,60 +163,10 @@ def handle_message(event):
             return
 
 
-
-
     
-            
-            # ✅ 這兩行應該永遠都執行（不論 try 成功或失敗）
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-#                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-#            ))
-#            del user_sessions[user_id]
-            
-#           return
-            
 
-
-
-    
-#            response = requests.post(
-#                webhook_url,
-#                data=json.dumps({
-#                    "user_id": user_id,
-#                    "request_type": "支援醫師調診單",
-#                    "original_date": session["original_date"],
-#                    "new_date": session["new_date"],
-#                    "reason": session["reason"]
-#                }),
-#                headers={"Content-Type": "application/json"}
-#            )
         
-#            print("🔁 Webhook status:", response.status_code)
-#            print("🔁 Webhook response:", response.text)
-        
-
-            
-
-
-
-            
-#            webhook_url = "https://script.google.com/macros/s/AKfycbyE2eNVvph3arKUPLf7-2qWhv0Px9iak715n2gQPfr8B0Xq-5USdev6SPFRHc3WcR-V/exec"
-#            response = requests.post(webhook_url, json={
-#                "user_id": user_id,
-#                "request_type": "支援醫師調診單",
-#                "original_date": session["original_date"],
-#                "new_date": session["new_date"],
-#                "reason": session["reason"]
-#            })
-#            print("🔁 Webhook status:", response.status_code)
-#            print("🔁 Webhook response:", response.text)
-            
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-#                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-#            ))
-#            del user_sessions[user_id]
-        
-
+    # ✅ 調診三步驟
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天？（例如 5/6 上午診）"))
@@ -271,10 +225,6 @@ def handle_message(event):
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
         return
-
-
-
-
 
 
 
