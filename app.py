@@ -142,7 +142,7 @@ def handle_message(event):
         elif session["step"] == 3:
             session["reason"] = user_msg
     
-            webhook_url = "https://script.google.com/macros/s/AKfycbyA8pcyYBGC_ShAnDfL3DHGThcSfXlcHMzsAg4S4t75JlkEWk48fPbFv7mayGnEVjyEdw/exec"
+            webhook_url = "https://script.google.com/macros/s/AKfycbyBHP3HCzLARhT5CcYg_l9fwTak_r2uiMNy4EWiQYxSnH8uQixf1kcPq6u5M8OXbLQxBg/exec"
             payload = {
                 "user_id": user_id,
                 "request_type": "支援醫師調診單",
