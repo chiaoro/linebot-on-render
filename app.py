@@ -53,7 +53,7 @@ def get_main_menu():
                 *[
                     {"type": "button", "action": {"type": "message", "label": label, "text": label},
                      "style": "primary", "margin": "md"}
-                    for label in ["門診調整服務","值班調換服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
+                    for label in ["門診調整服務","值班調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
                 ]
             ]
         }
