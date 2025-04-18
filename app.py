@@ -105,46 +105,37 @@ def handle_message(event):
     
     # ✅ 支援醫師調診單流程（四步驟）
     if user_msg == "支援醫師調診單":
-        user_sessions[user_id] = {"step": 1, "type": "支援醫師調診單"}
+        user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
         return
     
     if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
         session = user_sessions[user_id]
-    
-        if session["step"] == 1:
+        if session["step"] == 0:
             session["doctor_name"] = user_msg
-            session["step"] = 2
+            session["step"] = 1
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
-        
-        elif session["step"] == 2:
+        elif session["step"] == 1:
             session["original_date"] = user_msg
-            session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
-        
-        elif session["step"] == 3:
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16上午診）"))
+        elif session["step"] == 2:
             session["new_date"] = user_msg
-            session["step"] = 4
+            session["step"] = 3
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
-        
-        elif session["step"] == 4:
+        elif session["step"] == 3:
             session["reason"] = user_msg
-    
-            # 🔁 webhook 目標網址（你提供的）
             webhook_url = "https://script.google.com/macros/s/AKfycbyA8pcyYBGC_ShAnDfL3DHGThcSfXlcHMzsAg4S4t75JlkEWk48fPbFv7mayGnEVjyEdw/exec"
-    
-            # 📨 要傳送的資料，多加 doctor_name 欄位
             payload = {
                 "user_id": user_id,
-                "doctor_name": session["doctor_name"],
                 "request_type": "支援醫師調診單",
+                "doctor_name": session["doctor_name"],
                 "original_date": session["original_date"],
                 "new_date": session["new_date"],
                 "reason": session["reason"]
             }
     
             print("📤 準備送出 payload：", payload)
-    
             try:
                 response = requests.post(
                     webhook_url,
@@ -168,12 +159,11 @@ def handle_message(event):
     醫師：{session['doctor_name']}
     原門診：{session['original_date']}
     處理方式：{session['new_date']}
-    原因：{session['reason']}
-    請聯繫管理員確認是否成功記錄。"""
+    原因：{session['reason']}"""
                 ))
-    
             del user_sessions[user_id]
             return
+
 
 
 
