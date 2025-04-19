@@ -16,7 +16,7 @@ from utils.state_manager import set_state, get_state, clear_state
 import re
 from meeting_reminder import send_meeting_reminder
 from monthly_reminder import send_monthly_fixed_reminders
-
+from event_reminder import send_important_event_reminder
 
 
 
@@ -518,17 +518,23 @@ def home():
     return "LINE Bot is running"
 
 
-
+#✅院務會議請假申請推播
 @app.route("/reminder", methods=["GET"])
 def reminder():
     send_meeting_reminder()
     return "提醒已送出", 200
 
+#✅固定日期推播
 @app.route("/monthly-reminder", methods=["GET"])
 def monthly_reminder():
     send_monthly_fixed_reminders()
     return "固定日期推播完成", 200
 
+#✅重要會議推播
+@app.route("/event-reminder", methods=["GET"])
+def event_reminder():
+    send_important_event_reminder()
+    return "重要會議提醒完成", 200
 
 
 if __name__ == "__main__":
