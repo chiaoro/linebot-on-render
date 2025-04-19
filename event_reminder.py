@@ -23,7 +23,7 @@ gc = gspread.authorize(creds)
 
 
 # ✅ 開啟工作表
-sheet = client.open_by_url(
+sheet = gc.open_by_url(
     "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
 ).worksheet("重要會議提醒")
 
