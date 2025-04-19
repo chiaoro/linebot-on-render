@@ -12,8 +12,8 @@ load_dotenv()
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 group_id = os.getenv("All_doctor_group_id")
 
-creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-credentials = service_account.Credentials.from_service_account_info(creds_info)
+scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+credentials = service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
 client = gspread.authorize(credentials)
 sheet = client.open_by_url(
     "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
