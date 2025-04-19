@@ -1,0 +1,4 @@
+event_reminder.py   重要會議提醒推播(開會前一天進行推播)
+meeting_reminder.py    院務會議請假申請(開會前五天開放申請推播)
+monthly_reminder.py  每月固定幾號 當日進行推播
+app.py 主程式
