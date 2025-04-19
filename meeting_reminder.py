@@ -1,22 +1,26 @@
-import os
-import json
-from datetime import datetime, timedelta
-import gspread
-from google.oauth2 import service_account
+import os, json, gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# ✅ LINE Bot
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 group_id = os.getenv("All_doctor_group_id")
 
-# ✅ 🔧加上這段才不會錯！
-creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-credentials = service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
-client = gspread.authorize(credentials)
+# ✅ Google Sheets 認證（穩定版）
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+gc = gspread.authorize(creds)
+
+
+
+
+
 
 sheet = client.open_by_url(
     "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
