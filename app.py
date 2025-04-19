@@ -37,11 +37,10 @@ EMAIL_SENDER = "surry318@gmail.com"
 EMAIL_RECEIVER = "surry318@gmail.com"
 EMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
-creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-credentials = service_account.Credentials.from_service_account_info(creds_info, scopes=scopes)
-gspread_client = gspread.authorize(credentials)
-gc = gspread_client
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+gc = gspread.authorize(creds)
 
 
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
