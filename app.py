@@ -15,6 +15,11 @@ from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 import re
 from meeting_reminder import send_meeting_reminder
+from monthly_reminder import send_monthly_fixed_reminders
+
+
+
+
 
 #✅ 各群組的投票記錄與統計開關
 user_votes = {}
@@ -519,7 +524,10 @@ def reminder():
     send_meeting_reminder()
     return "提醒已送出", 200
 
-
+@app.route("/monthly-reminder", methods=["GET"])
+def monthly_reminder():
+    send_monthly_fixed_reminders()
+    return "固定日期推播完成", 200
 
 
 
