@@ -14,6 +14,7 @@ from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 import re
+from meeting_reminder import send_meeting_reminder
 
 #✅ 各群組的投票記錄與統計開關
 user_votes = {}
@@ -485,6 +486,11 @@ def callback():
 
     return "OK"
 
+
+
+
+
+
 @app.route("/submit", methods=["POST"])
 def receive_form_submission():
     data = request.get_json()
@@ -498,9 +504,24 @@ def receive_form_submission():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+
+
+
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot is running"
+
+
+
+@app.route("/reminder", methods=["GET"])
+def reminder():
+    send_meeting_reminder()
+    return "提醒已送出", 200
+
+
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
