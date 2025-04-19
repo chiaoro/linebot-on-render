@@ -5,6 +5,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 from dotenv import load_dotenv
+import json
+from google.oauth2 import service_account
 
 load_dotenv()
 
@@ -14,8 +16,9 @@ group_id = os.getenv("All_doctor_group_id")  # ✅ 傳給全醫師群組
 
 # ✅初始化 gspread
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name(os.getenv("GOOGLE_CREDENTIALS_FILE"), scope)
-client = gspread.authorize(creds)
+creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+credentials = service_account.Credentials.from_service_account_info(creds_info)
+client = gspread.authorize(credentials)
 sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit").worksheet("院務會議請假")
 
 def send_meeting_reminder():
