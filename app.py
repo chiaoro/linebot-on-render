@@ -108,16 +108,16 @@ def handle_message(event):
 
 
 
-    # ✅取得群組ID   -----判斷是不是群組訊息
-    if event.source.type == "group":
-        group_id = event.source.group_id
-        user_id = event.source.user_id
-        print(f"[DEBUG] 群組ID：{group_id}，發話者ID：{user_id}")
+#    # ✅取得群組ID   -----判斷是不是群組訊息
+#    if event.source.type == "group":
+#        group_id = event.source.group_id
+#        user_id = event.source.user_id
+#        print(f"[DEBUG] 群組ID：{group_id}，發話者ID：{user_id}")
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f"群組 ID 為：\n{group_id}")
-        )
+#        line_bot_api.reply_message(
+#            event.reply_token,
+#            TextSendMessage(text=f"群組 ID 為：\n{group_id}")
+#        )
 
 
 
