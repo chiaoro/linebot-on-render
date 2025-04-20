@@ -539,6 +539,12 @@ def event_reminder():
     return "重要會議提醒完成", 200
 
 
+# ✅ 喚醒用的 ping 路由
+@app.route("/ping", methods=["GET"])
+def ping():
+    return "Bot is awake!", 200
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"✅ Flask app starting on port {port}")
