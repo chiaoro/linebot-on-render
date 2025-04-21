@@ -42,12 +42,16 @@ def send_important_event_reminder():
         group_env = row.get("推播對象", "").strip()
         status = row.get("提醒狀態", "").strip()
 
+        # ✅ 日期解析（自動補上今年年份）
         try:
+            if "/" in date_str and len(date_str.split("/")[0]) <= 2:
+                date_str = f"{datetime.now().year}/{date_str}"  # 補今年年份
             meeting_date = datetime.strptime(date_str, "%Y/%m/%d").date()
         except:
+            print(f"❌ 日期格式錯誤：{date_str}")
             continue
 
-        # 只提醒明天的、且尚未提醒過的
+        # ✅ 判斷是否推播
         if meeting_date != tomorrow or status == "✅已提醒":
             continue
 
