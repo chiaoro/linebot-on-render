@@ -71,5 +71,11 @@ def send_important_event_reminder():
         line_bot_api.push_message(group_id, TextSendMessage(text=message))
         print(f"✅ 已推播：{name} ➜ {group_env}")
 
+
+if __name__ == "__main__":
+    send_important_event_reminder()
+
+        
+
         # ✅ 更新提醒狀態
         sheet.update_cell(i, status_col, "✅已提醒")
