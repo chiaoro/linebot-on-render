@@ -14,17 +14,18 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
 # ✅ 設定資料表網址與分頁名稱
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit?usp=sharing"
-MAPPING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit?usp=sharing"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit"
+MAPPING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 MAPPING_SHEET_NAME = "UserMapping"
 
-# ✅ 取得醫師姓名與科別
-
+# ✅ 取得醫師姓名與科別（修正欄位名稱）
 def get_doctor_info(user_id):
     sheet = gc.open_by_url(MAPPING_SHEET_URL).worksheet(MAPPING_SHEET_NAME)
     data = sheet.get_all_records()
+    print("🔍 醫師對照資料：", data)
     for row in data:
-        if row.get("LINE_USER_ID") == user_id:
+        print(f"比對中 → {row.get('LINE_USER_ID')} == {user_id}")
+        if str(row.get("LINE_USER_ID")).strip() == str(user_id).strip():
             return row.get("姓名"), row.get("科別")
     return None, None
 
@@ -46,11 +47,10 @@ def expand_date_range(text):
     return result
 
 # ✅ 寫入資料到對應科別分頁
-
 def write_to_sheet(user_id, dates):
     doctor_name, dept = get_doctor_info(user_id)
     if not doctor_name or not dept:
-        return False, "查無醫師對應資料"
+        return False, f"查無醫師對應資料（user_id: {user_id}）"
 
     cleaned_dates = expand_date_range(dates)
     cleaned_dates = [d.strip() for d in cleaned_dates if d.strip()]
