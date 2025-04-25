@@ -4,4 +4,6 @@ monthly_reminder.py    每月固定幾號 當日進行推播
 app.py 主程式
 daily_notifier.py 👉 決定今天該推播誰，內容是什麼
 line_push_utils.py 👉 根據醫師姓名查 userId + 實際推播出去
-night_shift_fee.py   夜點費申請模組
+night_shift_fee.py   夜點費申請模組  -輸入到試算表
+night_shift_fee_generator.py   夜點費申請模組  -輸入到試算表 -轉word
+
