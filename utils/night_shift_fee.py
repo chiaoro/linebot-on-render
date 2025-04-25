@@ -29,6 +29,8 @@ def get_doctor_info(user_id):
             return row.get("姓名"), row.get("科別")
     return None, None
 
+
+
 # ✅ 展開區間格式的日期（如 4/25-29）
 def expand_date_range(text):
     result = []
@@ -45,6 +47,8 @@ def expand_date_range(text):
         else:
             result.append(part)
     return result
+
+
 
 # ✅ 寫入資料到對應科別分頁
 def write_to_sheet(user_id, dates):
@@ -78,6 +82,8 @@ def write_to_sheet(user_id, dates):
         return True, f"✅ 已收到 {date_text} 的申請，共 {count} 班。"
     except Exception as e:
         return False, f"❌ 發生錯誤：{e}"
+
+
 
 # ✅ LINE webhook 使用的流程函式
 user_sessions = {}
