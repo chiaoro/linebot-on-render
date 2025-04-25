@@ -554,10 +554,9 @@ def home():
 
 #✅院務會議請假申請推播
 @app.route("/reminder", methods=["GET"])
-def reminder():
-    from meeting_reminder import send_meeting_reminder
-    send_meeting_reminder(gspread_client)
-    return "提醒已送出", 200
+def meeting_reminder():
+    run_meeting_reminder()
+    return "✅ 會議提醒完成", 200
 
 #✅固定日期推播
 @app.route("/monthly-reminder", methods=["GET"])
