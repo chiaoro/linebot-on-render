@@ -56,8 +56,11 @@ def expand_date_range(text):
 # ✅ 寫入資料到對應科別分頁
 def write_to_sheet(user_id, dates):
     doctor_name, dept = get_doctor_info(user_id)
-    if not doctor_name or not dept:
-        return False, f"查無醫師對應資料（user_id: {user_id}）"
+
+    if not doctor_name:
+        doctor_name = "未知醫師"
+    if not dept:
+        dept = "未分類"
 
     cleaned_dates = expand_date_range(dates)
     cleaned_dates = [d.strip() for d in cleaned_dates if d.strip()]
@@ -85,7 +88,6 @@ def write_to_sheet(user_id, dates):
         return True, f"✅ 已收到 {date_text} 的申請，共 {count} 班。"
     except Exception as e:
         return False, f"❌ 發生錯誤：{e}"
-
 
 
 # ✅ LINE webhook 使用的流程函式
