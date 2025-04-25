@@ -3,35 +3,55 @@
 import os
 import json
 import gspread
+from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
-from linebot import LineBotApi
-from linebot.models import TextSendMessage
+from line_push_utils import push_to_doctor
 
 load_dotenv()
 
-# ✅ Google Sheets 認證
-SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
-gc = gspread.authorize(creds)
+def run_daily_push():
+    # ✅ Google Sheets 認證
+    SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+    gc = gspread.authorize(creds)
 
-# ✅ LINE Bot 初始化
-line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+    # ✅ 開啟推播任務表
+    sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1FspUjkRckA1g4bYESb7QEUKl1FzOcL5BejhOqkMD0Po/edit")
+    worksheet = sheet.worksheet("每日推播")
+    data = worksheet.get_all_records()
 
-# ✅ 開啟使用者對照表
-user_sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit").sheet1
-user_data = user_sheet.get_all_records()
+    # ✅ 比對今天日期
+    today_str = datetime.now().strftime("%Y/%m/%d")
+    weekday_map = ["一", "二", "三", "四", "五", "六", "日"]
 
-# ✅ 根據醫師姓名推播訊息
-def push_to_doctor(name, message):
-    for row in user_data:
-        if row["醫師姓名"] == name:
-            user_id = row["LINE 使用者 ID"]
-            try:
-                line_bot_api.push_message(user_id, TextSendMessage(text=message))
-                print(f"✅ 已推播給 {name}")
-            except Exception as e:
-                print(f"❌ 推播失敗給 {name}：{e}")
-            return
-    print(f"❌ 找不到醫師：{name}")
+    for idx, row in enumerate(data):
+        if row["日期"] != today_str or row["推播狀態"] == "已推播":
+            continue
+
+        name = row["醫師姓名"]
+        type_ = row["類型"]
+        time = row.get("時間", "")
+        place = row.get("地點", "")
+        content = row.get("通知內容", "")
+        weekday = weekday_map[datetime.now().weekday()]
+
+        # 📌 設定訊息格式
+        if type_ == "會議":
+            message = f"📣 您好，提醒您 {today_str} ({weekday}) {time} {place} 有 {content}，請務必記得出席～"
+        elif type_ == "要假單":
+            message = (
+                "📣 您好，記得盡快完成要假單填寫唷～\n"
+                "填寫連結：https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"
+            )
+        else:
+            print(f"⚠️ 類型尚未支援：{type_}")
+            continue
+
+        # ✅ 推播
+        push_to_doctor(name, message)
+
+        # ✅ 更新「推播狀態」為已推播
+        worksheet.update_cell(idx + 2, list(row.keys()).index("推播狀態") + 1, "已推播")
+
