@@ -24,8 +24,8 @@ def get_doctor_info(user_id):
     sheet = gc.open_by_url(MAPPING_SHEET_URL).worksheet(MAPPING_SHEET_NAME)
     data = sheet.get_all_records()
     for row in data:
-        if row.get("LINE 使用者 ID") == user_id:
-            return row.get("醫師姓名"), row.get("科別")
+        if row.get("LINE_USER_ID") == user_id:
+            return row.get("姓名"), row.get("科別")
     return None, None
 
 # ✅ 展開區間格式的日期（如 4/25-29）
