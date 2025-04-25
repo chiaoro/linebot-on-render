@@ -603,14 +603,6 @@ def daily_push():
 @app.route("/generate-night-fee-word", methods=["GET"])
 def generate_night_fee_word():
     try:
-        run_generate_night_fee_word()  # 這是核心函式
-        return "✅ 夜點費申請表已產出", 200
-    except Exception as e:
-        return f"❌ 錯誤：{e}", 500
-
-@app.route("/generate-night-fee-word", methods=["GET"])
-def generate_night_fee_word():
-    try:
         run_generate_night_fee_word()
         return "✅ 夜點費申請表已成功產出並上傳！", 200
     except Exception as e:
