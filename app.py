@@ -19,6 +19,10 @@ from monthly_reminder import send_monthly_fixed_reminders
 from event_reminder import send_important_event_reminder
 from daily_notifier import run_daily_push
 from utils.night_shift_fee import handle_night_shift_request
+from utils.night_shift_fee_generator import run_generate_night_fee_word
+
+
+
 
 
 
@@ -603,6 +607,15 @@ def generate_night_fee_word():
         return "✅ 夜點費申請表已產出", 200
     except Exception as e:
         return f"❌ 錯誤：{e}", 500
+
+@app.route("/generate-night-fee-word", methods=["GET"])
+def generate_night_fee_word():
+    try:
+        run_generate_night_fee_word()
+        return "✅ 夜點費申請表已成功產出並上傳！", 200
+    except Exception as e:
+        return f"❌ 發生錯誤：{e}", 500
+
 
 
 
