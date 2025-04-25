@@ -46,9 +46,17 @@ gc = gspread.authorize(creds)
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
+# ✳️ 舊的：使用者對照表
+spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
 mapping_sheet = spreadsheet.worksheet("UserMapping")
-stats_log_sheet = spreadsheet.worksheet("統計記錄")
+
+# ✳️ 新增的：統計紀錄表
+stat_sheet = gc.open_by_key("14TdjFoBVJITE6_lEaGj32NT8S3o-Ysk8ObstdpNxLOI")
+stats_log_sheet = stat_sheet.worksheet("統計記錄")
 user_sessions = {}
+
+
+
 
 # ✅ Flex Menu 設定
 def get_main_menu():
