@@ -44,6 +44,8 @@ def run_daily_push():
                 "📣 您好，記得盡快完成要假單填寫唷～\n"
                 "填寫連結：https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform?usp=sharing"
             )
+        elif type_ == "家庭":
+            message = f"📌 {today_str} ({weekday}) !! 記得明天 {content}!!!～"
         else:
             print(f"⚠️ 類型尚未支援：{type_}")
             continue
