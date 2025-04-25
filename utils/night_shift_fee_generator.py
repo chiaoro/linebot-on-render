@@ -25,9 +25,6 @@ TEMPLATE_MAP = {
     "醫療部": "templates/醫療部_樣板.docx"
 }
 
-# ✅ 醫師名單（依樣板固定順序）
-DOCTORS = ["王良財", "林大欽", "劉韋廷", "鄭旭智"]
-
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit"
 
 
@@ -39,8 +36,6 @@ def run_generate_night_fee_word():
     target_month = now.month - 1 or 12
     target_year = now.year if now.month != 1 else now.year - 1
 
-    summary = {}
-
     for sheet in worksheets:
         if sheet.title == "使用者對照表":
             continue
@@ -48,19 +43,23 @@ def run_generate_night_fee_word():
         dept = sheet.title
         rows = sheet.get_all_records()
 
-        doctor_data = {name: [] for name in DOCTORS}
+        doctor_data = []
 
         for row in rows:
             ts_str = row.get("時間戳記")
             name = row.get("醫師姓名")
             dates = row.get("值班日期")
 
-            if not ts_str or not name or name not in DOCTORS:
+            if not ts_str or not name or not dates:
                 continue
 
             ts = datetime.strptime(ts_str, "%Y/%m/%d %H:%M:%S")
             if ts.year == target_year and ts.month == target_month:
-                doctor_data[name].extend(dates.split(","))
+                doctor_data.append({
+                    "醫師姓名": name,
+                    "值班日期": ", ".join([d.strip() for d in dates.split(",")]),
+                    "班數": str(len([d.strip() for d in dates.split(",") if d.strip()]))
+                })
 
         if dept not in TEMPLATE_MAP:
             continue
@@ -77,11 +76,15 @@ def run_generate_night_fee_word():
 
         for table in doc.tables:
             for row in table.rows:
-                name = row.cells[1].text.strip()
-                if name in doctor_data:
-                    dates = [d.strip() for d in doctor_data[name]]
-                    row.cells[2].text = ", ".join(dates)
-                    row.cells[3].text = str(len(dates)) if dates else ""
+                for cell in row.cells:
+                    text = cell.text
+                    for entry in doctor_data:
+                        if "{醫師姓名}" in text:
+                            cell.text = text.replace("{醫師姓名}", entry["醫師姓名"])
+                        if "{值班日期}" in text:
+                            cell.text = text.replace("{值班日期}", entry["值班日期"])
+                        if "{班數}" in text:
+                            cell.text = text.replace("{班數}", entry["班數"])
 
         filename = f"{dept}_夜點費申請表_{target_year}年{target_month}月.docx"
         filepath = f"/tmp/{filename}"
