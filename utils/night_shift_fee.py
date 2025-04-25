@@ -13,8 +13,8 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
 # ✅ 試算表網址與使用者對照表分頁名稱
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit"
-MAPPING_SHEET_NAME = "使用者對照表"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+MAPPING_SHEET_NAME = "UserMapping"
 
 # ✅ 固定欄位
 COLUMNS = ["時間戳記", "LINE 使用者 ID", "醫師姓名", "科別", "值班日期", "班數", "處理狀態"]
@@ -22,7 +22,7 @@ COLUMNS = ["時間戳記", "LINE 使用者 ID", "醫師姓名", "科別", "值�
 # ✅ 取得醫師姓名與科別
 
 def get_doctor_info(user_id):
-    sheet = gc.open_by_url(SHEET_URL).worksheet(MAPPING_SHEET_NAME)
+    sheet = gc.open_by_url(MAPPING_SHEET_URL).worksheet(MAPPING_SHEET_NAME)
     data = sheet.get_all_records()
     for row in data:
         if row.get("LINE 使用者 ID") == user_id:
