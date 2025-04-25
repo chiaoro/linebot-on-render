@@ -23,7 +23,8 @@ worksheet = sheet.worksheet("每日推播")
 data = worksheet.get_all_records()
 
 # ✅ 處理今日推播任務
-today_str = datetime.now().strftime("%Y/%m/%d")
+today_str = (datetime.now() + timedelta(days=1)).strftime("%Y/%m/%d")
+
 weekday_map = ["一", "二", "三", "四", "五", "六", "日"]
 
 for idx, row in enumerate(data):
