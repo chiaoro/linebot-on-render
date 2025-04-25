@@ -37,6 +37,8 @@ def run_daily_push():
 
         if type_ == "會議":
             message = f"📣 您好，提醒您 {today_str} ({weekday}) {time} {place} 有 {content}，請務必記得出席～"
+        elif type_ == "課程":
+            message = f"📣 您好，提醒您 {today_str} ({weekday}) {time} {place} 有課程：{content}，歡迎準時參加唷～"
         elif type_ == "要假單":
             message = (
                 "📣 您好，記得盡快完成要假單填寫唷～\n"
