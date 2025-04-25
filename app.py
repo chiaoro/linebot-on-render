@@ -17,6 +17,7 @@ import re
 from meeting_reminder import send_meeting_reminder
 from monthly_reminder import send_monthly_fixed_reminders
 from event_reminder import send_important_event_reminder
+from daily_notifier import run_daily_push
 
 
 
@@ -575,6 +576,21 @@ def event_reminder():
 @app.route("/ping", methods=["GET"])
 def ping():
     return "Bot is awake!", 200
+
+
+# ✅個人訊息推播
+@app.route("/daily-push")
+def daily_push():
+    try:
+        run_daily_push()
+        return "✅ 今日推播已執行完成", 200
+    except Exception as e:
+        return f"❌ 推播錯誤：{e}", 500
+
+
+
+
+
 
 
 if __name__ == "__main__":
