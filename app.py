@@ -215,7 +215,7 @@ def handle_message(event):
 
     # ✅ 全域防呆機制
     if any(word in user_msg for word in ["調診", "加診", "休診", "代診"]):
-        if user_msg not in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        if user_msg not in ["我要調診", "我要休診", "我要代診", "我要加診", "支援醫師調診單"]:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 若您需要申請門診異動，請點選主選單中的正確項目～"))
             return
 
