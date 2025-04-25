@@ -22,8 +22,8 @@ from event_reminder import send_important_event_reminder
 
 
 #✅ 各群組的投票記錄與統計開關
-user_votes = {}
-stat_active = {}  # 紀錄哪些群組開啟了統計功能
+user_votes = {}                   # user_votes[group_id][topic] = {0: 1, 1: 2, ...}
+stat_active = {}  # 紀錄哪些群組開啟了統計功能     # stat_active[group_id] = topic
 user_sessions = {}
 
 
@@ -47,7 +47,7 @@ DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8B
 RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 spreadsheet = gc.open_by_key("1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo")
 mapping_sheet = spreadsheet.worksheet("UserMapping")
-
+stats_log_sheet = spreadsheet.worksheet("統計記錄")
 user_sessions = {}
 
 # ✅ Flex Menu 設定
@@ -126,70 +126,94 @@ def handle_message(event):
 #            TextSendMessage(text=f"群組 ID 為：\n{group_id}")
 #        )
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-    # ✅ 統計功能 - 僅處理群組中的訊息
+    # ✅統計
     if event.source.type == "group":
         group_id = event.source.group_id
         if group_id not in user_votes:
             user_votes[group_id] = {}
-            stat_active[group_id] = False
+            stat_active[group_id] = None
 
-        if text == "開啟統計":
-            user_votes[group_id] = {}
-            stat_active[group_id] = True
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟢 統計功能已開啟！請大家踴躍 +1 ～如果臨時要取消請喊 -1 ～"))
+
+        # ✅ 開啟統計：主題名稱
+        if text.startswith("開啟統計："):
+            topic = text.replace("開啟統計：", "").strip()
+            user_votes[group_id][topic] = {}
+            stat_active[group_id] = topic
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🟢 統計主題「{topic}」已啟動，請大家踴躍 +1 ～如果臨時要取消請喊 -1 ～～"))
             return
 
+        # ✅ 切換主題
+        if text.startswith("切換主題："):
+            topic = text.replace("切換主題：", "").strip()
+            if topic in user_votes[group_id]:
+                stat_active[group_id] = topic
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔄 已切換至主題「{topic}」，請繼續統計！"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 查無主題「{topic}」，請先使用『開啟統計：{topic}』建立。"))
+            return
+
+        # ✅ 結束統計（支援指定主題）
+        if text.startswith("結束統計："):
+            topic = text.replace("結束統計：", "").strip()
+            if topic in user_votes[group_id]:
+                total = sum(user_votes[group_id][topic].values())
+                if stat_active.get(group_id) == topic:
+                    stat_active[group_id] = None
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                stats_log_sheet.append_row([now, group_id, topic, total])
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計「{topic}」已結束，總人數為：{total} 人 🙌"))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 查無主題「{topic}」，無法結束統計。"))
+            return
+
+        # ✅ 舊式結束統計（用 stat_active）
         if text == "結束統計":
-            if stat_active[group_id]:
-                total = sum(user_votes[group_id].values())
-                stat_active[group_id] = False
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計已結束，總人數為：{total} 人 🙌"))
+            topic = stat_active.get(group_id)
+            if topic and topic in user_votes[group_id]:
+                total = sum(user_votes[group_id][topic].values())
+                stat_active[group_id] = None
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                stats_log_sheet.append_row([now, group_id, topic, total])
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計「{topic}」已結束，總人數為：{total} 人 🙌"))
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計主題，請輸入『開啟統計：主題名稱』。"))
             return
 
+        # ✅ 查詢目前主題人數
         if text == "統計人數":
-            if stat_active[group_id]:
-                total = sum(user_votes[group_id].values())
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"📊 統計進行中，目前為 {total} 人。"))
+            topic = stat_active.get(group_id)
+            if topic and topic in user_votes[group_id]:
+                total = sum(user_votes[group_id][topic].values())
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"📊 統計「{topic}」進行中，目前為 {total} 人。"))
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計主題。"))
             return
 
-        if stat_active[group_id]:
-                # ➕ 捕捉 +1 ~ +99 等加票
+        # ✅ 累加投票（不分人）
+        topic = stat_active.get(group_id)
+        if topic and topic in user_votes[group_id]:
             plus_match = re.match(r"^\+(\d+)$", text)
             if plus_match:
                 count = int(plus_match.group(1))
-                user_votes[group_id][len(user_votes[group_id])] = count
+                user_votes[group_id][topic][len(user_votes[group_id][topic])] = count
                 return
-              # ➖ 撤銷最後一筆
             elif text == "-1":
-                if user_votes[group_id]:
-                    user_votes[group_id].popitem()
+                if user_votes[group_id][topic]:
+                    user_votes[group_id][topic].popitem()
                 return
 
 
 
+    # ✅ 全域防呆機制
+    if any(word in user_msg for word in ["調診", "加診", "休診", "代診"]):
+        if user_msg not in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 若您需要申請門診異動，請點選主選單中的正確項目～"))
+            return
 
-
-
-
+    if any(word in user_msg for word in ["值班", "調換", "代理"]):
+        if user_msg not in ["我要值班調換", "我要值班代理"]:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 如需申請值班調換或代理，請點選主選單中的對應選項～"))
+            return
 
 
 
@@ -355,7 +379,7 @@ def handle_message(event):
 
 
     # ✅ 院務會議請假流程
-    if "院務會議" in user_msg:
+    if user_msg.strip() == "院務會議我要請假":
         set_state(user_id, "ASK_LEAVE")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要出席？請輸入 Y 或 N"))
         return
