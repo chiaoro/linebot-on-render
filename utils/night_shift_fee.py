@@ -18,6 +18,9 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gws
 MAPPING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 MAPPING_SHEET_NAME = "UserMapping"
 
+
+
+
 # ✅ 取得醫師姓名與科別（修正欄位名稱）
 def get_doctor_info(user_id):
     sheet = gc.open_by_url(MAPPING_SHEET_URL).worksheet(MAPPING_SHEET_NAME)
