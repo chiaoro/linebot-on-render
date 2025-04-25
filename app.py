@@ -102,7 +102,8 @@ other_buttons = [
     {"type": "button", "action": {"type": "uri", "label": "專師每日服務量填寫", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "在職證明申請表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSeI64Av1Fb2Qgm6lCwTaUyvFRejHItS5KTQNujs1rU3NufMEA/viewform?usp=header"}, "style": "secondary", "margin": "md"},
     {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform"}, "style": "secondary", "margin": "md"},
-    {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"}, "style": "secondary", "margin": "md"}
+    {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"}, "style": "secondary", "margin": "md"},
+    {"type": "button", "action": {"type": "message", "label": "夜點費申請", "text": "夜點費申請"},"style": "secondary","margin": "md"}    
 ]
 duty_swap_buttons = [
     {"type": "button", "action": {"type": "message", "label": "值班調換（互換）", "text": "值班調換"}, "style": "primary", "margin": "md"},
@@ -587,6 +588,14 @@ def daily_push():
         return f"❌ 推播錯誤：{e}", 500
 
 
+# ✅ 夜點費申請表
+@app.route("/generate-night-fee-word", methods=["GET"])
+def generate_night_fee_word():
+    try:
+        run_generate_night_fee_word()  # 這是核心函式
+        return "✅ 夜點費申請表已產出", 200
+    except Exception as e:
+        return f"❌ 錯誤：{e}", 500
 
 
 
