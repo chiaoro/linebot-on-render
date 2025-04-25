@@ -18,6 +18,7 @@ from meeting_reminder import send_meeting_reminder
 from monthly_reminder import send_monthly_fixed_reminders
 from event_reminder import send_important_event_reminder
 from daily_notifier import run_daily_push
+from utils.night_shift_fee import handle_night_shift_request
 
 
 
@@ -123,6 +124,12 @@ def handle_message(event):
     # 統一處理訊息，去除中括號與空白（避免格式不一致）
     text = user_msg.replace("【", "").replace("】", "").strip()
 
+    
+    # ✅ 處理夜點費申請流程
+    reply = handle_night_shift_request(user_id, user_msg)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
 
 
 #    # ✅取得群組ID   -----判斷是不是群組訊息
