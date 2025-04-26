@@ -114,6 +114,14 @@ def handle_night_shift_request(user_id, user_msg):
 # ✅ 每日提醒未繳交夜點費的醫師
 def daily_night_fee_reminder():
     today = datetime.today()
+    # ✅ 加上這段判斷
+    if today.day == 1:
+        print("✅ 每月1日開始提醒，繼續執行")
+    else:
+        print("✅ 尚未到每月1日，暫不推播")
+        return
+    
+    
     last_month = today.month - 1 if today.month > 1 else 12
     last_month_str = str(last_month)
 
