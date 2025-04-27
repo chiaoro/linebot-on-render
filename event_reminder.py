@@ -49,7 +49,6 @@ def send_important_event_reminder():
             print(f"❌ 日期格式錯誤，跳過：{date_str}，錯誤訊息：{e}")
             continue
 
-        # 條件判斷
         if meeting_date != tomorrow:
             print(f"⏭️ 日期不是明天({tomorrow})，跳過")
             continue
@@ -58,13 +57,11 @@ def send_important_event_reminder():
             print(f"⏭️ 已提醒過，跳過")
             continue
 
-        # 取得 LINE 群組 ID
         group_id = os.getenv(group_env)
         if not group_id:
             print(f"❌ 無法取得群組 ID：{group_env}，跳過")
             continue
 
-        # 準備推播訊息
         weekday_name = ["一", "二", "三", "四", "五", "六", "日"][meeting_date.weekday()]
         message = (
             f"📣【重要會議提醒】\n"
@@ -72,15 +69,13 @@ def send_important_event_reminder():
             f"請各位準時出席唷。"
         )
 
-        # 發送 LINE 推播
         try:
             line_bot_api.push_message(group_id, TextSendMessage(text=message))
             print(f"✅ 成功推播 ➜ {group_env} ：{name}")
-            # 更新提醒狀態
             sheet.update_cell(i, status_col, "✅已提醒")
         except Exception as e:
             print(f"❌ 推播失敗：{e}")
 
-# ✅ 若直接執行，就跑一次推播（方便測試）
+# ✅ 若直接執行，就跑一次推播
 if __name__ == "__main__":
     send_important_event_reminder()
