@@ -21,7 +21,7 @@ from daily_notifier import run_daily_push
 from utils.night_shift_fee import handle_night_shift_request
 from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.night_shift_fee import daily_night_fee_reminder
-
+from utils.meeting_reminder import run_meeting_reminder
 
 
 
@@ -565,10 +565,18 @@ def home():
 
 
 #✅院務會議請假申請推播
+✅ 先定義 function
+def run_meeting_reminder():
+    print("Meeting reminder triggered!")
+
+# ✅ 再來設置 route
 @app.route("/reminder", methods=["GET"])
 def meeting_reminder():
     run_meeting_reminder()
     return "✅ 會議提醒完成", 200
+
+
+
 
 #✅固定日期推播
 @app.route("/monthly-reminder", methods=["GET"])
@@ -576,11 +584,14 @@ def monthly_reminder():
     send_monthly_fixed_reminders()
     return "固定日期推播完成", 200
 
+
+
 #✅重要會議推播
 @app.route("/event-reminder", methods=["GET"])
 def event_reminder():
     send_important_event_reminder()
     return "重要會議提醒完成", 200
+
 
 
 # ✅ 喚醒用的 ping 路由
