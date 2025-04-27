@@ -565,7 +565,7 @@ def home():
 
 
 #✅院務會議請假申請推播
-✅ 先定義 function
+#✅ 先定義 function
 def run_meeting_reminder():
     print("Meeting reminder triggered!")
 
@@ -573,7 +573,7 @@ def run_meeting_reminder():
 @app.route("/reminder", methods=["GET"])
 def meeting_reminder():
     run_meeting_reminder()
-    return "會議提醒完成", 200
+    return "✅會議提醒完成", 200
 
 
 
@@ -582,7 +582,7 @@ def meeting_reminder():
 @app.route("/monthly-reminder", methods=["GET"])
 def monthly_reminder():
     send_monthly_fixed_reminders()
-    return "固定日期推播完成", 200
+    return "✅固定日期推播完成", 200
 
 
 
@@ -590,7 +590,7 @@ def monthly_reminder():
 @app.route("/event-reminder", methods=["GET"])
 def event_reminder():
     send_important_event_reminder()
-    return "重要會議提醒完成", 200
+    return "✅重要會議提醒完成", 200
 
 
 
@@ -624,7 +624,7 @@ def generate_night_fee_word():
 def night_shift_reminder():
     try:
         daily_night_fee_reminder()
-        return "夜點費每日提醒已執行完成！", 200
+        return "✅夜點費每日提醒已執行完成！", 200
     except Exception as e:
         return f"提醒錯誤：{e}", 500
 
