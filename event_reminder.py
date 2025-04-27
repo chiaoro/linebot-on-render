@@ -28,6 +28,8 @@ def send_important_event_reminder():
     headers = sheet.row_values(1)
     status_col = headers.index("提醒狀態") + 1  # gspread從1開始算欄位
 
+    print(f"▶️ 明天日期：{tomorrow}")
+
     for i, row in enumerate(rows, start=2):  # 從第2列開始（跳過標題）
         date_str = row.get("會議日期", "").strip()
         time_str = row.get("會議時間", "").strip()
@@ -36,23 +38,30 @@ def send_important_event_reminder():
         group_env = row.get("推播對象", "").strip()
         status = row.get("提醒狀態", "").strip()
 
+        print(f"➡️ 處理第 {i} 列：{date_str} {time_str} {name} ({group_env}) 狀態：{status or '空白'}")
+
         # 解析會議日期
         try:
             if "/" in date_str and len(date_str.split("/")[0]) <= 2:
                 date_str = f"{datetime.now().year}/{date_str}"
             meeting_date = datetime.strptime(date_str, "%Y/%m/%d").date()
-        except:
-            print(f"❌ 日期格式錯誤：{date_str}")
+        except Exception as e:
+            print(f"❌ 日期格式錯誤，跳過：{date_str}，錯誤訊息：{e}")
             continue
 
-        # 僅推播「明天」的會議，且未提醒過
-        if meeting_date != tomorrow or status == "✅已提醒":
+        # 條件判斷
+        if meeting_date != tomorrow:
+            print(f"⏭️ 日期不是明天({tomorrow})，跳過")
+            continue
+
+        if status == "✅已提醒":
+            print(f"⏭️ 已提醒過，跳過")
             continue
 
         # 取得 LINE 群組 ID
         group_id = os.getenv(group_env)
         if not group_id:
-            print(f"❌ 無法取得群組 ID：{group_env}")
+            print(f"❌ 無法取得群組 ID：{group_env}，跳過")
             continue
 
         # 準備推播訊息
@@ -66,12 +75,12 @@ def send_important_event_reminder():
         # 發送 LINE 推播
         try:
             line_bot_api.push_message(group_id, TextSendMessage(text=message))
-            print(f"✅ 已推播：{name} ➜ {group_env}")
-            # 更新提醒狀態為 ✅
+            print(f"✅ 成功推播 ➜ {group_env} ：{name}")
+            # 更新提醒狀態
             sheet.update_cell(i, status_col, "✅已提醒")
         except Exception as e:
             print(f"❌ 推播失敗：{e}")
 
-# ✅ 若是直接執行，就跑一次推播（方便測試）
+# ✅ 若直接執行，就跑一次推播（方便測試）
 if __name__ == "__main__":
     send_important_event_reminder()
