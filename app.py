@@ -605,7 +605,7 @@ def ping():
 def daily_push():
     try:
         run_daily_push()
-        return 今日推播已執行完成", 200
+        return "今日推播已執行完成", 200
     except Exception as e:
         return f"推播錯誤：{e}", 500
 
