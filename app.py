@@ -605,9 +605,9 @@ def ping():
 def daily_push():
     try:
         run_daily_push()
-        return "✅ 今日推播已執行完成", 200
+        return 今日推播已執行完成", 200
     except Exception as e:
-        return f"❌ 推播錯誤：{e}", 500
+        return f"推播錯誤：{e}", 500
 
 
 # ✅ 夜點費申請表
@@ -615,18 +615,18 @@ def daily_push():
 def generate_night_fee_word():
     try:
         run_generate_night_fee_word()
-        return "✅ 夜點費申請表已成功產出並上傳！", 200
+        return "夜點費申請表已成功產出並上傳！", 200
     except Exception as e:
-        return f"❌ 發生錯誤：{e}", 500
+        return f"發生錯誤：{e}", 500
 
 # ✅ 夜點費每日提醒
 @app.route("/night-shift-reminder", methods=["GET"])
 def night_shift_reminder():
     try:
         daily_night_fee_reminder()
-        return "✅ 夜點費每日提醒已執行完成！", 200
+        return "夜點費每日提醒已執行完成！", 200
     except Exception as e:
-        return f"❌ 提醒錯誤：{e}", 500
+        return f"提醒錯誤：{e}", 500
 
 
 
