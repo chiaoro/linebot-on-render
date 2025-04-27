@@ -573,7 +573,7 @@ def run_meeting_reminder():
 @app.route("/reminder", methods=["GET"])
 def meeting_reminder():
     run_meeting_reminder()
-    return "✅ 會議提醒完成", 200
+    return "會議提醒完成", 200
 
 
 
