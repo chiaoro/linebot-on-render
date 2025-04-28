@@ -46,6 +46,8 @@ stat_active = {}
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 
+
+
 # ✅ Flex主選單
 def get_main_menu():
     return FlexSendMessage("主選單", {
@@ -62,9 +64,7 @@ def get_main_menu():
         }
     })
 
-
-
-# ✅ 子選單
+# ✅ 子選單生成
 def get_submenu(title, buttons):
     return FlexSendMessage(title, {
         "type": "bubble",
@@ -109,6 +109,12 @@ duty_swap_buttons = [
     {"type": "button", "action": {"type": "message", "label": "值班代理", "text": "值班代理"}, "style": "primary", "margin": "md"}
 ]
 
+
+
+
+
+
+
 # ✅ 處理收到的所有訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -116,11 +122,11 @@ def handle_message(event):
     user_msg = event.message.text.strip()
     text = user_msg.replace("【", "").replace("】", "").strip()
 
-    # ✅ 院務會議請假
+    # ✅ 院務會議請假處理
     if handle_meeting_leave_response(event, line_bot_api, user_msg, user_id):
         return
 
-    # ✅ 夜點費申請
+    # ✅ 夜點費申請處理
     reply = handle_night_shift_request(user_id, user_msg)
     if reply:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
@@ -143,73 +149,78 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
         return
 
-    # ✅ （這裡後面接各種申請流程）
-
-
-
-# ✅ 院務會議請假 - 叫出 Flex
-if user_msg == "院務會議請假":
-    flex_message = FlexSendMessage(
-        alt_text="院務會議請假",
-        contents={
-            "type": "bubble",
-            "size": "mega",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "md",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "📋 院務會議請假",
-                        "weight": "bold",
-                        "size": "xl",
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": "請問您是否出席院務會議？",
-                        "wrap": True,
-                        "align": "center"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "spacing": "md",
-                        "contents": [
-                            {
-                                "type": "button",
-                                "style": "primary",
-                                "action": {
-                                    "type": "message",
-                                    "label": "✅ 出席",
-                                    "text": "✅ 出席"
+    # ✅ 院務會議請假（點選後叫出 Flex）
+    if user_msg == "院務會議請假":
+        flex_message = FlexSendMessage(
+            alt_text="院務會議請假",
+            contents={
+                "type": "bubble",
+                "size": "mega",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "md",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "📋 院務會議請假",
+                            "weight": "bold",
+                            "size": "xl",
+                            "align": "center"
+                        },
+                        {
+                            "type": "text",
+                            "text": "請問您是否出席院務會議？",
+                            "wrap": True,
+                            "align": "center"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "md",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "style": "primary",
+                                    "action": {
+                                        "type": "message",
+                                        "label": "✅ 出席",
+                                        "text": "✅ 出席"
+                                    }
+                                },
+                                {
+                                    "type": "button",
+                                    "style": "primary",
+                                    "color": "#FF6666",
+                                    "action": {
+                                        "type": "message",
+                                        "label": "❌ 請假",
+                                        "text": "❌ 請假"
+                                    }
                                 }
-                            },
-                            {
-                                "type": "button",
-                                "style": "primary",
-                                "color": "#FF6666",
-                                "action": {
-                                    "type": "message",
-                                    "label": "❌ 請假",
-                                    "text": "❌ 請假"
-                                }
-                            }
-                        ]
-                    }
-                ]
+                            ]
+                        }
+                    ]
+                }
             }
-        }
-    )
-    line_bot_api.reply_message(event.reply_token, flex_message)
-    return
+        )
+        line_bot_api.reply_message(event.reply_token, flex_message)
+        return
+
+    # ✅ （這裡後面接各種申請流程）
+    # 🔵 調診/休診/代診/加診流程
+    # 🔵 支援醫師調診單流程
+    # 🔵 值班調換/值班代理流程
+    # 🔵 統計功能（開啟統計、結束統計、查詢統計）
 
 
 
 
 
-    # ✅ 調診/休診/代診/加診申請（3步驟）
+
+
+
+    # ✅ 調診/休診/代診/加診 - 三步驟流程
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天？（例如 5/6 上午診）"))
@@ -220,7 +231,7 @@ if user_msg == "院務會議請假":
         if session["step"] == 1:
             session["original_date"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？（例如：休診、5/23下午加診）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？（例如：休診、5/23 下午加診）"))
             return
         elif session["step"] == 2:
             session["new_date"] = user_msg
@@ -238,12 +249,16 @@ if user_msg == "院務會議請假":
                 "reason": session["reason"]
             })
             line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請：\n類型：{session['type']}\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+                text=f"""✅ 已收到您的申請：
+申請類型：{session['type']}
+原門診：{session['original_date']}
+處理方式：{session['new_date']}
+原因：{session['reason']}"""
             ))
             del user_sessions[user_id]
             return
 
-    # ✅ 支援醫師調診單（四步驟）
+    # ✅ 支援醫師調診單 - 四步驟流程
     if user_msg == "支援醫師調診單":
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
@@ -287,7 +302,7 @@ if user_msg == "院務會議請假":
             del user_sessions[user_id]
             return
 
-    # ✅ 值班調整/代理 流程
+    # ✅ 值班調換／代理申請
     if user_msg in ["值班調換", "值班代理"]:
         user_sessions[user_id] = {"step": 0, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如內科急診白班）"))
@@ -304,7 +319,7 @@ if user_msg == "院務會議請假":
         elif step == 1:
             session["原值班醫師"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原值班日期是？（例如5/2 (0800-2000)）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原值班日期是？"))
             return
         elif step == 2:
             session["原值班日期"] = user_msg
@@ -335,7 +350,7 @@ if user_msg == "院務會議請假":
             del user_sessions[user_id]
             return
 
-    # ✅ 統計功能
+    # ✅ 群組統計功能（開啟統計、切換主題、結束統計）
     if event.source.type == "group":
         group_id = event.source.group_id
         if group_id not in user_votes:
@@ -366,6 +381,9 @@ if user_msg == "院務會議請假":
 
 
 
+
+
+
 # ✅ LINE Webhook 接收器
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -379,6 +397,7 @@ def callback():
 
     return 'OK'
 
+
 # ✅ 每天自動檢查是否開啟院務會議請假
 @app.route("/daily-check-meeting-leave", methods=["GET"])
 def daily_check_meeting_leave():
@@ -388,17 +407,20 @@ def daily_check_meeting_leave():
     except Exception as e:
         return f"❌ 排程錯誤：{e}", 500
 
+
 # ✅ 固定日期推播
 @app.route("/monthly-reminder", methods=["GET"])
 def monthly_reminder():
     send_monthly_fixed_reminders()
     return "✅ 固定日期推播完成", 200
 
+
 # ✅ 重要會議推播
 @app.route("/event-reminder", methods=["GET"])
 def event_reminder():
     send_important_event_reminder()
     return "✅ 重要會議推播完成", 200
+
 
 # ✅ 每日個人推播
 @app.route("/daily-push", methods=["GET"])
@@ -409,6 +431,7 @@ def daily_push():
     except Exception as e:
         return f"❌ 推播失敗：{e}", 500
 
+
 # ✅ 產生夜點費申請表
 @app.route("/generate-night-fee-word", methods=["GET"])
 def generate_night_fee_word():
@@ -418,6 +441,7 @@ def generate_night_fee_word():
     except Exception as e:
         return f"❌ 產出錯誤：{e}", 500
 
+
 # ✅ 夜點費每日提醒
 @app.route("/night-shift-reminder", methods=["GET"])
 def night_shift_reminder():
@@ -426,6 +450,7 @@ def night_shift_reminder():
         return "✅ 夜點費提醒完成", 200
     except Exception as e:
         return f"❌ 夜點費提醒失敗：{e}", 500
+
 
 # ✅ 接收 Google 表單送來的休假資料
 @app.route("/submit", methods=["POST"])
@@ -441,19 +466,21 @@ def receive_form_submission():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
 # ✅ 喚醒專用
 @app.route("/ping", methods=["GET"])
 def ping():
     return "Bot is awake!", 200
+
 
 # ✅ 測試首頁
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot is running!"
 
+
 # ✅ 啟動 Flask 主程式
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"✅ Flask app starting on port {port}")
     app.run(host="0.0.0.0", port=port)
-
