@@ -580,6 +580,7 @@ def receive_form_submission():
 #def meeting_reminder():
 #    print("🧪 有進入 /reminder route！")  # <-- 加這行測試！
 #    send_meeting_reminder()
+
 #    return "✅ 會議提醒完成", 200
 
 
@@ -587,8 +588,7 @@ def receive_form_submission():
 
 
 
-@app.route("/callback", meth
-           ds=['POST'])
+@app.route("/callback", methods=['POST'])
 def callback():
     try:
         data = request.get_json(force=True)
