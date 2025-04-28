@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: 小秘LINE機器人
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    plan: free
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        value: （你的Line Bot的access token）
+      - key: LINE_CHANNEL_SECRET
+        value: （你的Line Bot的secret）
+      - key: GOOGLE_CREDENTIALS
+        value: （你的Service Account憑證內容）
+      - key: internal_medicine_group_id
+        value: （內科群組ID）
+      - key: surgery_group_id
+        value: （外科群組ID）
+      - key: All_doctor_group_id
+        value: （全醫師群組ID）
+      - key: DOCTOR_SHEET_URL
+        value: https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit
+      - key: NIGHT_FEE_SHEET_URL
+        value: https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit
