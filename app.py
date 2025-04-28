@@ -79,16 +79,19 @@ submenu_map = {
 }
 
 def get_main_menu():
-    contents = {"type":"bubble","body":{"type":"box","layout":"vertical","contents":[
-        {"type":"text","text":"📋 請選擇服務類別","weight":"bold","size":"lg"}
-    ] + [b for b in []]}}
-    # replaced by actual generation below
-    return FlexSendMessage("主選單", {"type":"bubble","body":{"type":"box","layout":"vertical","contents":[
-        {"type":"text","text":"📋 請選擇服務類別","weight":"bold","size":"lg"}
-    ] + [
-        {"type":"button","action":{"type":"message","label":lbl,"text":lbl},"style":"primary","margin":"md"}
-        for lbl in main_menu_labels
-    ]]}})
+    return FlexSendMessage("主選單", {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg"}
+            ] + [
+                {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary", "margin": "md"}
+                for label in main_menu_labels
+            ]
+        }
+    })
 
 def get_submenu(title, buttons):
     return FlexSendMessage(title, {"type":"bubble","body":{"type":"box","layout":"vertical","contents":[
