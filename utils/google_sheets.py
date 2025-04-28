@@ -1,30 +1,21 @@
+# utils/google_sheets.py
 
-import json
-import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from utils.google_auth import get_gspread_client
 
-def get_gspread_client():
-    credentials_json = os.getenv("GOOGLE_CREDENTIALS")
-    if not credentials_json:
-        raise ValueError("Missing GOOGLE_CREDENTIALS env var")
-    credentials_dict = json.loads(credentials_json)
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
-    return gspread.authorize(credentials)
-
-def log_meeting_reply(sheet_url, user_id, doctor_name, reply, reason=""):
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(sheet_url).sheet1
-    from datetime import datetime
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sheet.append_row([now, user_id, doctor_name, reply, reason])
+DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 
 def get_doctor_name(sheet_url, user_id):
     gc = get_gspread_client()
-    sheet = gc.open_by_url(sheet_url).sheet1
-    records = sheet.get_all_records()
-    for row in records:
-        if str(row.get("userId")).strip() == str(user_id).strip():
-            return row.get("醫師姓名", "未知醫師")
-    return "未知醫師"
+    sheet = gc.open_by_url(sheet_url).worksheet("UserMapping")
+    rows = sheet.get_all_records()
+    for row in rows:
+        if row.get("userId") == user_id:
+            return row.get("name")
+    return "未知"
+
+def log_meeting_reply(sheet_url, user_id, doctor_name, status, reason=None):
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(sheet_url).worksheet("院務會議請假")
+    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    sheet.append_row([now, doctor_name, status, reason or ""])
