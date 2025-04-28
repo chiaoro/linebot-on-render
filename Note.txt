@@ -31,3 +31,20 @@ REMINDER_SHEET_URL	夜點費提醒名冊 Google Sheet 網址
 SHEET_URL	夜點費申請記錄表網址
 DOCTOR_SHEET_URL	醫師名冊/使用者對照表（姓名對應科別）網址
 NIGHT_FEE_FOLDER_ID	產生的 Word 文件要存進去的 Google Drive 資料夾 ID
+
+
+
+
+
+/ (專案根目錄)
+├── app.py  （主程式）
+├── requirements.txt （安裝套件列表）
+├── render.yaml （Render 自動部署設定）
+└── utils/   （功能模組）
+    ├── google_auth.py
+    ├── google_sheets.py
+    ├── line_push.py
+    ├── night_shift_fee.py
+    ├── night_shift_fee_generator.py
+    ├── schedule_utils.py
+    └── state_manager.py
