@@ -1,5 +1,5 @@
 # app.py
-# ✅ 主程式，整合院務會議請假 Flex + 值班調整 + 夜點費 + 自動排程
+# ✅ 主程式，整合院務會議請假 Flex + 值班調整 + 夜點費申請 + 自動排程
 
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
@@ -48,7 +48,8 @@ RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPdd
 
 
 
-# ✅ Flex主選單
+
+# ✅ Flex 主選單
 def get_main_menu():
     return FlexSendMessage("主選單", {
         "type": "bubble",
@@ -64,7 +65,7 @@ def get_main_menu():
         }
     })
 
-# ✅ 子選單生成
+# ✅ 子選單設定
 def get_submenu(title, buttons):
     return FlexSendMessage(title, {
         "type": "bubble",
@@ -113,8 +114,6 @@ duty_swap_buttons = [
 
 
 
-
-
 # ✅ 處理收到的所有訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -122,34 +121,7 @@ def handle_message(event):
     user_msg = event.message.text.strip()
     text = user_msg.replace("【", "").replace("】", "").strip()
 
-    # ✅ 院務會議請假處理
-    if handle_meeting_leave_response(event, line_bot_api, user_msg, user_id):
-        return
-
-    # ✅ 夜點費申請處理
-    reply = handle_night_shift_request(user_id, user_msg)
-    if reply:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        return
-
-    # ✅ 主選單
-    if user_msg == "主選單":
-        line_bot_api.reply_message(event.reply_token, get_main_menu())
-        return
-
-    # ✅ 子選單
-    submenu_map = {
-        "門診調整服務": clinic_buttons,
-        "值班調整服務": duty_swap_buttons,
-        "支援醫師服務": support_buttons,
-        "新進醫師服務": newcomer_buttons,
-        "其他表單服務": other_buttons
-    }
-    if user_msg in submenu_map:
-        line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
-        return
-
-    # ✅ 院務會議請假（點選後叫出 Flex）
+    # ✅ 院務會議請假流程（偵測 Flex）
     if user_msg == "院務會議請假":
         flex_message = FlexSendMessage(
             alt_text="院務會議請假",
@@ -207,20 +179,39 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, flex_message)
         return
 
-    # ✅ （這裡後面接各種申請流程）
-    # 🔵 調診/休診/代診/加診流程
-    # 🔵 支援醫師調診單流程
-    # 🔵 值班調換/值班代理流程
-    # 🔵 統計功能（開啟統計、結束統計、查詢統計）
+    # ✅ 處理院務會議請假 回覆邏輯
+    if handle_meeting_leave_response(event, line_bot_api, user_msg, user_id):
+        return
+
+    # ✅ 處理夜點費申請邏輯
+    reply = handle_night_shift_request(user_id, user_msg)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    # ✅ 處理主選單
+    if user_msg == "主選單":
+        line_bot_api.reply_message(event.reply_token, get_main_menu())
+        return
+
+    # ✅ 處理子選單
+    submenu_map = {
+        "門診調整服務": clinic_buttons,
+        "值班調整服務": duty_swap_buttons,
+        "支援醫師服務": support_buttons,
+        "新進醫師服務": newcomer_buttons,
+        "其他表單服務": other_buttons
+    }
+    if user_msg in submenu_map:
+        line_bot_api.reply_message(event.reply_token, get_submenu(user_msg, submenu_map[user_msg]))
+        return
+
+    # ✅ （這裡後面接各種申請流程，如 調診/值班調整/統計功能）
 
 
 
 
-
-
-
-
-    # ✅ 調診/休診/代診/加診 - 三步驟流程
+    # ✅ 調診/休診/代診/加診 申請流程（3步驟）
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問原本門診是哪一天？（例如 5/6 上午診）"))
@@ -231,7 +222,7 @@ def handle_message(event):
         if session["step"] == 1:
             session["original_date"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？（例如：休診、5/23 下午加診）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您希望如何處理？（例如休診、5/23下午加診）"))
             return
         elif session["step"] == 2:
             session["new_date"] = user_msg
@@ -240,7 +231,7 @@ def handle_message(event):
             return
         elif session["step"] == 3:
             session["reason"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/你的webhook網址/exec"
+            webhook_url = "https://script.google.com/macros/s/你的調診Webhook網址/exec"
             requests.post(webhook_url, json={
                 "user_id": user_id,
                 "request_type": session["type"],
@@ -258,7 +249,7 @@ def handle_message(event):
             del user_sessions[user_id]
             return
 
-    # ✅ 支援醫師調診單 - 四步驟流程
+    # ✅ 支援醫師調診單（4步驟）
     if user_msg == "支援醫師調診單":
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
@@ -269,12 +260,12 @@ def handle_message(event):
         if session["step"] == 0:
             session["doctor_name"] = user_msg
             session["step"] = 1
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如5/6 上午診）"))
             return
         elif session["step"] == 1:
             session["original_date"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問希望如何處理？（例如休診、調整至5/23 上午診）"))
             return
         elif session["step"] == 2:
             session["new_date"] = user_msg
@@ -283,7 +274,7 @@ def handle_message(event):
             return
         elif session["step"] == 3:
             session["reason"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/你的支援醫師webhook/exec"
+            webhook_url = "https://script.google.com/macros/s/你的支援醫師Webhook網址/exec"
             requests.post(webhook_url, json={
                 "user_id": user_id,
                 "request_type": "支援醫師調診單",
@@ -302,7 +293,7 @@ def handle_message(event):
             del user_sessions[user_id]
             return
 
-    # ✅ 值班調換／代理申請
+    # ✅ 值班調整（互換/代理）流程
     if user_msg in ["值班調換", "值班代理"]:
         user_sessions[user_id] = {"step": 0, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如內科急診白班）"))
@@ -311,6 +302,7 @@ def handle_message(event):
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["值班調換", "值班代理"]:
         session = user_sessions[user_id]
         step = session["step"]
+
         if step == 0:
             session["班別"] = user_msg
             session["step"] = 1
@@ -319,7 +311,7 @@ def handle_message(event):
         elif step == 1:
             session["原值班醫師"] = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原值班日期是？"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原值班日期是？（例如5/2 (0800-2000)）"))
             return
         elif step == 2:
             session["原值班日期"] = user_msg
@@ -336,21 +328,22 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問調換後的值班日期？"))
             return
         elif step == 4:
-            session["對方值班日期" if session["type"] == "值班調換" else "代理醫師"] = user_msg
+            if session["type"] == "值班調換":
+                session["對方值班日期"] = user_msg
+            else:
+                session["代理醫師"] = user_msg
             session["step"] = 5
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入調整原因"))
             return
         elif step == 5:
             session["原因"] = user_msg
-            webhook_url = "https://script.google.com/macros/s/你的值班調換代理webhook/exec"
+            webhook_url = "https://script.google.com/macros/s/你的值班Webhook網址/exec"
             requests.post(webhook_url, data=session)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text="✅ 已送出值班調整單！"
-            ))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 值班調整單已成功送出！"))
             del user_sessions[user_id]
             return
 
-    # ✅ 群組統計功能（開啟統計、切換主題、結束統計）
+    # ✅ 群組統計功能
     if event.source.type == "group":
         group_id = event.source.group_id
         if group_id not in user_votes:
@@ -385,9 +378,9 @@ def handle_message(event):
 
 
 # ✅ LINE Webhook 接收器
-@app.route("/callback", methods=['POST'])
+@app.route("/callback", methods=["POST"])
 def callback():
-    signature = request.headers.get('X-Line-Signature')
+    signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
 
     try:
@@ -395,7 +388,7 @@ def callback():
     except InvalidSignatureError:
         abort(400)
 
-    return 'OK'
+    return "OK"
 
 
 # ✅ 每天自動檢查是否開啟院務會議請假
@@ -411,15 +404,21 @@ def daily_check_meeting_leave():
 # ✅ 固定日期推播
 @app.route("/monthly-reminder", methods=["GET"])
 def monthly_reminder():
-    send_monthly_fixed_reminders()
-    return "✅ 固定日期推播完成", 200
+    try:
+        send_monthly_fixed_reminders()
+        return "✅ 固定日期推播完成", 200
+    except Exception as e:
+        return f"❌ 固定日期推播失敗：{e}", 500
 
 
 # ✅ 重要會議推播
 @app.route("/event-reminder", methods=["GET"])
 def event_reminder():
-    send_important_event_reminder()
-    return "✅ 重要會議推播完成", 200
+    try:
+        send_important_event_reminder()
+        return "✅ 重要會議推播完成", 200
+    except Exception as e:
+        return f"❌ 重要會議推播失敗：{e}", 500
 
 
 # ✅ 每日個人推播
@@ -429,7 +428,7 @@ def daily_push():
         run_daily_push()
         return "✅ 每日推播完成", 200
     except Exception as e:
-        return f"❌ 推播失敗：{e}", 500
+        return f"❌ 每日推播失敗：{e}", 500
 
 
 # ✅ 產生夜點費申請表
@@ -439,7 +438,7 @@ def generate_night_fee_word():
         run_generate_night_fee_word()
         return "✅ 夜點費申請表已產出", 200
     except Exception as e:
-        return f"❌ 產出錯誤：{e}", 500
+        return f"❌ 夜點費產出失敗：{e}", 500
 
 
 # ✅ 夜點費每日提醒
@@ -458,8 +457,10 @@ def receive_form_submission():
     data = request.get_json()
     name = data.get("name")
     off_days = data.get("off_days")
+
     if not name or not off_days:
         return jsonify({"status": "error", "message": "缺少欄位"}), 400
+
     try:
         handle_submission(name, off_days)
         return jsonify({"status": "success"}), 200
