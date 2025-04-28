@@ -514,28 +514,7 @@ def handle_message(event):
 
 
 
-@app.route("/callback", methods=['POST'])
-def callback():
-    try:
-        data = request.get_json(force=True)
-    except:
-        data = {}
 
-    if data.get("mode") == "push":
-        user_id = data.get("userId")
-        message = data.get("message", "（無訊息內容）")
-        line_bot_api.push_message(user_id, TextSendMessage(text=message))
-        return "Pushed message to user."
-
-    signature = request.headers.get("X-Line-Signature")
-    body = request.get_data(as_text=True)
-
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-
-    return "OK"
 
 
 
@@ -576,6 +555,33 @@ def meeting_reminder():
     send_meeting_reminder()
     return "✅ 會議提醒完成", 200
 
+
+
+
+
+
+@app.route("/callback", methods=['POST'])
+def callback():
+    try:
+        data = request.get_json(force=True)
+    except:
+        data = {}
+
+    if data.get("mode") == "push":
+        user_id = data.get("userId")
+        message = data.get("message", "（無訊息內容）")
+        line_bot_api.push_message(user_id, TextSendMessage(text=message))
+        return "Pushed message to user."
+
+    signature = request.headers.get("X-Line-Signature")
+    body = request.get_data(as_text=True)
+
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return "OK"
 
 
 
