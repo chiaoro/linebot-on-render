@@ -23,6 +23,8 @@ from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_re
 from utils.night_shift_fee_generator import run_generate_night_fee_word
 from meeting_leave import handle_meeting_leave_response
 from meeting_leave_scheduler import run_meeting_leave_scheduler
+from utils.night_shift_fee import handle_night_shift_request, continue_night_shift_fee_request
+
 
 # ✅ 環境設定
 load_dotenv()
@@ -118,6 +120,20 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
     text = user_msg.replace("【", "").replace("】", "").strip()
+
+
+
+        # ✅ 夜點費申請流程
+    reply = handle_night_shift_request(user_id, user_msg)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    reply = continue_night_shift_fee_request(user_id, user_msg)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
 
     # ✅ 院務會議請假 FLEX 流程
     if user_msg == "院務會議請假":
