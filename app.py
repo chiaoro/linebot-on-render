@@ -17,7 +17,7 @@ from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
-from utils.night_shift_fee_generator import generate_night_fee_word
+from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.meeting_reminder import send_meeting_reminder
 from utils.monthly_reminder import send_monthly_fixed_reminders
 from utils.event_reminder import send_important_event_reminder
