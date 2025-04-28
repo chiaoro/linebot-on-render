@@ -79,6 +79,35 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
+# ✅ 主選單處理
+submenu_map = {
+    "門診調整服務": clinic_buttons,
+    "值班調整服務": duty_swap_buttons,
+    "支援醫師服務": support_buttons,
+    "新進醫師服務": newcomer_buttons,
+    "其他表單服務": other_buttons
+
+@app.route("/callback", methods=["POST"])
+def callback():
+    signature = request.headers.get('X-Line-Signature')
+    body = request.get_data(as_text=True)
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+    return "OK"
+
+@app.route("/", methods=["GET"])
+def home():
+    return "LINE Bot is running!", 200
+
+
+
+
+
+
+
+    
     # ✅ 夜點費申請
     if "夜點費" in user_msg:
         reply = handle_night_shift_request(user_id, user_msg)
