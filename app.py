@@ -22,6 +22,7 @@ from monthly_reminder import run_monthly_reminder
 from event_reminder import run_event_reminder
 from daily_notifier import run_daily_push
 
+
 # Global storages
 user_votes = {}
 stat_active = {}
@@ -171,19 +172,19 @@ def home():
     return "LINE Bot is running",200
 
 @app.route("/meeting-reminder", methods=["GET"])
-def meeting_reminder():
+def meeting_reminder_route():
     run_meeting_reminder()
-    return "✅ 會議提醒完成",200
+    return "✅ 會議提醒完成", 200
 
 @app.route("/monthly-reminder", methods=["GET"])
-def monthly_reminder():
+def monthly_reminder_route():
     run_monthly_reminder()
-    return "✅ 固定日期推播完成",200
+    return "✅ 固定日期推播完成", 200
 
 @app.route("/event-reminder", methods=["GET"])
-def event_reminder():
+def event_reminder_route():
     run_event_reminder()
-    return "✅ 重要會議提醒完成",200
+    return "✅ 重要會議提醒完成", 200
 
 @app.route("/daily-push", methods=["GET"])
 def daily_push():
