@@ -283,15 +283,23 @@ def daily_push_route():
 
 # ✅ 夜點費產生Word文件
 @app.route("/generate-night-fee-word", methods=["GET"])
-def generate_night_fee_word_route():
-    generate_night_fee_word()
-    return "✅ 夜點費申請表已產出", 200
+def generate_night_fee_word():
+    try:
+        from utils.night_shift_fee_generator import run_generate_night_fee_word
+        run_generate_night_fee_word()
+        return "✅ 夜點費申請表產生完成", 200
+    except Exception as e:
+        return f"❌ 夜點費申請表產生錯誤：{e}", 500
 
 # ✅ 夜點費每日提醒
 @app.route("/night-shift-reminder", methods=["GET"])
-def night_shift_reminder_route():
-    daily_night_fee_reminder()
-    return "✅ 夜點費提醒完成", 200
+def night_shift_reminder():
+    try:
+        from utils.night_shift_fee_reminder import daily_night_fee_reminder
+        daily_night_fee_reminder()
+        return "✅ 夜點費每日提醒完成", 200
+    except Exception as e:
+        return f"❌ 夜點費提醒錯誤：{e}", 500
 
 # ✅ 喚醒機制（避免Render睡死）
 @app.route("/ping", methods=["GET"])
