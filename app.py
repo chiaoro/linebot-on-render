@@ -72,74 +72,103 @@ submenu_map = {
 }
 
 # Flex generators
-def get_main_menu():
-    contents = {"type":"bubble","body":{"type":"box","layout":"vertical","contents":[
-        {"type":"text","text":"📋 請選擇服務類別","weight":"bold","size":"lg"}
-    ] + [
-        {"type":"button","action":{"type":"message","label":label,"text":label},"style":"primary","margin":"md"}
-        for label in main_menu_labels
-    ]}}
-    return FlexSendMessage("主選單", contents)
 
-def get_submenu(title, options):
-    buttons = []
-    if all(isinstance(o, str) for o in options):
-        for txt in options:
-            buttons.append({"type":"button","action":{"type":"message","label":txt,"text":txt},"style":"primary","margin":"md"})
+def get_main_menu():
+    bubble = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg"},
+            ] + [
+                {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary", "margin": "md"}
+                for label in main_menu_labels
+            ]
+        }
+    }
+    return FlexSendMessage("主選單", bubble)
+
+def get_submenu(title, items):
+    if all(isinstance(i, str) for i in items):
+        buttons = [
+            {"type": "button", "action": {"type": "message", "label": i, "text": i}, "style": "primary", "margin": "md"}
+            for i in items
+        ]
     else:
-        buttons = options
-    contents = {"type":"bubble","body":{"type":"box","layout":"vertical","contents":[
-        {"type":"text","text":f"📂 {title}","weight":"bold","size":"lg"}
-    ] + buttons}}
-    return FlexSendMessage(title, contents)
+        buttons = items
+    bubble = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": f"📂 {title}", "weight": "bold", "size": "lg"},
+            ] + buttons
+        }
+    }
+    return FlexSendMessage(title, bubble)
 
 meeting_flex_bubble = {
-    "type":"bubble","size":"mega","body":{"type":"box","layout":"vertical","spacing":"md","contents":[
-        {"type":"text","text":"📋 院務會議請假","weight":"bold","size":"xl","align":"center"},
-        {"type":"text","text":"請問您是否出席？","wrap":True,"align":"center"},
-        {"type":"box","layout":"horizontal","spacing":"md","contents":[
-            {"type":"button","style":"primary","action":{"type":"message","label":"✅ 出席","text":"✅ 出席"}},
-            {"type":"button","style":"primary","color":"#FF6666","action":{"type":"message","label":"❌ 請假","text":"❌ 請假"}}
-        ]}
-    ]]}}
+    "type": "bubble",
+    "size": "mega",
+    "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+            {"type": "text", "text": "📋 院務會議請假", "weight": "bold", "size": "xl", "align": "center"},
+            {"type": "text", "text": "請問您是否出席？", "wrap": True, "align": "center"},
+            {
+                "type": "box",
+                "layout": "horizontal",
+                "spacing": "md",
+                "contents": [
+                    {"type": "button", "style": "primary", "action": {"type": "message", "label": "✅ 出席", "text": "✅ 出席"}},
+                    {"type": "button", "style": "primary", "color": "#FF6666", "action": {"type": "message", "label": "❌ 請假", "text": "❌ 請假"}}
+                ]
+            }
+        ]
+    }
+}
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    text_in = event.message.text.strip()
+    text = event.message.text.strip()
 
     # 1. 主選單
-    if text_in == "主選單":
+    if text == "主選單":
         return line_bot_api.reply_message(event.reply_token, get_main_menu())
     # 2. 子選單
-    if text_in in submenu_map:
-        return line_bot_api.reply_message(event.reply_token, get_submenu(text_in, submenu_map[text_in]))
+    if text in submenu_map:
+        return line_bot_api.reply_message(event.reply_token, get_submenu(text, submenu_map[text]))
     # 3. 院務會議請假
-    if text_in == "院務會議請假":
+    if text == "院務會議請假":
         return line_bot_api.reply_message(event.reply_token, FlexSendMessage("院務會議請假", meeting_flex_bubble))
     # 4. 夜點費申請
-    if text_in == "夜點費申請":
+    if text == "夜點費申請":
         reply = handle_night_shift_request(event)
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
     # 5. 調診流程
-    if text_in in clinic_buttons_text:
-        user_sessions[user_id] = {"step":1,"type":text_in}
+    if text in clinic_buttons_text:
+        user_sessions[user_id] = {"step": 1, "type": text}
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原門診日期（如5/6上午診）"))
     # 6. 值班調整流程
-    if text_in in duty_buttons_text:
-        user_sessions[user_id] = {"step":1,"type":text_in}
+    if text in duty_buttons_text:
+        user_sessions[user_id] = {"step": 1, "type": text}
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別？"))
     # 7. 在職證明申請
-    if text_in == "在職證明申請":
+    if text == "在職證明申請":
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📄 在職證明申請表：https://docs.google.com/forms/d/e/1FAIpQLSeI64Av1Fb2Qgm6lCwTaUyvFRejHItS5KTQNujs1rU3NufMEA/viewform"))
     # 8. 專師每日服務量填寫
-    if text_in == "專師每日服務量填寫":
+    if text == "專師每日服務量填寫":
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📋 專師每日服務量填寫表單：https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"))
     # 9. Temp傳檔
-    if text_in == "Temp傳檔":
+    if text == "Temp傳檔":
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📂 Temp傳檔表單：https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform"))
     # 10. 外科醫師休假登記表
-    if text_in == "外科醫師休假登記表":
+    if text == "外科醫師休假登記表":
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 外科醫師休假登記表單：https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform"))
     # default
     return line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入「主選單」重新開始。"))
@@ -147,7 +176,7 @@ def handle_message(event):
 # Webhook
 @app.route("/callback", methods=["POST"])
 def callback():
-    signature = request.headers.get('X-Line-Signature')
+    signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
     try:
         handler.handle(body, signature)
