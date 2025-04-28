@@ -63,7 +63,7 @@ mapping_sheet = spreadsheet.worksheet("UserMapping")
 # ✳️ 新增的：統計紀錄表
 stat_sheet = gc.open_by_key("14TdjFoBVJITE6_lEaGj32NT8S3o-Ysk8ObstdpNxLOI")
 stats_log_sheet = stat_sheet.worksheet("統計記錄")
-user_sessions = {}
+
 
 
 
@@ -567,9 +567,7 @@ def receive_form_submission():
 
 
 
-@app.route("/", methods=["GET"])
-def home():
-    return "LINE Bot is running"
+
 
 
 ##✅院務會議請假申請推播
@@ -589,7 +587,8 @@ def home():
 
 
 
-@app.route("/callback", methods=['POST'])
+@app.route("/callback", meth
+           ds=['POST'])
 def callback():
     try:
         data = request.get_json(force=True)
