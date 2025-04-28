@@ -285,11 +285,12 @@ def daily_push_route():
 @app.route("/generate-night-fee-word", methods=["GET"])
 def generate_night_fee_word():
     try:
-        from utils.night_shift_fee_generator import run_generate_night_fee_word
-        run_generate_night_fee_word()
+        run_generate_night_fee_word()  # 直接呼叫就好，不需要每次再import一次
         return "✅ 夜點費申請表產生完成", 200
     except Exception as e:
         return f"❌ 夜點費申請表產生錯誤：{e}", 500
+
+
 
 # ✅ 夜點費每日提醒
 @app.route("/night-shift-reminder", methods=["GET"])
