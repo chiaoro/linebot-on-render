@@ -132,7 +132,7 @@ def handle_message(event):
     text = event.message.text.strip()
 
     # ✅ 夜點費申請流程
-    reply = handle_night_shift_request(user_id, text)
+    reply = handle_night_shift_request(text)
     if reply:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
