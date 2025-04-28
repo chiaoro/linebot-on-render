@@ -1,25 +1,29 @@
-# app.py
-
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
-import os, json, gspread, re
+from linebot.exceptions import InvalidSignatureError, LineBotApiError
+from linebot.models import TextMessage, MessageEvent, TextSendMessage, FlexSendMessage
+import os, json, tempfile, requests, mimetypes, smtplib, gspread
+from email.mime.text import MIMEText
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime, date
+from datetime import datetime
 from dotenv import load_dotenv
 
-# utils 小模組
-from utils.line_push import push_text_to_user, push_text_to_group
+# 引入 utils 下的小模組
+from utils.line_push import push_text_to_user
 from utils.schedule_utils import handle_submission
+from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
+
 from utils.meeting_reminder import send_meeting_reminder
 from utils.monthly_reminder import send_monthly_fixed_reminders
 from utils.event_reminder import send_important_event_reminder
 from utils.daily_notifier import run_daily_push
 from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
+
+from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
+from utils.night_shift_fee_generator import run_generate_night_fee_word
 
 # 載入 .env
 load_dotenv()
