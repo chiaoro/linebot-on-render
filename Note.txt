@@ -9,3 +9,25 @@ night_shift_fee_generator.py   夜點費申請模組  -輸入到試算表 -轉wo
 meeting_leave_scheduler.py    每天自動檢查開啟院務會議請假
 meeting_leave.py     處理單場出席/請假＋推播請假通知
   
+
+
+🧱 架構說明
+
+檔案	功能	
+app.py	LINE Bot主程式 + 各種 route（/callback, /night-shift-reminder, /generate-night-fee-word等）	
+utils/night_shift_fee.py	處理「使用者傳訊息登記夜點費申請」	
+utils/night_shift_fee_reminder.py	每月 1~5 號自動推播提醒未繳交夜點費的醫師	
+utils/night_shift_fee_generator.py	自動根據科別產生夜點費申請表（Word檔），並上傳到 Google Drive	
+utils/line_push_utils.py	提供 push_text_to_user 和 push_text_to_group	
+🔧 必須設定的環境變數清單
+
+環境變數名稱	說明
+GOOGLE_CREDENTIALS	Google Service Account 的 JSON憑證字串
+LINE_CHANNEL_ACCESS_TOKEN	LINE Bot 的 Channel Access Token
+LINE_CHANNEL_SECRET	LINE Bot 的 Channel Secret
+All_doctor_group_id	所有醫師群組 ID（推播用）
+surgery_group_id	外科群組 ID（優先推播外科，沒有就推到 All）
+REMINDER_SHEET_URL	夜點費提醒名冊 Google Sheet 網址
+SHEET_URL	夜點費申請記錄表網址
+DOCTOR_SHEET_URL	醫師名冊/使用者對照表（姓名對應科別）網址
+NIGHT_FEE_FOLDER_ID	產生的 Word 文件要存進去的 Google Drive 資料夾 ID
