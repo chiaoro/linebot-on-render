@@ -1,10 +1,13 @@
+# app.py
+# ✅ 主程式，整合院務會議請假 Flex + 自動排程
+
+
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import *
-import os, json, tempfile, requests, mimetypes, smtplib
+from linebot.models import  TextMessage, MessageEvent
+import os, json, tempfile, requests, mimetypes, smtplib, gspread
 from email.mime.text import MIMEText
-import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from dotenv import load_dotenv
@@ -21,7 +24,8 @@ from daily_notifier import run_daily_push
 from utils.night_shift_fee import handle_night_shift_request
 from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.night_shift_fee import daily_night_fee_reminder
-
+from meeting_leave import handle_meeting_leave_response
+from meeting_leave_scheduler import run_meeting_leave_scheduler
 
 
 
@@ -128,6 +132,15 @@ def handle_message(event):
     # 統一處理訊息，去除中括號與空白（避免格式不一致）
     text = user_msg.replace("【", "").replace("】", "").strip()
 
+
+
+
+    
+    # ✅ 處理院務會議請假 Flex 流程
+    if handle_meeting_leave_response(event, line_bot_api, user_msg, user_id):
+        return
+
+    
     
     # ✅ 處理夜點費申請流程
     reply = handle_night_shift_request(user_id, user_msg)
@@ -399,31 +412,31 @@ def handle_message(event):
 
 
 
-    # ✅ 院務會議請假流程
-    if user_msg.strip() == "院務會議我要請假":
-        set_state(user_id, "ASK_LEAVE")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要出席？請輸入 Y 或 N"))
-        return
+#    # ✅ 院務會議請假流程
+#    if user_msg.strip() == "院務會議我要請假":
+#        set_state(user_id, "ASK_LEAVE")
+#        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問你這禮拜院務會議是否要出席？請輸入 Y 或 N"))
+#        return
 
-    if get_state(user_id) == "ASK_LEAVE":
-        if user_msg.upper() == "Y":
-            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-            log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "出席")
-            clear_state(user_id)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="收到您的回覆，您即將出席這禮拜院務會議，請當日準時與會。"))
-        elif user_msg.upper() == "N":
-            set_state(user_id, "ASK_REASON")
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您無法出席的原因是？"))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入 Y 或 N"))
-        return
+#    if get_state(user_id) == "ASK_LEAVE":
+#        if user_msg.upper() == "Y":
+#            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+#            log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "出席")
+#            clear_state(user_id)
+#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="收到您的回覆，您即將出席這禮拜院務會議，請當日準時與會。"))
+#        elif user_msg.upper() == "N":
+#            set_state(user_id, "ASK_REASON")
+#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您無法出席的原因是？"))
+#        else:
+#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入 Y 或 N"))
+#        return
 
-    if get_state(user_id) == "ASK_REASON":
-        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-        log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "請假", user_msg)
-        clear_state(user_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
-        return
+#    if get_state(user_id) == "ASK_REASON":
+#        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+#        log_meeting_reply(RECORD_SHEET_URL, user_id, doctor_name, "請假", user_msg)
+#        clear_state(user_id)
+#        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"收到回覆，原因：{user_msg}"))
+#        return
 
 
 
@@ -506,7 +519,23 @@ def handle_message(event):
 
 
 
+# ✅ 每天自動檢查院務會議排程（給 CronJob 用）
+@app.route("/daily-check-meeting-leave", methods=["GET"])
+def daily_check_meeting_leave():
+    try:
+        run_meeting_leave_scheduler(line_bot_api)
+        return "✅ 每日會議排程檢查完成", 200
+    except Exception as e:
+        return f"❌ 排程錯誤：{e}", 500
 
+# ✅ 測試用首頁
+@app.route("/", methods=["GET"])
+def home():
+    return "LINE Bot is running"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 
 
@@ -543,17 +572,17 @@ def home():
     return "LINE Bot is running"
 
 
-#✅院務會議請假申請推播
-#✅ 先定義 function
-def run_meeting_reminder():
-    print("Meeting reminder triggered!")
-
+##✅院務會議請假申請推播
+##✅ 先定義 function
+#def run_meeting_reminder():
+#    print("Meeting reminder triggered!")
+#
 # ✅ 再來設置 route
-@app.route("/reminder", methods=["GET"])
-def meeting_reminder():
-    print("🧪 有進入 /reminder route！")  # <-- 加這行測試！
-    send_meeting_reminder()
-    return "✅ 會議提醒完成", 200
+#@app.route("/reminder", methods=["GET"])
+#def meeting_reminder():
+#    print("🧪 有進入 /reminder route！")  # <-- 加這行測試！
+#    send_meeting_reminder()
+#    return "✅ 會議提醒完成", 200
 
 
 
