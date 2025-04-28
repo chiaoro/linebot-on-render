@@ -572,8 +572,8 @@ def run_meeting_reminder():
 # ✅ 再來設置 route
 @app.route("/reminder", methods=["GET"])
 def meeting_reminder():
-    run_meeting_reminder()
-    return "✅會議提醒完成", 200
+    send_meeting_reminder()
+    return "✅ 會議提醒完成", 200
 
 
 
