@@ -148,6 +148,66 @@ def handle_message(event):
 
 
 
+# ✅ 院務會議請假 - 叫出 Flex
+if user_msg == "院務會議請假":
+    flex_message = FlexSendMessage(
+        alt_text="院務會議請假",
+        contents={
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 院務會議請假",
+                        "weight": "bold",
+                        "size": "xl",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": "請問您是否出席院務會議？",
+                        "wrap": True,
+                        "align": "center"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "spacing": "md",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "action": {
+                                    "type": "message",
+                                    "label": "✅ 出席",
+                                    "text": "✅ 出席"
+                                }
+                            },
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "color": "#FF6666",
+                                "action": {
+                                    "type": "message",
+                                    "label": "❌ 請假",
+                                    "text": "❌ 請假"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    )
+    line_bot_api.reply_message(event.reply_token, flex_message)
+    return
+
+
+
 
     # ✅ 調診/休診/代診/加診申請（3步驟）
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
