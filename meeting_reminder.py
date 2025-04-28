@@ -24,7 +24,7 @@ sheet = gc.open_by_url(
 def send_meeting_reminder():
     today = datetime.now().date()
     start_date = today + timedelta(days=3)  # 提醒開始日（+3天）
-    end_date = today + timedelta(days=5)    # 提醒結束日（+5天）
+    end_date = today + timedelta(days=7)    # 提醒結束日（+7天）
 
     rows = sheet.get_all_records()
     headers = sheet.row_values(1)
