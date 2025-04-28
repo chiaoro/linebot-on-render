@@ -147,7 +147,6 @@ def handle_message(event):
 
 
 
-
 # ✅ 院務會議請假 - 叫出 Flex
 if user_msg == "院務會議請假":
     flex_message = FlexSendMessage(
@@ -205,6 +204,7 @@ if user_msg == "院務會議請假":
     )
     line_bot_api.reply_message(event.reply_token, flex_message)
     return
+
 
 
 
