@@ -17,9 +17,9 @@ from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
 from utils.night_shift_fee_generator import generate_night_fee_doc
-from meeting_reminder import run_meeting_reminder
-from monthly_reminder import run_monthly_reminder
-from event_reminder import run_event_reminder
+from meeting_reminder import send_meeting_reminder
+from monthly_reminder import send_monthly_fixed_reminders
+from event_reminder import send_important_event_reminder
 from daily_notifier import run_daily_push
 from meeting_leave import handle_meeting_leave_response
 from meeting_leave_scheduler import run_meeting_leave_scheduler
@@ -161,17 +161,17 @@ def daily_check_meeting_leave():
 
 @app.route("/meeting-reminder", methods=["GET"])
 def meeting_reminder():
-    run_meeting_reminder()
+    send_meeting_reminder()
     return "OK",200
 
 @app.route("/monthly-reminder", methods=["GET"])
 def monthly_reminder():
-    run_monthly_reminder()
+    send_monthly_fixed_reminders()
     return "OK",200
 
 @app.route("/event-reminder", methods=["GET"])
 def event_reminder():
-    run_event_reminder()
+    send_important_event_reminder()
     return "OK",200
 
 @app.route("/daily-push", methods=["GET"])
