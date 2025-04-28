@@ -122,7 +122,23 @@ def handle_message(event):
     text = user_msg.replace("【", "").replace("】", "").strip()
 
 
+    # ✅ 處理夜點費申請（新增這段）
+    night_fee_reply = handle_night_shift_fee_request(user_id, user_msg)
+    if night_fee_reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=night_fee_reply))
+        return
 
+    night_fee_finalize_reply = finalize_night_shift_fee_request(user_id, user_msg)
+    if night_fee_finalize_reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=night_fee_finalize_reply))
+        return
+
+
+
+
+
+
+    
         # ✅ 夜點費申請流程
     reply = handle_night_shift_request(user_id, user_msg)
     if reply:
