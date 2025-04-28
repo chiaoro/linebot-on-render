@@ -19,6 +19,12 @@ gc = gspread.authorize(creds)
 
 def send_meeting_reminder():
     try:
+        print("🧪 測試：我真的有進來 send_meeting_reminder()！")  # <--- 加這一行！
+
+
+
+
+        
         today = datetime.now().date()
         print(f"🛎️ send_meeting_reminder() 被觸發了！今天是 {today}")
         print(f"🎯 推播目標群組ID：{group_id}")
