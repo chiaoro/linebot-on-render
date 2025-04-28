@@ -48,3 +48,37 @@ NIGHT_FEE_FOLDER_ID	產生的 Word 文件要存進去的 Google Drive 資料夾 
     ├── night_shift_fee_generator.py
     ├── schedule_utils.py
     └── state_manager.py
+
+
+
+
+
+✅ app.py（主程式）
+
+✅ utils/
+
+daily_notifier.py（每日推播）
+
+meeting_reminder.py（院務會議提醒）
+
+monthly_reminder.py（每月固定推播）
+
+event_reminder.py（重要會議推播）
+
+night_shift_fee.py（夜點費申請）
+
+night_shift_fee_generator.py（夜點費 Word 產生器）
+
+google_auth.py（Google Sheets 授權）
+
+google_sheets.py（Google Sheets 操作）
+
+line_push.py（LINE推播工具）
+
+schedule_utils.py（排班表工具）
+
+state_manager.py（狀態管理）
+
+✅ meeting_leave.py（院務會議請假流程）
+
+✅ meeting_leave_scheduler.py（院務會議請假排程）
