@@ -16,7 +16,7 @@ gc = gspread.authorize(creds)
 
 # 重要會議提醒表
 EVENT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1FspUjkRckA1g4bYESb7QEUKl1FzOcL5BejhOqkMD0Po/edit"
-event_sheet = gc.open_by_url(EVENT_SHEET_URL).worksheet("固定日期推播")
+event_sheet = gc.open_by_url(EVENT_SHEET_URL).worksheet("每日推播")
 
 def send_important_event_reminder():
     today = datetime.now()
