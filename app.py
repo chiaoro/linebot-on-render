@@ -230,7 +230,7 @@ def daily_push():
 @app.route("/meeting-leave", methods=["POST"])
 def meeting_leave():
     try:
-        from meeting_leave import handle_meeting_leave_response
+        from utils.meeting_leave import handle_meeting_leave_response
         data = request.get_json()
         user_id = data.get("user_id")
         user_reply = data.get("reply")
