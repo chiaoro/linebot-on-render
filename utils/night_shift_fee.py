@@ -3,7 +3,7 @@ import os, json
 from datetime import datetime, date
 from linebot.models import TextSendMessage
 import gspread
-from app import gc
+from utils.gspread_client import gc
 from oauth2client.service_account import ServiceAccountCredentials
 from utils.line_push_utils import push_text_to_user, push_text_to_group
 
@@ -22,9 +22,13 @@ def get_night_shift_sheet():
 
 
 
-def handle_night_shift_request(event):
-    """使用者輸入「夜點費 姓名」時，將申請登錄至試算表並回覆"""
-    sheet = GC.open_by_url(SHEET_URL).worksheet(WORKSHEET_NAME)
+def handle_night_shift_request(user_id, user_msg):
+    SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
+    gc = gspread.authorize(creds)
+
+    sheet = gc.open_by_url(SHEET_URL).worksheet(WORKSHEET_NAME)
     user_text = event.message.text.replace("夜點費", "").strip()
     now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     # 假設試算表欄位為 [時間, 醫師姓名, 提醒狀態]
