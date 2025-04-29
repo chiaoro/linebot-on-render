@@ -15,7 +15,7 @@ from utils.schedule_utils import handle_submission
 from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
-
+from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.meeting_reminder import send_meeting_reminder
 from utils.monthly_reminder import send_monthly_fixed_reminders
 from utils.event_reminder import send_important_event_reminder
@@ -106,7 +106,7 @@ def handle_message(event):
 
     # 夜點費處理
     if "夜點費" in user_msg:
-        reply = handle_night_shift_request(user_id, user_msg)  # ✅ 補上 user_id
+        reply = handle_night_shift_request(user_id, user_msg)
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
@@ -129,63 +129,21 @@ def handle_message(event):
         }))
         return
 
-
-
-
     # 院務會議請假（顯示選單）
     if user_msg == "院務會議請假":
-        # 進入院務會議請假流程，設定狀態
         set_state(user_id, "ASK_LEAVE")
-        from utils.state_manager import set_state
-        from linebot.models import FlexSendMessage
-
-        
-        message = FlexSendMessage(
-            alt_text="院務會議請假",
-            contents={
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "md",
-                    "contents": [
-                        {"type": "text", "text": "📋 院務會議請假", "weight": "bold", "size": "lg"},
-                        {"type": "text", "text": "請問您是否出席院務會議？", "wrap": True}
-                    ]
-                },
-                "footer": {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "spacing": "md",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "style": "primary",
-                            "color": "#00C851",
-                            "action": {"type": "message", "label": "✅ 出席", "text": "院務會議出席"}
-                        },
-                        {
-                            "type": "button",
-                            "style": "primary",
-                            "color": "#ff4444",
-                            "action": {"type": "message", "label": "❌ 請假", "text": "院務會議請假申請"}
-                        }
-                    ]
-                }
-            }
-        )
-        line_bot_api.reply_message(event.reply_token, message)
+        line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
         return
 
-    # 2. 只要是院務會議相關回覆 (出席/請假/原因)
-    elif get_state(user_id) in ["ASK_LEAVE", "ASK_REASON"]:
+    # ✅ 如果是正在處理院務會議請假的後續對話
+    if get_state(user_id) in ["ASK_LEAVE", "ASK_REASON"]:
         reply = handle_meeting_leave_response(user_id, user_msg)
         line_bot_api.reply_message(event.reply_token, reply)
         return
 
-    # 3. 無效指令
-    else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
+    # 無效指令
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
+
 
 
 # ✅ LINE Webhook
