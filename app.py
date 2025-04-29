@@ -133,7 +133,54 @@ def handle_message(event):
 
 
 
-    if "院務會議" in user_msg or "請假" in user_msg:
+    # 院務會議請假（顯示選單）
+    if user_msg == "院務會議請假":
+        from linebot.models import FlexSendMessage
+        message = FlexSendMessage(
+            alt_text="院務會議請假",
+            contents={
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "md",
+                    "contents": [
+                        {"type": "text", "text": "📋 院務會議請假", "weight": "bold", "size": "lg"},
+                        {"type": "text", "text": "請問您是否出席院務會議？", "wrap": True}
+                    ]
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "spacing": "md",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "color": "#00C851",
+                            "action": {"type": "message", "label": "✅ 出席", "text": "院務會議出席"}
+                        },
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "color": "#ff4444",
+                            "action": {"type": "message", "label": "❌ 請假", "text": "院務會議請假申請"}
+                        }
+                    ]
+                }
+            }
+        )
+        line_bot_api.reply_message(event.reply_token, message)
+        return
+
+    # ✅ 回報出席
+    elif user_msg == "院務會議出席":
+        reply = "✅ 感謝您確認出席，祝您會議順利！"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    # ❌ 請假流程
+    elif user_msg == "院務會議請假申請":
         from utils.meeting_leave import handle_meeting_leave
         reply = handle_meeting_leave(user_id, user_msg)
         if reply:
