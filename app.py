@@ -106,13 +106,12 @@ def handle_message(event):
 
     # 夜點費處理
     if "夜點費" in user_msg:
-        from utils.night_shift_fee import handle_night_shift_request
         reply = handle_night_shift_request(user_id, user_msg)  # ✅ 補上 user_id
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
 
-    # 主選單
+    # 主選單處理
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
         return
@@ -135,7 +134,12 @@ def handle_message(event):
 
     # 院務會議請假（顯示選單）
     if user_msg == "院務會議請假":
+        # 進入院務會議請假流程，設定狀態
+        set_state(user_id, "ASK_LEAVE")
+        from utils.state_manager import set_state
         from linebot.models import FlexSendMessage
+
+        
         message = FlexSendMessage(
             alt_text="院務會議請假",
             contents={
@@ -173,25 +177,15 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, message)
         return
 
-    # ✅ 回報出席
-    elif user_msg == "院務會議出席":
-        reply = "✅ 感謝您確認出席，祝您會議順利！"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    # 2. 只要是院務會議相關回覆 (出席/請假/原因)
+    elif get_state(user_id) in ["ASK_LEAVE", "ASK_REASON"]:
+        reply = handle_meeting_leave_response(user_id, user_msg)
+        line_bot_api.reply_message(event.reply_token, reply)
         return
 
-    # ❌ 請假流程
-    elif user_msg == "院務會議請假申請":
-        from utils.meeting_leave import handle_meeting_leave
-        reply = handle_meeting_leave(user_id, user_msg)
-        if reply:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        return
-
-
-
-    # 其他訊息
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
-
+    # 3. 無效指令
+    else:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
 
 
 # ✅ LINE Webhook
