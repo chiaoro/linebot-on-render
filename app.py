@@ -105,7 +105,7 @@ def handle_message(event):
     # 夜點費處理
     if "夜點費" in user_msg:
         from utils.night_shift_fee import handle_night_shift_request
-        reply = handle_night_shift_request(user_id, user_msg)
+        reply = handle_night_shift_request(user_msg)
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
