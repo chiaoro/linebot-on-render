@@ -21,12 +21,13 @@ def get_doctor_name(sheet_url, user_id):
     return "未知"
 
 def log_meeting_reply(user_id, status, reason):
-    """
-    紀錄院務會議的出席或請假
-    """
     try:
         sheet = gc.open_by_url(MEETING_SHEET_URL).worksheet("院務會議請假")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        sheet.append_row([now, user_id, status, reason])
+        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)  # ✅ 自動抓姓名
+
+        # 寫入：時間、使用者ID、醫師姓名、出席/請假、原因
+        sheet.append_row([now, user_id, doctor_name, status, reason])
+
     except Exception as e:
         print(f"❌ log_meeting_reply 發生錯誤：{e}")
