@@ -107,9 +107,21 @@ submenu_map = {
     ]
 }
 
+
+
+
+
+
+
+
 # ✅ 主訊息處理
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    user_id = event.source.user_id
+    user_msg = event.message.text.strip()
+
     # ✅ 夜點費
-    if "夜點費申請" in user_msg:
+    if "夜點費" in user_msg:
         reply = handle_night_shift_request(user_id, user_msg)
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
@@ -133,7 +145,7 @@ submenu_map = {
         }))
         return
 
-    # ✅ 支援醫師調診單 四步驟
+    # ✅ 支援醫師調診單（四步驟）
     if user_msg == "支援醫師調診單":
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
@@ -171,7 +183,7 @@ submenu_map = {
             del user_sessions[user_id]
         return
 
-    # ✅ 我要調診/休診/代診/加診 三步驟
+    # ✅ 調診/休診/代診/加診（共三步驟）
     if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": user_msg}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
@@ -204,15 +216,15 @@ submenu_map = {
             del user_sessions[user_id]
         return
 
-    # ✅ 值班調換/代理 四～五步驟
+    # ✅ 值班調換/代理（四～五步驟）
     if user_msg == "值班調換":
         user_sessions[user_id] = {"step": 0, "type": "值班調換"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如：內科急診白班）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
 
     if user_msg == "值班代理":
         user_sessions[user_id] = {"step": 0, "type": "值班代理"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如：內科急診白班）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
 
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["值班調換", "值班代理"]:
@@ -255,7 +267,7 @@ submenu_map = {
                 del user_sessions[user_id]
         return
 
-    # ✅ 院務會議請假處理（已簡化版）
+    # ✅ 院務會議請假
     if user_msg == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您是否出席院務會議？請輸入 Y（出席）或 N（請假）"))
@@ -284,6 +296,9 @@ submenu_map = {
 
     # ⛔ 無效指令
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
+
+
+
 
 
 
