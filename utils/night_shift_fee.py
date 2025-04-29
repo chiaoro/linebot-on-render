@@ -1,5 +1,3 @@
-# utils/night_shift_fee.py
-
 import os, json
 from datetime import datetime, date
 from linebot.models import TextSendMessage
