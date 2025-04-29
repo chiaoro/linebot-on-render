@@ -144,20 +144,19 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
         return
 
-    # ✅ 點選出席/請假後處理
+    # ✅ 出席或請假 Flex 按鈕回覆
     if get_state(user_id) == "ASK_LEAVE":
         if user_msg == "院務會議出席":
             log_meeting_reply(user_id, "出席", "")
             clear_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
             return
-
         elif user_msg == "院務會議請假申請":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
             return
 
-    # ✅ 請假理由處理
+    # ✅ 請假理由回覆
     if get_state(user_id) == "ASK_REASON":
         reason = user_msg
         log_meeting_reply(user_id, "請假", reason)
