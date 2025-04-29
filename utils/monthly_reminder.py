@@ -15,16 +15,16 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
 # 固定日期推播紀錄表
-FIXED_PUSH_URL = "https://docs.google.com/spreadsheets/d/1XpXl17Uf93XWNEYdZsHx-3IXpPf4Sb9ZI0ARGa41y5c/edit"
-WORKSHEET_NAME = "固定日期推播"   # ← 確定這名字和試算表上的分頁一模一樣
+FIXED_PUSH_URL = "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
+WORKSHEET_NAME = "固定日期推播"
 
-# 直接打開
+# 打開
 fixed_sheet = gc.open_by_url(FIXED_PUSH_URL).worksheet(WORKSHEET_NAME)
 
 def send_monthly_fixed_reminders():
     today = datetime.now().strftime("%Y-%m-%d")
-
     data = fixed_sheet.get_all_records()
+
     for idx, record in enumerate(data, start=2):
         push_date = record.get("日期")
         message = record.get("推播項目")
@@ -39,5 +39,6 @@ def send_monthly_fixed_reminders():
             else:
                 group_id = os.getenv("All_doctor_group_id")
 
-            push_text_to_group(group_id, f"📣{message}")
-            fixed_sheet.update_cell(idx, list(record.keys()).index("提醒狀態") + 1, "已推播")
+            if group_id:
+                push_text_to_group(group_id, f"📣{message}")
+                fixed_sheet.update_cell(idx, 5, "已推播")  # 第5欄是「提醒狀態」
