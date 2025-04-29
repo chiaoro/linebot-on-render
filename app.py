@@ -139,26 +139,18 @@ def handle_message(event):
         return
 
     # ✅ 院務會議請假流程簡化版
-    if user_msg == "院務會議請假":
-        set_state(user_id, "ASK_LEAVE")
-        line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
-        return
-
     if user_msg == "院務會議出席":
-        # 使用者選擇出席，直接紀錄
         log_meeting_reply(user_id, "出席", "")
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
         return
-
+    
     if user_msg == "院務會議請假申請":
-        # 使用者選擇請假，進入輸入原因的流程
         set_state(user_id, "ASK_REASON")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
         return
-
+    
     if get_state(user_id) == "ASK_REASON":
-        # 使用者正在輸入請假原因
         reason = user_msg
         log_meeting_reply(user_id, "請假", reason)
         clear_state(user_id)
