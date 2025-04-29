@@ -1,20 +1,24 @@
 # utils/night_shift_fee.py
 import os, json
 from datetime import datetime, date
+from linebot.models import TextSendMessage
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from utils.line_push_utils import push_text_to_user, push_text_to_group
 
-# Google Sheets 認證
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS_DICT = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-CREDS = ServiceAccountCredentials.from_json_keyfile_dict(CREDS_DICT, SCOPE)
-GC = gspread.authorize(CREDS)
+# ✅ 改成等到用到時才去開 Sheet
+def get_night_shift_sheet():
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    gc = gspread.authorize(creds)
+    
+    sheet_url = "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
+    worksheet_name = "夜點費申請紀錄"  # 這個如果不存在，會報錯！
+    
+    sheet = gc.open_by_url(sheet_url).worksheet(worksheet_name)
+    return sheet
 
-# 環境變數設定
-SHEET_URL = os.getenv("NIGHT_FEE_SHEET_URL")
-WORKSHEET_NAME = os.getenv("NIGHT_FEE_WORKSHEET_NAME", "夜點費申請")
-GROUP_ID = os.getenv("surgery_group_id") or os.getenv("All_doctor_group_id")
 
 
 def handle_night_shift_request(event):
