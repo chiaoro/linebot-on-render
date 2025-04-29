@@ -1,7 +1,7 @@
 # utils/event_reminder.py
 
 import os, json, gspread
-from datetime import datetime
+from datetime import datetime, timedelta
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 from utils.line_push import push_text_to_group
@@ -20,10 +20,12 @@ event_sheet = gc.open_by_url(EVENT_SHEET_URL).worksheet("固定日期推播")
 
 def send_important_event_reminder():
     today = datetime.now()
-    tomorrow = today + datetime.timedelta(days=1)
+    tomorrow = today + timedelta(days=1)
     tomorrow_str = tomorrow.strftime("%Y-%m-%d")
 
     records = event_sheet.get_all_records()
+    header = event_sheet.row_values(1)
+    status_col_idx = header.index("提醒狀態") + 1  # 1-based index
 
     for idx, rec in enumerate(records, start=2):
         meeting_date = rec.get("日期")
@@ -33,7 +35,7 @@ def send_important_event_reminder():
 
         if meeting_date == tomorrow_str and status != "已推播":
             weekday = "一二三四五六日"[tomorrow.weekday()]
-            message = f"📣【重要會議提醒】\n明天({tomorrow_str})（星期{weekday}）即將召開 {meeting_name}，請各位準時出席唷。"
+            message = f"📣【重要會議提醒】\n明天({tomorrow.month}/{tomorrow.day}，星期{weekday})即將召開 {meeting_name}，請各位準時出席唷！"
 
             if group == "內科":
                 group_id = os.getenv("internal_medicine_group_id")
@@ -43,4 +45,4 @@ def send_important_event_reminder():
                 group_id = os.getenv("All_doctor_group_id")
 
             push_text_to_group(group_id, message)
-            event_sheet.update_cell(idx, list(rec.keys()).index("提醒狀態") + 1, "已推播")
+            event_sheet.update_cell(idx, status_col_idx, "已推播")
