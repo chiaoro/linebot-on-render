@@ -108,24 +108,19 @@ submenu_map = {
 }
 
 # ✅ 主訊息處理
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_id = event.source.user_id
-    user_msg = event.message.text.strip()
-
-    # 夜點費處理
+    # ✅ 夜點費
     if "夜點費" in user_msg:
         reply = handle_night_shift_request(user_id, user_msg)
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
 
-    # 主選單處理
+    # ✅ 主選單
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
         return
 
-    # 子選單處理
+    # ✅ 子選單
     if user_msg in submenu_map:
         submenu = submenu_map[user_msg]
         line_bot_api.reply_message(event.reply_token, FlexSendMessage(user_msg, {
@@ -138,35 +133,157 @@ def handle_message(event):
         }))
         return
 
-    # ✅ 院務會議請假入口（顯示出席/請假按鈕）
-    if user_msg == "院務會議請假":
-        set_state(user_id, "ASK_LEAVE")
-        line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
+    # ✅ 支援醫師調診單 四步驟
+    if user_msg == "支援醫師調診單":
+        user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
         return
 
-    # ✅ 出席或請假 Flex 按鈕回覆
+    if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
+        session = user_sessions[user_id]
+        if session["step"] == 0:
+            session["doctor_name"] = user_msg
+            session["step"] = 1
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        elif session["step"] == 1:
+            session["original_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
+        elif session["step"] == 2:
+            session["new_date"] = user_msg
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
+        elif session["step"] == 3:
+            session["reason"] = user_msg
+            webhook_url = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
+            payload = {
+                "user_id": user_id,
+                "request_type": "支援醫師調診單",
+                "doctor_name": session["doctor_name"],
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            }
+            requests.post(webhook_url, json=payload)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n醫師：{session['doctor_name']}\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+        return
+
+    # ✅ 我要調診/休診/代診/加診 三步驟
+    if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 1, "type": user_msg}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        return
+
+    if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        session = user_sessions[user_id]
+        if session["step"] == 1:
+            session["original_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）"))
+        elif session["step"] == 2:
+            session["new_date"] = user_msg
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因（例如：返台、會議）"))
+        elif session["step"] == 3:
+            session["reason"] = user_msg
+            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            payload = {
+                "user_id": user_id,
+                "request_type": session["type"],
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"]
+            }
+            requests.post(webhook_url, json=payload)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 已收到您的申請（{session['type']}）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+            ))
+            del user_sessions[user_id]
+        return
+
+    # ✅ 值班調換/代理 四～五步驟
+    if user_msg == "值班調換":
+        user_sessions[user_id] = {"step": 0, "type": "值班調換"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如：內科急診白班）"))
+        return
+
+    if user_msg == "值班代理":
+        user_sessions[user_id] = {"step": 0, "type": "值班代理"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？（例如：內科急診白班）"))
+        return
+
+    if user_id in user_sessions and user_sessions[user_id].get("type") in ["值班調換", "值班代理"]:
+        session = user_sessions[user_id]
+        swap_type = session["type"]
+        step = session["step"]
+
+        if swap_type == "值班調換":
+            questions = [
+                "🟡 原本值班醫師是誰？",
+                "🟡 原本的值班日期？（例如：5/2）",
+                "🟡 調換後值班醫師是誰？",
+                "🟡 調換的值班日期？（例如：5/3）",
+                "🟡 請問調換原因？"
+            ]
+            key_list = ["班別", "原值班醫師", "原值班日期", "對方醫師", "對方值班日期", "原因"]
+        else:  # 值班代理
+            questions = [
+                "🟡 原本值班醫師是誰？",
+                "🟡 原本的值班日期？（例如：5/2）",
+                "🟡 代理值班醫師是誰？",
+                "🟡 請問代理原因？"
+            ]
+            key_list = ["班別", "原值班醫師", "原值班日期", "代理醫師", "原因"]
+
+        if step < len(key_list):
+            session[key_list[step]] = user_msg
+            session["step"] += 1
+            if session["step"] < len(key_list):
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=questions[session["step"] - 1]))
+            else:
+                webhook_url = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
+                payload = {
+                    "swap_type": swap_type,
+                    **{k: session.get(k, "") for k in key_list}
+                }
+                requests.post(webhook_url, data=payload)
+                confirm = "\n".join([f"{k}：{payload[k]}" for k in key_list])
+                line_bot_api.push_message(user_id, TextSendMessage(text=f"✅ 值班{swap_type}資料已提交成功：\n{confirm}"))
+                del user_sessions[user_id]
+        return
+
+    # ✅ 院務會議請假處理（已簡化版）
+    if user_msg == "院務會議請假":
+        set_state(user_id, "ASK_LEAVE")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您是否出席院務會議？請輸入 Y（出席）或 N（請假）"))
+        return
+
     if get_state(user_id) == "ASK_LEAVE":
-        if user_msg == "院務會議出席":
+        if user_msg.upper() == "Y":
+            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             log_meeting_reply(user_id, "出席", "")
             clear_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
-            return
-        elif user_msg == "院務會議請假申請":
+        elif user_msg.upper() == "N":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
-            return
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請輸入 Y 或 N"))
+        return
 
-    # ✅ 請假理由回覆
     if get_state(user_id) == "ASK_REASON":
+        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
         reason = user_msg
         log_meeting_reply(user_id, "請假", reason)
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您的請假申請。"))
         return
 
-    # ⛔ 無效指令回覆
+    # ⛔ 無效指令
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
-
 
 
 
