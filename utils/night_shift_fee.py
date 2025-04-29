@@ -3,6 +3,7 @@ import os, json
 from datetime import datetime, date
 from linebot.models import TextSendMessage
 import gspread
+from app import gc
 from oauth2client.service_account import ServiceAccountCredentials
 from utils.line_push_utils import push_text_to_user, push_text_to_group
 
@@ -16,7 +17,7 @@ def get_night_shift_sheet():
     sheet_url = "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
     worksheet_name = "夜點費申請紀錄"  # 這個如果不存在，會報錯！
     
-    sheet = gc.open_by_url(sheet_url).worksheet(worksheet_name)
+    sheet = gc.open_by_url(SHEET_URL).worksheet(WORKSHEET_NAME)
     return sheet
 
 
