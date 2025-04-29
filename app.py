@@ -107,12 +107,12 @@ def handle_message(event):
     # 夜點費處理
     if "夜點費" in user_msg:
         from utils.night_shift_fee import handle_night_shift_request
-        reply = handle_night_shift_request(user_msg)
+        reply = handle_night_shift_request(user_id, user_msg)  # ✅ 補上 user_id
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
         return
 
-    # 叫出主選單
+    # 主選單
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
         return
@@ -132,6 +132,17 @@ def handle_message(event):
 
     # 其他訊息
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 無效指令，請輸入『主選單』重新開始。"))
+
+
+if "院務會議" in user_msg or "請假" in user_msg:
+    from utils.meeting_leave import handle_meeting_leave
+    reply = handle_meeting_leave(user_id, user_msg)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    return
+
+
+
 
 
 
