@@ -15,8 +15,11 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
 # 固定日期推播紀錄表
-FIXED_PUSH_URL = "https://docs.google.com/spreadsheets/d/1FspUjkRckA1g4bYESb7QEUKl1FzOcL5BejhOqkMD0Po/edit"
-fixed_sheet = gc.open_by_url(FIXED_PUSH_URL).worksheet("固定日期推播")
+FIXED_PUSH_URL = "https://docs.google.com/spreadsheets/d/1XpXl17Uf93XWNEYdZsHx-3IXpPf4Sb9ZI0ARGa41y5c/edit"
+WORKSHEET_NAME = "固定日期推播"   # ← 確定這名字和試算表上的分頁一模一樣
+
+# 直接打開
+fixed_sheet = gc.open_by_url(FIXED_PUSH_URL).worksheet(WORKSHEET_NAME)
 
 def send_monthly_fixed_reminders():
     today = datetime.now().strftime("%Y-%m-%d")
