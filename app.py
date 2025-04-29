@@ -109,7 +109,7 @@ submenu_map = {
 
 # ✅ 主訊息處理
     # ✅ 夜點費
-    if "夜點費" in user_msg:
+    if "夜點費申請" in user_msg:
         reply = handle_night_shift_request(user_id, user_msg)
         if reply:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
