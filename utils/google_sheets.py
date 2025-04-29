@@ -1,6 +1,9 @@
 # utils/google_sheets.py
 
 from utils.google_auth import get_gspread_client
+import gspread
+from datetime import datetime
+from utils.gspread_client import gc  # 確保有載入 gspread 的 gc 物件
 
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 RECORD_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
