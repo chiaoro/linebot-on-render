@@ -8,6 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from dotenv import load_dotenv
 
+
 # 引入 utils 下的小模組
 from utils.line_push import push_text_to_user
 from utils.schedule_utils import handle_submission
@@ -21,6 +22,7 @@ from utils.event_reminder import send_important_event_reminder
 from utils.daily_notifier import run_daily_push
 from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
+from utils.gspread_client import gc
 
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
 from utils.night_shift_fee_generator import run_generate_night_fee_word
