@@ -14,8 +14,22 @@ def get_doctor_name(sheet_url, user_id):
             return row.get("name")
     return "未知"
 
-def log_meeting_reply(sheet_url, user_id, doctor_name, status, reason=None):
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(sheet_url).worksheet("院務會議請假")
-    now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-    sheet.append_row([now, doctor_name, status, reason or ""])
+def log_meeting_reply(user_id, status, reason):
+    """
+    把院務會議出席/請假狀態紀錄到 Google Sheets
+    user_id：使用者的 LINE ID
+    status：'出席' 或 '請假'
+    reason：如果請假，要記錄原因
+    """
+    try:
+        # 開啟試算表
+        sheet = gc.open_by_url(MEETING_SHEET_URL).worksheet("院務會議請假")
+        
+        # 找到現在時間
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 寫入一列資料：時間、user_id、出席/請假、原因
+        sheet.append_row([now, user_id, status, reason])
+        
+    except Exception as e:
+        print(f"❌ 紀錄院務會議請假失敗：{str(e)}")
