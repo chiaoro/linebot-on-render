@@ -33,11 +33,12 @@ from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
 from utils.gspread_client import gc
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
 from utils.night_shift_fee_generator import run_generate_night_fee_word
-from utils.meeting_leave_menu import get_meeting_leave_menu  # ✅ 新加的
+from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
+from utils.user_binding import handle_user_binding
 
 
-# 載入 .env
+# ✅載入 .env
 load_dotenv()
 
 # ✅ 初始化 Flask 和 LineBot API
@@ -121,7 +122,11 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
-
+    #✅ 嘗試處理綁定流程
+    reply = handle_user_binding(event, line_bot_api)
+    if reply:
+        line_bot_api.reply_message(event.reply_token, reply)
+        return
 
 
 
