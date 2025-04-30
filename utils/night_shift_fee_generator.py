@@ -52,17 +52,20 @@ def run_generate_night_fee_word():
     # 建立姓名 -> 科別對照表
     doctor_to_dept = {m["姓名"]: m.get("科別", "醫療部") for m in mappings}
 
-    # 群組資料
+    # 群組資料（並記下 row index）
     grouped = {}
-    for row in records:
-        name = row.get("醫師姓名")
-        date = row.get("日期")
-        count = row.get("總班數")
-        if name:
+    all_rows = sheet.get_all_values()
+
+    for idx, row in enumerate(all_rows[1:], start=2):  # skip header
+        name = row[0]
+        date = row[2] if len(row) > 2 else ""
+        status = row[4] if len(row) > 4 else ""
+        if name and not status:
             if name not in grouped:
-                grouped[name] = {"dates": [], "count": 0}
+                grouped[name] = {"dates": [], "count": 0, "rows": []}
             grouped[name]["dates"].append(date)
-            grouped[name]["count"] += int(count)
+            grouped[name]["count"] += 1
+            grouped[name]["rows"].append(idx)
 
     for doctor, info in grouped.items():
         dept = doctor_to_dept.get(doctor, "醫療部")
@@ -95,3 +98,7 @@ def run_generate_night_fee_word():
         }
         media = MediaIoBaseUpload(output_stream, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+
+        # ✅ 標記試算表已產出
+        for r in info["rows"]:
+            sheet.update_cell(r, 5, "已產出")  # 第 5 欄為狀態
