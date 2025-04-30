@@ -120,6 +120,10 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
+
+
+
+
 # ✅ 夜點費申請流程（Flex Bubble + 三步驟）
 if user_msg == "夜點費申請":
     user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
@@ -187,6 +191,10 @@ if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費
         return
 
 
+
+
+
+    
     # ✅ 主選單
     if user_msg == "主選單":
         line_bot_api.reply_message(event.reply_token, get_main_menu())
@@ -204,6 +212,11 @@ if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費
             }
         }))
         return
+
+
+
+
+    
 
     # ✅ 支援醫師調診單（四步驟）
     if user_msg == "支援醫師調診單":
