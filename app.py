@@ -122,6 +122,20 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
+
+
+
+    # ✅ 每次收到訊息都先補資料
+    ensure_user_id_exists(user_id)
+
+    # 👉 這裡可以加其他邏輯，例如回覆主選單或綁定流程
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text="您好👋 系統已自動為您建立記錄，如尚未綁定姓名，請輸入「我要綁定」完成身分設定")
+    )
+
+
+    
     #✅ 嘗試處理綁定流程
     reply = handle_user_binding(event, line_bot_api)
     if reply:
