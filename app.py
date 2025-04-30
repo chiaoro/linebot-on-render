@@ -36,6 +36,7 @@ from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 from utils.user_binding import handle_user_binding
+from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_binding, ensure_user_id_exists, user_states
 
 
 # ✅載入 .env
@@ -125,22 +126,20 @@ def handle_message(event):
 
 
 
-    # ✅ 每次收到訊息都先補資料
+    # ✅ 每次進來都補 userId（一定要）
     ensure_user_id_exists(user_id)
-
-    # 👉 這裡可以加其他邏輯，例如回覆主選單或綁定流程
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="您好👋 系統已自動為您建立記錄，如尚未綁定姓名，請輸入「我要綁定」完成身分設定")
-    )
-
-
     
-    #✅ 嘗試處理綁定流程
+    # ✅ 嘗試處理綁定流程（若正在進行中）
     reply = handle_user_binding(event, line_bot_api)
     if reply:
         line_bot_api.reply_message(event.reply_token, reply)
         return
+    
+    # ✅ 如果不是綁定流程 → 顯示提示
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text="您好👋 系統已自動為您建立記錄，如尚未綁定姓名，請輸入「我要綁定」完成身分設定")
+    )
 
 
 
