@@ -1,4 +1,4 @@
-from linebot.models import TextSendMessage
+from linebot.models import TextSendMessage, FlexSendMessage
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json, os
@@ -30,28 +30,53 @@ def ensure_user_id_exists(user_id):
 
 
 # ✅主處理流程
-def handle_user_binding(event, line_bot_api):
-    user_id = event.source.user_id
-    msg = event.message.text.strip()
+# 綁定流程步驟：顯示開始綁定的 Flex Bubble
+def send_bind_start_flex(line_bot_api, reply_token):
+    bubble = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "🔒 綁定身份", "weight": "bold", "size": "xl"},
+                {"type": "text", "text": "歡迎您！請點選下方按鈕開始綁定，以利系統識別您的身分。", "size": "sm", "wrap": True}
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "message", "label": "我要綁定", "text": "我要綁定"},
+                    "style": "primary",
+                    "color": "#1DB446"
+                }
+            ]
+        }
+    }
+    flex = FlexSendMessage(alt_text="綁定身份", contents=bubble)
+    line_bot_api.reply_message(reply_token, flex)
 
-    # 第一步：觸發綁定
-    if msg == "我要綁定":
-        user_states[user_id] = {"step": 1}
-        return TextSendMessage(text="請輸入您的姓名以完成綁定")
+# 步驟二：要求輸入姓名
+def ask_for_name(line_bot_api, reply_token):
+    line_bot_api.reply_message(reply_token, TextSendMessage(text="👤 請輸入您的姓名，以完成身分綁定。"))
 
-    # 第二步：儲存使用者對照資料
-    if user_id in user_states and user_states[user_id].get("step") == 1:
-        doctor_name = msg
-        worksheet = get_worksheet()
-
-        # 檢查是否已存在相同 user_id（避免重複）
-        existing_ids = worksheet.col_values(1)
-        if user_id in existing_ids:
-            return TextSendMessage(text="⚠️ 您已完成綁定，無需重複操作")
-
-        # 寫入資料：LINE_USER_ID｜姓名｜（空白，等你手動填入科別）
-        worksheet.append_row([user_id, doctor_name, ""])
-        user_states.pop(user_id)
-        return TextSendMessage(text=f"✅ 綁定完成，您好「{doctor_name}」！")
-
-    return None  # 非綁定流程，不處理
+# 步驟三：確認綁定完成
+def confirm_binding(line_bot_api, reply_token, name, user_id):
+    bubble = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "✅ 綁定完成", "weight": "bold", "size": "xl", "color": "#1DB446"},
+                {"type": "text", "text": f"歡迎 {name}  ，您好！", "wrap": True, "size": "sm"},
+                {"type": "text", "text": f"您的個人 ID：{user_id}", "wrap": True, "size": "sm", "color": "#666666"}
+            ]
+        }
+    }
+    flex = FlexSendMessage(alt_text="綁定完成", contents=bubble)
+    line_bot_api.reply_message(reply_token, flex)
