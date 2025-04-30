@@ -37,6 +37,9 @@ from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 from utils.user_binding import handle_user_binding
 from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_binding, ensure_user_id_exists, user_states
+from utils.user_binding import ensure_user_id_exists, handle_user_binding
+
+
 
 
 # ✅載入 .env
@@ -135,11 +138,7 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, reply)
         return
     
-    # ✅ 如果不是綁定流程 → 顯示提示
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="您好👋 系統已自動為您建立記錄，如尚未綁定姓名，請輸入「我要綁定」完成身分設定")
-    )
+
 
 
 
