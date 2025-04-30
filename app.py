@@ -34,6 +34,7 @@ from utils.gspread_client import gc
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
 from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.meeting_leave_menu import get_meeting_leave_menu  # ✅ 新加的
+from utils.daily_night_fee_reminder import send_night_fee_reminders
 
 
 # 載入 .env
@@ -431,14 +432,13 @@ def generate_night_fee_word():
         return f"❌ 夜點費申請表產生錯誤：{e}", 500
 
 # ✅ 夜點費每日提醒
-@app.route("/night-shift-reminder", methods=["GET"])
-def night_shift_reminder():
+@app.route("/night-fee-daily-reminder", methods=["GET"])
+def night_fee_daily_reminder():
     try:
-        from utils.night_shift_fee import daily_night_fee_reminder
-        daily_night_fee_reminder()
+        send_night_fee_reminders()
         return "✅ 夜點費每日提醒完成", 200
     except Exception as e:
-        return f"❌ 夜點費每日提醒錯誤：{e}", 500
+        return f"❌ 夜點費提醒錯誤：{e}", 500
 
 # ✅ 院務會議請假提醒推播
 @app.route("/meeting-reminder", methods=["GET"])
