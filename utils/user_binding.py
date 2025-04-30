@@ -3,10 +3,10 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json, os
 
-# 暫存狀態
+# ✅暫存狀態
 user_states = {}
 
-# 初始化 Google Sheets 連線
+# ✅初始化 Google Sheets 連線
 def get_worksheet():
     SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
@@ -15,7 +15,21 @@ def get_worksheet():
     sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit")
     return sheet.worksheet("UserMapping")  # 請確認分頁名稱為此
 
-# 主處理流程
+
+
+# ✅自動補 userId（如果未綁定）
+def ensure_user_id_exists(user_id):
+    worksheet = get_worksheet()
+    existing_ids = worksheet.col_values(1)
+    if user_id not in existing_ids:
+        worksheet.append_row([user_id, "", ""])  # 留空姓名與科別供你後補
+        print(f"📌 新增未綁定 userId：{user_id}")
+
+
+
+
+
+# ✅主處理流程
 def handle_user_binding(event, line_bot_api):
     user_id = event.source.user_id
     msg = event.message.text.strip()
