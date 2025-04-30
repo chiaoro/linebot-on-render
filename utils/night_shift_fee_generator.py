@@ -42,43 +42,46 @@ def run_generate_night_fee_word():
     last_month = today.month - 1 if today.month > 1 else 12
     year = today.year if today.month > 1 else today.year - 1
 
-    # 開啟試算表
-    night_fee_sheet = gc.open_by_url(NIGHT_FEE_SHEET_URL).worksheet("夜點費申請")
-    user_mapping_sheet = gc.open_by_url(USER_MAPPING_URL).worksheet("UserMapping")
+    # 讀取資料
+    sheet = gc.open_by_url(SHEET_URL).worksheet("夜點費申請")
+    rows = sheet.get_all_records()
     
-    records = night_fee_sheet.get_all_records()
+    user_mapping_sheet = gc.open_by_url(USER_MAPPING_URL).worksheet("UserMapping")
     mappings = user_mapping_sheet.get_all_records()
-
-    # 先建立醫師到科別的對應表
     doctor_to_dept = {m["姓名"]: m.get("科別", "醫療部") for m in mappings}
 
-    # 處理每一個人
-    doctors = set([rec["醫師姓名"] for rec in records if rec.get("醫師姓名")])
+    for row in rows:
+        doctor = row.get("醫師姓名", "").strip()
+        dept = row.get("醫師科別", "").strip()
+        dates = row.get("日期", "").strip()
+        total = row.get("總班數", "")
 
-    for doctor in doctors:
-        dept = doctor_to_dept.get(doctor, "醫療部")
+        if not doctor or not dates:
+            continue
+
         template_id = TEMPLATE_MAP.get(dept, TEMPLATE_MAP["醫療部"])
 
-        # 下載 Word樣板
-        template_file = drive_service.files().get_media(fileId=template_id).execute()
-        document = Document(io.BytesIO(template_file))
+        try:
+            # 下載模板
+            template_file = drive_service.files().get_media(fileId=template_id).execute()
+            document = Document(io.BytesIO(template_file))
 
-        # 把 Word 裡的 {{醫師姓名}}、{{年月}} 替換掉
-        for p in document.paragraphs:
-            if "{{醫師姓名}}" in p.text:
+            # 替換欄位
+            for p in document.paragraphs:
                 p.text = p.text.replace("{{醫師姓名}}", doctor)
-            if "{{年月}}" in p.text:
                 p.text = p.text.replace("{{年月}}", f"{year}/{last_month:02d}")
+                p.text = p.text.replace("{{值班日期}}", dates)
+                p.text = p.text.replace("{{總班數}}", str(total))
 
-        # 儲存到記憶體
-        output_stream = io.BytesIO()
-        document.save(output_stream)
-        output_stream.seek(0)
+            # 儲存
+            output_stream = io.BytesIO()
+            document.save(output_stream)
+            output_stream.seek(0)
 
-        # 上傳到 Google Drive
-        file_metadata = {
-            "name": f"{doctor}_{year}_{last_month:02d}_夜點費申請.docx",
-            "parents": [UPLOAD_FOLDER_ID]
-        }
-        media = MediaIoBaseUpload(output_stream, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            # 上傳
+            filename = f"{doctor}_{year}_{last_month:02d}_夜點費申請.docx"
+            file_metadata = {"name": filename, "parents": [UPLOAD_FOLDER_ID]}
+            media = MediaIoBaseUpload(output_stream, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        except Exception as e:
+            print(f"❌ {doctor} Word 產生失敗：{str(e)}")
