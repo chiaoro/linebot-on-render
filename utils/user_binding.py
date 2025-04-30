@@ -13,7 +13,7 @@ def get_worksheet():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
     gc = gspread.authorize(creds)
     sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit")
-    return sheet.worksheet("使用者對照表")  # 請確認分頁名稱為此
+    return sheet.worksheet("UserMapping")  # 請確認分頁名稱為此
 
 # 主處理流程
 def handle_user_binding(event, line_bot_api):
