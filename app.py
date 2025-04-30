@@ -120,12 +120,72 @@ def handle_message(event):
     user_id = event.source.user_id
     user_msg = event.message.text.strip()
 
-    # ✅ 夜點費
-    if "夜點費" in user_msg:
-        reply = handle_night_shift_request(user_id, user_msg)
-        if reply:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+# ✅ 夜點費申請流程（Flex Bubble + 三步驟）
+if user_msg == "夜點費申請":
+    user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
+    bubble = {
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "url": "https://i.imgur.com/oHg5yCD.png",
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
+                {"type": "text", "text": "請依序輸入：\n1️⃣ 值班班別\n2️⃣ 日期與時間\n3️⃣ 原因", "wrap": True, "size": "sm"}
+            ]
+        }
+    }
+    line_bot_api.reply_message(event.reply_token, FlexSendMessage("夜點費申請", bubble))
+    return
+
+if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費申請":
+    session = user_sessions[user_id]
+    step = session["step"]
+
+    if step == 1:
+        session["班別"] = user_msg
+        session["step"] = 2
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問是哪一天值班？（例如：4/29 晚上10點-隔天早上8點）"))
         return
+    elif step == 2:
+        session["日期"] = user_msg
+        session["step"] = 3
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入值班原因（例如：急診人力支援）"))
+        return
+    elif step == 3:
+        session["原因"] = user_msg
+
+        webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
+        payload = {
+            "user_id": user_id,
+            "班別": session["班別"],
+            "日期": session["日期"],
+            "原因": session["原因"]
+        }
+
+        try:
+            requests.post(webhook_url, json=payload)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"""✅ 夜點費資料已送出：
+📌 班別：{session['班別']}
+📆 日期：{session['日期']}
+📖 原因：{session['原因']}"""
+            ))
+        except Exception as e:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"⚠️ 發送失敗：{str(e)}"
+            ))
+
+        del user_sessions[user_id]
+        return
+
 
     # ✅ 主選單
     if user_msg == "主選單":
