@@ -1,104 +1,67 @@
-# utils/night_shift_fee_generator.py
+# ✅ night_shift_fee_generator.py
+# 每月產出夜點費申請表：每科別一張 Word 總表
 
 import os
 import json
-from datetime import datetime, timedelta
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from docx import Document
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-import io
-from googleapiclient.http import MediaIoBaseUpload
+from datetime import datetime
+from oauth2client.service_account import ServiceAccountCredentials
 
 # ✅ Google Sheets 認證
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS", "{}"))
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
 
-# ✅ Google Drive 認證（for 上傳 Word）
-SERVICE_ACCOUNT_INFO = json.loads(os.getenv("GOOGLE_CREDENTIALS", "{}"))
-credentials = service_account.Credentials.from_service_account_info(
-    SERVICE_ACCOUNT_INFO,
-    scopes=['https://www.googleapis.com/auth/drive']
-)
-drive_service = build('drive', 'v3', credentials=credentials)
-
-# ✅ 固定變數
-NIGHT_FEE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs/edit"
-USER_MAPPING_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
-UPLOAD_FOLDER_ID = os.getenv("NIGHT_FEE_FOLDER_ID")
-
-# ✅ Word 樣板對照表
+# ✅ 試算表與模板資料夾設定
+SHEET_ID = "1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs"
 TEMPLATE_MAP = {
-    "醫療部": "1lCMQxsNh7bWeWKDPYi9k9r3GWnG1RhpV1P487vNBrww",
-    "內科":   "179bI7Fx9kSm7vz19wsTv51-ULAnH9llC8Yc_3wLhviM",
-    "外科":   "1KG1eRI7ySvoczAGpCQKIQM0AIw3LkOZiTfKaCWrQigE"
+    "醫療部": "templates/醫療部_夜點費申請表.docx",
+    "外科": "templates/外科_夜點費申請表.docx"
 }
+SAVE_DIR = "/mnt/data/generated_words"
 
-def run_generate_night_fee_word():
-    today = datetime.today()
-    last_month = today.month - 1 if today.month > 1 else 12
-    year = today.year if today.month > 1 else today.year - 1
+# ✅ 載入資料
+sheet = gc.open_by_key(SHEET_ID).worksheet("夜點費申請")
+data = sheet.get_all_records()
 
-    # 開啟試算表
-    sheet = gc.open_by_url(NIGHT_FEE_SHEET_URL).worksheet("夜點費申請")
-    mapping = gc.open_by_url(USER_MAPPING_URL).worksheet("UserMapping")
+# ✅ 整理成：{科別: [{姓名, 日期清單, 總班數}]}
+from collections import defaultdict
+from pathlib import Path
 
-    records = sheet.get_all_records()
-    mappings = mapping.get_all_records()
+output = defaultdict(list)
 
-    # 建立姓名 -> 科別對照表
-    doctor_to_dept = {m["姓名"]: m.get("科別", "醫療部") for m in mappings}
+for row in data:
+    name = row.get("醫師姓名", "")
+    dept = row.get("醫師科別", "")
+    date = row.get("日期", "")
+    count = row.get("總班數", 1)
+    if not name or not dept:
+        continue
+    output[dept].append({"name": name, "date": date, "count": count})
 
-    # 群組資料（並記下 row index）
-    grouped = {}
-    all_rows = sheet.get_all_values()
+# ✅ 按科別產出 Word
+Path(SAVE_DIR).mkdir(parents=True, exist_ok=True)
+this_month = datetime.now().strftime("%m").lstrip("0")
+this_year = datetime.now().year - 1911
 
-    for idx, row in enumerate(all_rows[1:], start=2):  # skip header
-        name = row[0]
-        date = row[2] if len(row) > 2 else ""
-        status = row[4] if len(row) > 4 else ""
-        if name and not status:
-            if name not in grouped:
-                grouped[name] = {"dates": [], "count": 0, "rows": []}
-            grouped[name]["dates"].append(date)
-            grouped[name]["count"] += 1
-            grouped[name]["rows"].append(idx)
+for dept, records in output.items():
+    template_path = TEMPLATE_MAP.get(dept)
+    if not template_path or not os.path.exists(template_path):
+        continue
 
-    for doctor, info in grouped.items():
-        dept = doctor_to_dept.get(doctor, "醫療部")
-        template_id = TEMPLATE_MAP.get(dept, TEMPLATE_MAP["醫療部"])
+    doc = Document(template_path)
+    table = doc.tables[0]  # 假設表格在第一個表格
 
-        # 下載 Word 樣板
-        template_file = drive_service.files().get_media(fileId=template_id).execute()
-        document = Document(io.BytesIO(template_file))
+    for rec in records:
+        row = table.add_row().cells
+        row[0].text = rec["name"]
+        row[1].text = rec["date"]
+        row[2].text = str(rec["count"])
 
-        # 替換變數
-        for p in document.paragraphs:
-            if "{{醫師姓名}}" in p.text:
-                p.text = p.text.replace("{{醫師姓名}}", doctor)
-            if "{{年月}}" in p.text:
-                p.text = p.text.replace("{{年月}}", f"{year}/{last_month:02d}")
-            if "{{日期}}" in p.text:
-                p.text = p.text.replace("{{日期}}", ", ".join(info["dates"]))
-            if "{{班數}}" in p.text:
-                p.text = p.text.replace("{{班數}}", str(info["count"]))
+    filename = f"{this_year}年{this_month}月_{dept}_夜點費申請表.docx"
+    filepath = os.path.join(SAVE_DIR, filename)
+    doc.save(filepath)
 
-        # 儲存
-        output_stream = io.BytesIO()
-        document.save(output_stream)
-        output_stream.seek(0)
-
-        # 上傳
-        file_metadata = {
-            "name": f"{doctor}_{year}_{last_month:02d}_夜點費申請.docx",
-            "parents": [UPLOAD_FOLDER_ID]
-        }
-        media = MediaIoBaseUpload(output_stream, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-
-        # ✅ 標記試算表已產出
-        for r in info["rows"]:
-            sheet.update_cell(r, 5, "已產出")  # 第 5 欄為狀態
+print(f"✅ 全部申請表已產出至 {SAVE_DIR}")
