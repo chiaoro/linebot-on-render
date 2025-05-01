@@ -488,11 +488,14 @@ def home():
 @app.route("/generate-night-fee-word", methods=["GET"])
 def generate_night_fee_word():
     try:
-        from utils.night_shift_fee_generator import run_generate_night_fee_word
-        run_generate_night_fee_word()
+        exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
         return "✅ 夜點費申請表產生完成", 200
     except Exception as e:
         return f"❌ 夜點費申請表產生錯誤：{e}", 500
+
+
+
+
 
 # ✅ 夜點費每日提醒
 @app.route("/night-fee-daily-reminder", methods=["GET"])
@@ -502,6 +505,9 @@ def night_fee_daily_reminder():
         return "✅ 夜點費每日提醒完成", 200
     except Exception as e:
         return f"❌ 夜點費提醒錯誤：{e}", 500
+
+
+
 
 # ✅ 院務會議請假提醒推播
 @app.route("/meeting-reminder", methods=["GET"])
