@@ -39,6 +39,7 @@ from utils.user_binding import handle_user_binding
 from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_binding, ensure_user_id_exists, user_states
 from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
+from utils.group_vote_tracker import handle_group_vote
 
 
 
@@ -139,7 +140,11 @@ def handle_message(event):
         return
     
 
+    # ✅ 處理群組統計功能
+    if handle_group_vote(event, line_bot_api):
+        return
 
+    
 
 
     # ✅ 夜點費申請流程（Flex Bubble + 一步輸入日期 + 自動解析區間）
