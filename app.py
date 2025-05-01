@@ -153,7 +153,7 @@ def handle_message(event):
                 "contents": [
                     {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
                     {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
-                    {"type": "text", "text": "範例：\n4/15\n4/15、4/17\n4/15-20", "size": "sm", "color": "#888888", "margin": "md"}
+                    {"type": "text", "text": "範例：\n4/10、\n4/15、4/17\n4/15-20", "size": "sm", "color": "#888888", "margin": "md"}
                 ]
             }
         }
