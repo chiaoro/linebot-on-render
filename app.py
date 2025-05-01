@@ -272,6 +272,8 @@ def handle_message(event):
     
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
+
+
         
         if session["step"] == 1:
             session["original_date"] = user_msg
