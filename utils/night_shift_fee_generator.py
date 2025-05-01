@@ -25,9 +25,9 @@ drive_service = build('drive', 'v3', credentials=creds2)
 # ✅ 設定
 SHEET_ID = "1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs"
 TEMPLATE_MAP = {
-    "醫療部": "templates/醫療部_夜點費申請表.docx",
-    "外科": "templates/外科_夜點費申請表.docx",
-    "內科": "templates/內科_夜點費申請表.docx"
+    "醫療部": "templates/醫療部_樣板.docx",
+    "外科": "templates/外科_樣板.docx",
+    "內科": "templates/內科_樣板.docx"
 }
 DRIVE_FOLDER_ID = "1s-joUzZQBHyCKmWZRD4F78qjvvEZ15Dq"
 
