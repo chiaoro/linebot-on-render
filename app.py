@@ -170,27 +170,28 @@ def handle_message(event):
         if step == 1:
             date_input = user_msg
             session["step"] = 2
-    
-            expanded_dates = expand_date_range(date_input)
-    
+        
+            expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
+        
             # ✅ Webhook 送出
-            webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
+            webhook_url = "你的 webhook 網址"
             payload = {
                 "user_id": user_id,
                 "日期": "、".join(expanded_dates)
             }
-    
+        
             try:
                 requests.post(webhook_url, json=payload)
+                # ✅ 顯示總班數
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"""✅ 夜點費資料已送出：
-    📆 日期：{"、".join(expanded_dates)}"""
+        📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"⚠️ 發送失敗：{str(e)}"
                 ))
-    
+        
             del user_sessions[user_id]
             return
 
