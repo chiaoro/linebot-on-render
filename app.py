@@ -274,66 +274,66 @@ def handle_message(event):
             del user_sessions[user_id]
         return
 
-# ✅ 調診/休診/代診/加診（三步驟流程）
-if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-    user_sessions[user_id] = {"step": 1, "type": user_msg}
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
-    )
-    return
-
-if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-    session = user_sessions[user_id]
-    
-    if session["step"] == 1:
-        session["original_date"] = user_msg
-        session["step"] = 2
+    # ✅ 調診/休診/代診/加診（三步驟流程）
+    if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 1, "type": user_msg}
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）")
+            TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
         )
+        return
     
-    elif session["step"] == 2:
-        session["new_date"] = user_msg
-        session["step"] = 3
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="📝 請輸入原因（例如：返台、會議）")
-        )
-    
-    elif session["step"] == 3:
-        session["reason"] = user_msg
-        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-        webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
-        payload = {
-            "user_id": user_id,
-            "request_type": session["type"],
-            "original_date": session["original_date"],
-            "new_date": session["new_date"],
-            "reason": session["reason"],
-            "doctor_name": doctor_name
-        }
-
-        try:
-            response = requests.post(
-                webhook_url,
-                json=payload,
-                headers={"Content-Type": "application/json"}
+    if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        session = user_sessions[user_id]
+        
+        if session["step"] == 1:
+            session["original_date"] = user_msg
+            session["step"] = 2
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）")
             )
-            print("✅ webhook 回應：", response.status_code, response.text)
-
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請（{session['type']}）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-            ))
-        except Exception as e:
-            print("❌ webhook 發送失敗：", str(e))
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text="⚠️ 系統暫時無法提交資料，請稍後再試或聯絡管理員。"
-            ))
-
-        del user_sessions[user_id]
-    return
+        
+        elif session["step"] == 2:
+            session["new_date"] = user_msg
+            session["step"] = 3
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="📝 請輸入原因（例如：返台、會議）")
+            )
+        
+        elif session["step"] == 3:
+            session["reason"] = user_msg
+            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+            payload = {
+                "user_id": user_id,
+                "request_type": session["type"],
+                "original_date": session["original_date"],
+                "new_date": session["new_date"],
+                "reason": session["reason"],
+                "doctor_name": doctor_name
+            }
+    
+            try:
+                response = requests.post(
+                    webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                print("✅ webhook 回應：", response.status_code, response.text)
+    
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=f"""✅ 已收到您的申請（{session['type']}）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
+                ))
+            except Exception as e:
+                print("❌ webhook 發送失敗：", str(e))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text="⚠️ 系統暫時無法提交資料，請稍後再試或聯絡管理員。"
+                ))
+    
+            del user_sessions[user_id]
+        return
 
 
     # ✅ 值班調換/代理（四～五步驟）
