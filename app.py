@@ -211,6 +211,7 @@ def handle_message(event):
         submenu = submenu_map[user_msg]
         line_bot_api.reply_message(event.reply_token, FlexSendMessage(user_msg, {
             "type": "bubble",
+            "backgroundColor": "#E6F7FF",
             "body": {
                 "type": "box",
                 "layout": "vertical",
