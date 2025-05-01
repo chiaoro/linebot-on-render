@@ -444,7 +444,8 @@ def handle_message(event):
     if get_state(user_id) == "ASK_REASON":
         doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
         reason = user_msg
-        log_meeting_reply(user_id, "請假", reason)
+        doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+        log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您的請假申請。"))
         return
