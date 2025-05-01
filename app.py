@@ -32,7 +32,6 @@ from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
 from utils.gspread_client import gc
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
-from utils.night_shift_fee_generator import run_generate_night_fee_word
 from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 from utils.user_binding import handle_user_binding
@@ -41,7 +40,7 @@ from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
 
-
+exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
 # ✅載入 .env
 load_dotenv()
