@@ -142,63 +142,84 @@ def handle_message(event):
 
 
 
-    # ✅ 夜點費申請流程（Flex Bubble + 三步驟）
+    # ✅ 夜點費申請流程（Flex Bubble + 一步輸入日期 + 自動解析區間）
     if user_msg == "夜點費申請":
         user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
         bubble = {
             "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": "https://i.imgur.com/oHg5yCD.png",
-                "size": "full",
-                "aspectRatio": "20:13",
-                "aspectMode": "cover"
-            },
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "spacing": "md",
                 "contents": [
                     {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": "請依序輸入：\n1️⃣ 值班班別\n2️⃣ 日期與時間\n3️⃣ 原因", "wrap": True, "size": "sm"}
+                    {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
+                    {"type": "text", "text": "範例：\n4/15\n4/15、4/17\n4/15-20", "size": "sm", "color": "#888888", "margin": "md"}
                 ]
             }
         }
-        line_bot_api.reply_message(event.reply_token, FlexSendMessage("夜點費申請", bubble))
+        flex_msg = FlexSendMessage(alt_text="🌙 夜點費申請", contents=bubble)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
         return
     
+    
+    # ✅ 接收日期並處理
     if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費申請":
         session = user_sessions[user_id]
         step = session["step"]
     
         if step == 1:
-            session["班別"] = user_msg
+            date_input = user_msg
             session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問是哪一天值班？（例如：4/29 晚上10點-隔天早上8點）"))
-            return
-        elif step == 2:
-            session["日期"] = user_msg
-            session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入值班原因（例如：急診人力支援）"))
-            return
-        elif step == 3:
-            session["原因"] = user_msg
     
+            # ✅ 區間展開函式
+            def expand_date_range(date_str):
+                from datetime import datetime, timedelta
+                import re
+    
+                today_year = datetime.now().year
+                results = []
+    
+                parts = re.split(r"[、,]", date_str)
+    
+                for part in parts:
+                    part = part.strip()
+    
+                    if "-" in part:
+                        start_str, end_str = part.split("-")
+                        if "/" not in end_str:
+                            start_month = int(start_str.split("/")[0])
+                            start_day = int(start_str.split("/")[1])
+                            end_day = int(end_str)
+                            end_month = start_month
+                        else:
+                            start_month, start_day = map(int, start_str.split("/"))
+                            end_month, end_day = map(int, end_str.split("/"))
+    
+                        start_date = datetime(today_year, start_month, start_day)
+                        end_date = datetime(today_year, end_month, end_day)
+    
+                        while start_date <= end_date:
+                            results.append(start_date.strftime("%-m/%-d"))
+                            start_date += timedelta(days=1)
+                    else:
+                        results.append(part)
+    
+                return results
+    
+            expanded_dates = expand_date_range(date_input)
+    
+            # ✅ Webhook 送出
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {
                 "user_id": user_id,
-                "班別": session["班別"],
-                "日期": session["日期"],
-                "原因": session["原因"]
+                "日期": "、".join(expanded_dates)
             }
     
             try:
                 requests.post(webhook_url, json=payload)
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"""✅ 夜點費資料已送出：
-    📌 班別：{session['班別']}
-    📆 日期：{session['日期']}
-    📖 原因：{session['原因']}"""
+    📆 日期：{"、".join(expanded_dates)}"""
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
@@ -207,6 +228,7 @@ def handle_message(event):
     
             del user_sessions[user_id]
             return
+
 
 
 
@@ -390,20 +412,68 @@ def handle_message(event):
     # ✅ 院務會議請假
     if user_msg == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請問您是否出席院務會議？請輸入 Y（出席）或 N（請假）"))
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 院務會議出席確認",
+                        "weight": "bold",
+                        "size": "lg",
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "請問您是否出席本次院務會議？",
+                        "size": "sm",
+                        "wrap": True,
+                        "margin": "md"
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "action": {
+                            "type": "message",
+                            "label": "✅ 我要出席",
+                            "text": "我要出席院務會議"
+                        }
+                    },
+                    {
+                        "type": "button",
+                        "style": "secondary",
+                        "action": {
+                            "type": "message",
+                            "label": "❌ 我要請假",
+                            "text": "我要請假院務會議"
+                        }
+                    }
+                ]
+            }
+        }
+        flex_msg = FlexSendMessage(alt_text="📋 院務會議出席確認", contents=bubble)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
         return
 
     if get_state(user_id) == "ASK_LEAVE":
-        if user_msg.upper() == "Y":
+        if user_msg == "我要出席院務會議":
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             log_meeting_reply(user_id, "出席", "")
             clear_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
-        elif user_msg.upper() == "N":
+        elif user_msg == "我要請假院務會議":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請輸入 Y 或 N"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請選擇上方按鈕"))
         return
 
     if get_state(user_id) == "ASK_REASON":
