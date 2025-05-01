@@ -185,7 +185,7 @@ def handle_message(event):
                 # ✅ 顯示總班數
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"""✅ 夜點費資料已送出：
-        📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
+            📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
