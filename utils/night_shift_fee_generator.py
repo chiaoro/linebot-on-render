@@ -1,5 +1,5 @@
 # ✅ night_shift_fee_generator.py
-# 每月產出夜點費申請表：每科別一張 Word 總表
+# 每月產出夜點費申請表：每科別一張 Word 總表，並自動備份到 Google Drive
 
 import os
 import json
@@ -7,12 +7,19 @@ import gspread
 from docx import Document
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2.service_account import Credentials
 
-# ✅ Google Sheets 認證
-SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+# ✅ Google Sheets + Drive 認證
+SCOPE = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
+
+# ✅ Google Drive API 客戶端
+creds2 = Credentials.from_service_account_info(creds_dict, scopes=SCOPE)
+drive_service = build('drive', 'v3', credentials=creds2)
 
 # ✅ 試算表與模板資料夾設定
 SHEET_ID = "1rtoP3e7D4FPzXDqv0yIOqYE9gwsdmFQSccODkbTZVDs"
@@ -22,6 +29,7 @@ TEMPLATE_MAP = {
     "內科": "templates/內科_夜點費申請表.docx"
 }
 SAVE_DIR = "/mnt/data/generated_words"
+DRIVE_FOLDER_ID = "1s-joUzZQBHyCKmWZRD4F78qjvvEZ15Dq"  # 備份資料夾 ID
 
 # ✅ 載入資料
 sheet = gc.open_by_key(SHEET_ID).worksheet("夜點費申請")
@@ -65,4 +73,12 @@ for dept, records in output.items():
     filepath = os.path.join(SAVE_DIR, filename)
     doc.save(filepath)
 
-print(f"✅ 全部申請表已產出至 {SAVE_DIR}")
+    # ✅ 備份到 Google Drive
+    file_metadata = {
+        'name': filename,
+        'parents': [DRIVE_FOLDER_ID]
+    }
+    media = MediaFileUpload(filepath, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+
+print(f"✅ 全部申請表已產出並備份至 Google Drive：{SAVE_DIR}")
