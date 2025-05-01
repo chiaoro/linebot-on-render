@@ -1,4 +1,4 @@
-# ✅ 升級版 group_vote_tracker.py - 支援跨天群組統計記錄至 Google Sheets
+# ✅ 升級版 group_vote_tracker.py - 支援跨天群組統計記錄至 Google Sheets（含快取與 quota 保護）
 
 import re
 from datetime import datetime
@@ -18,15 +18,21 @@ MAPPING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8
 
 # ✅ 群組統計暫存記憶體
 vote_sessions = {}  # group_id: {"sheet_name": str, "votes": {user_id: count}}
+user_display_cache = {}  # user_id: 暱稱
+stat_sheet = gc.open_by_url(STAT_SHEET_URL)  # 全域只開一次以降低 quota 消耗
 
-# ✅ 從使用者對照表取得暱稱
+# ✅ 從使用者對照表取得暱稱（含快取）
 def get_user_display_name(user_id):
+    if user_id in user_display_cache:
+        return user_display_cache[user_id]
     try:
         sheet = gc.open_by_url(MAPPING_SHEET_URL).worksheet("UserMapping")
         rows = sheet.get_all_records()
         for row in rows:
             if row.get("LINE_USER_ID") == user_id:
-                return row.get("使用者暱稱", "未知")
+                display_name = row.get("使用者暱稱", "未知")
+                user_display_cache[user_id] = display_name
+                return display_name
     except:
         pass
     return "未知"
@@ -35,8 +41,7 @@ def get_user_display_name(user_id):
 def get_unique_sheet_name(group_name):
     today = datetime.now().strftime("%Y-%m-%d")
     base_name = f"{today}_{group_name}"
-    sheet = gc.open_by_url(STAT_SHEET_URL)
-    existing_titles = [ws.title for ws in sheet.worksheets()]
+    existing_titles = [ws.title for ws in stat_sheet.worksheets()]
     if base_name not in existing_titles:
         return base_name
     else:
@@ -57,17 +62,19 @@ def handle_group_vote(event, line_bot_api):
     user_id = event.source.user_id
     display_name = get_user_display_name(user_id)
 
-    group_name = os.getenv(group_id, group_id)  # 若無對應名稱則用 ID
+    group_name = os.getenv(group_id, group_id)
 
     # ✅ 開啟統計
     if text == "開啟統計":
-        sheet_name = get_unique_sheet_name(group_name)
-        vote_sessions[group_id] = {"sheet_name": sheet_name, "votes": {}}
-        sheet = gc.open_by_url(STAT_SHEET_URL)
-        sheet.add_worksheet(title=sheet_name, rows=100, cols=5)
-        ws = sheet.worksheet(sheet_name)
-        ws.append_row(["統計時間", "ID", "使用者暱稱", "數量", "累加數量"])
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🟢 統計已開啟，紀錄於分頁：{sheet_name}"))
+        try:
+            sheet_name = get_unique_sheet_name(group_name)
+            vote_sessions[group_id] = {"sheet_name": sheet_name, "votes": {}}
+            stat_sheet.add_worksheet(title=sheet_name, rows=100, cols=5)
+            ws = stat_sheet.worksheet(sheet_name)
+            ws.append_row(["統計時間", "ID", "使用者暱稱", "數量", "累加數量"])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🟢 統計已開啟，紀錄於分頁：{sheet_name}"))
+        except Exception as e:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 開啟統計失敗：{str(e)}"))
         return True
 
     # ✅ 結束統計
@@ -94,36 +101,38 @@ def handle_group_vote(event, line_bot_api):
     if group_id in vote_sessions:
         plus_match = re.match(r"^\+(\d+)$", text)
         if plus_match:
-            count = int(plus_match.group(1))
-            votes = vote_sessions[group_id]["votes"]
-            prev = votes.get(user_id, 0)
-            votes[user_id] = prev + count
-
-            # ✅ 寫入試算表
-            sheet = gc.open_by_url(STAT_SHEET_URL)
-            ws = sheet.worksheet(vote_sessions[group_id]["sheet_name"])
-            ws.append_row([
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                user_id,
-                display_name,
-                count,
-                votes[user_id]
-            ])
-            return True
-
-        elif text == "-1":
-            votes = vote_sessions[group_id]["votes"]
-            if user_id in votes and votes[user_id] > 0:
-                votes[user_id] -= 1
-                sheet = gc.open_by_url(STAT_SHEET_URL)
-                ws = sheet.worksheet(vote_sessions[group_id]["sheet_name"])
+            try:
+                count = int(plus_match.group(1))
+                votes = vote_sessions[group_id]["votes"]
+                prev = votes.get(user_id, 0)
+                votes[user_id] = prev + count
+                ws = stat_sheet.worksheet(vote_sessions[group_id]["sheet_name"])
                 ws.append_row([
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     user_id,
                     display_name,
-                    -1,
+                    count,
                     votes[user_id]
                 ])
+            except Exception as e:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 加票失敗：{str(e)}"))
+            return True
+
+        elif text == "-1":
+            try:
+                votes = vote_sessions[group_id]["votes"]
+                if user_id in votes and votes[user_id] > 0:
+                    votes[user_id] -= 1
+                    ws = stat_sheet.worksheet(vote_sessions[group_id]["sheet_name"])
+                    ws.append_row([
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        user_id,
+                        display_name,
+                        -1,
+                        votes[user_id]
+                    ])
+            except Exception as e:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 減票失敗：{str(e)}"))
             return True
 
     return False
