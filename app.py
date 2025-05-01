@@ -179,7 +179,7 @@ def handle_message(event):
             expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
         
             # ✅ Webhook 送出
-            webhook_url = "你的 webhook 網址"
+            webhook_url = os.getenv("NIGHT_FEE_WEBHOOK_URL")
             payload = {
                 "user_id": user_id,
                 "日期": "、".join(expanded_dates)
