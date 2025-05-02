@@ -255,9 +255,8 @@ def handle_message(event):
             📆 日期：{date_input}（共 {len(expanded_dates)} 班）"""
                 ))
             except Exception as e:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                ))
-        
+                print("❌ webhook 發送失敗（靜默）：", str(e))
+                pass  # 不回應使用者任何訊息
             del user_sessions[user_id]
             return
 
