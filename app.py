@@ -41,6 +41,7 @@ from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
 from utils.bubble_templates import main_menu_v2_bubble
 from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble
+from utils.line_utils import get_event_text, is_trigger
 
 
 
@@ -368,14 +369,10 @@ def handle_message(event):
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
     # ✅ 啟動流程（這一句允許使用 reply_token）
-    trigger_text = ""
-    if isinstance(event, PostbackEvent):
-        trigger_text = event.postback.data
-    elif isinstance(event.message, TextMessage):
-        trigger_text = event.message.text.strip()
+    text = get_event_text(event)
     
-    if trigger_text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        user_sessions[user_id] = {"step": 0, "type": trigger_text}
+    if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
+        user_sessions[user_id] = {"step": 0, "type": text}
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
