@@ -541,8 +541,85 @@ def handle_message(event):
 
 
 
+    if text == "值班代理":
+        user_sessions[user_id] = {"step": 0, "type": "值班代理"}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請輸入您的姓名"))
+        return
+    
+    if user_id in user_sessions and user_sessions[user_id].get("type") == "值班代理":
+        session = user_sessions[user_id]
+    
+        if session["step"] == 0:
+            session["original_doctor"] = text
+            session["step"] = 1
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原值班班別與日期（例如：早班 5/10）"))
+    
+        elif session["step"] == 1:
+            try:
+                shift_type, date = text.split(" ")
+                session["shift_type"] = shift_type
+                session["original_date"] = date
+            except:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請用正確格式輸入，例如：早班 5/10"))
+                return
+    
+            session["step"] = 2
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🧑‍⚕️ 請輸入代理醫師姓名"))
+    
+        elif session["step"] == 2:
+            session["proxy_doctor"] = text
+            session["step"] = 3
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因"))
+    
+        elif session["step"] == 3:
+            session["reason"] = text
+    
+            webhook_url = "https://script.google.com/macros/s/你的_webhook_url/exec"
+            payload = {
+                "request_type": "值班代理",
+                "original_doctor": session["original_doctor"],
+                "shift_type": session["shift_type"],
+                "original_date": session["original_date"],
+                "proxy_doctor": session["proxy_doctor"],
+                "reason": session["reason"]
+            }
+    
+            # ✅ 先回覆確認文字（防止 reply_token 失效）
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="📨 已收到申請，稍後會送出代理通知")
+            )
+    
+            try:
+                requests.post(webhook_url, json=payload)
+    
+                bubble = get_duty_proxy_bubble(
+                    shift_type=session["shift_type"],
+                    original_doctor=session["original_doctor"],
+                    original_date=session["original_date"],
+                    proxy_doctor=session["proxy_doctor"],
+                    reason=session["reason"]
+                )
+    
+                line_bot_api.push_message(
+                    user_id,
+                    FlexSendMessage(alt_text="值班代理通知", contents=bubble)
+                )
+    
+            except Exception as e:
+                print("❌ webhook 發送失敗：", str(e))
+                line_bot_api.push_message(user_id, TextSendMessage(
+                    text="⚠️ 系統提交失敗，請稍後再試"
+                ))
+    
+            del user_sessions[user_id]
+        return
 
 
+
+
+
+    
 
     
 
