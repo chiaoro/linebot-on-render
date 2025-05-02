@@ -256,7 +256,6 @@ def handle_message(event):
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text=f"⚠️ 發送失敗：{str(e)}"
                 ))
         
             del user_sessions[user_id]
