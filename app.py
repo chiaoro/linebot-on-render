@@ -173,7 +173,7 @@ def handle_message(event):
         step = session["step"]
     
         if step == 1:
-            date_input = user_msg
+            date_input = user_msg.strip()
             session["step"] = 2
         
             expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
@@ -182,14 +182,16 @@ def handle_message(event):
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {
                 "user_id": user_id,
-                "日期": "、".join(expanded_dates)
+                "日期": date_input
             }
         
             try:
                 requests.post(webhook_url, json=payload)
+                print("📡 webhook 回傳：", response.status_code, response.text)
+                
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"""✅ 夜點費資料已送出：
-        📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
+            📆 日期：{date_input}（共 {len(expanded_dates)} 班）"""
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
