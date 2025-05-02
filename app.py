@@ -185,8 +185,7 @@ def handle_message(event):
 
 
     # ✅ 夜點費申請流程（Flex Bubble + 一步輸入日期 + 自動解析區間）
-    text = event.message.text.strip()
-    if user_msg == "夜點費申請":
+    if text == "夜點費申請":
         user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
         bubble = {
             "type": "bubble",
@@ -211,7 +210,7 @@ def handle_message(event):
         step = session["step"]
     
         if step == 1:
-            date_input = user_msg.strip()
+            date_input = text.strip()
             session["step"] = 2
         
             expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
@@ -246,13 +245,13 @@ def handle_message(event):
 
     
     # ✅ 主選單
-    if user_msg == "主選單":
+    if text == "主選單":
         line_bot_api.reply_message(event.reply_token, main_menu_v2_bubble())
         return
 
     # ✅ 子選單
-    if user_msg in submenu_map:
-        submenu = submenu_map[user_msg]
+    if text in submenu_map:
+        submenu = submenu_map[text]
     
         bubble = {
             "type": "bubble",
@@ -265,7 +264,7 @@ def handle_message(event):
                 "contents": [
                     {
                         "type": "text",
-                        "text": f"📂 {user_msg}",
+                        "text": f"📂 {text}",
                         "weight": "bold",
                         "size": "xl",
                         "color": "#222222",
@@ -277,7 +276,7 @@ def handle_message(event):
     
         line_bot_api.reply_message(
             event.reply_token,
-            FlexSendMessage(alt_text=user_msg, contents=bubble)
+            FlexSendMessage(alt_text=text, contents=bubble)
         )
         return
 
@@ -287,7 +286,7 @@ def handle_message(event):
     
 
     # ✅ 支援醫師調診單（四步驟）
-    if user_msg == "支援醫師調診單":
+    if text == "支援醫師調診單":
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
         return
@@ -295,19 +294,19 @@ def handle_message(event):
     if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
         session = user_sessions[user_id]
         if session["step"] == 0:
-            session["doctor_name"] = user_msg
+            session["doctor_name"] = text
             session["step"] = 1
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
         elif session["step"] == 1:
-            session["original_date"] = user_msg
+            session["original_date"] = text
             session["step"] = 2
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
         elif session["step"] == 2:
-            session["new_date"] = user_msg
+            session["new_date"] = text
             session["step"] = 3
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
         elif session["step"] == 3:
-            session["reason"] = user_msg
+            session["reason"] = text
             webhook_url = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
             payload = {
                 "user_id": user_id,
@@ -325,8 +324,8 @@ def handle_message(event):
         return
 
     # ✅ 調診/休診/代診/加診（三步驟流程）
-    if user_msg in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        user_sessions[user_id] = {"step": 1, "type": user_msg}
+    if text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 1, "type": text}
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
@@ -339,7 +338,7 @@ def handle_message(event):
 
         
         if session["step"] == 1:
-            session["original_date"] = user_msg
+            session["original_date"] = text
             session["step"] = 2
             line_bot_api.reply_message(
                 event.reply_token,
@@ -347,7 +346,7 @@ def handle_message(event):
             )
         
         elif session["step"] == 2:
-            session["new_date"] = user_msg
+            session["new_date"] = text
             session["step"] = 3
             line_bot_api.reply_message(
                 event.reply_token,
@@ -355,7 +354,7 @@ def handle_message(event):
             )
         
         elif session["step"] == 3:
-            session["reason"] = user_msg
+            session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
             payload = {
@@ -389,12 +388,12 @@ def handle_message(event):
 
 
     # ✅ 值班調換/代理（四～五步驟）
-    if user_msg == "值班調換":
+    if text == "值班調換":
         user_sessions[user_id] = {"step": 0, "type": "值班調換"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
 
-    if user_msg == "值班代理":
+    if text == "值班代理":
         user_sessions[user_id] = {"step": 0, "type": "值班代理"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
@@ -423,7 +422,7 @@ def handle_message(event):
             key_list = ["班別", "原值班醫師", "原值班日期", "代理醫師", "原因"]
 
         if step < len(key_list):
-            session[key_list[step]] = user_msg
+            session[key_list[step]] = text
             session["step"] += 1
             if session["step"] < len(key_list):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=questions[session["step"] - 1]))
@@ -440,7 +439,7 @@ def handle_message(event):
         return
 
     # ✅ 院務會議請假
-    if user_msg == "院務會議請假":
+    if text == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
         bubble = {
             "type": "bubble",
@@ -494,12 +493,12 @@ def handle_message(event):
         return
 
     if get_state(user_id) == "ASK_LEAVE":
-        if user_msg == "我要出席院務會議":
+        if text == "我要出席院務會議":
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             log_meeting_reply(user_id, "出席", "")
             clear_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
-        elif user_msg == "我要請假院務會議":
+        elif text == "我要請假院務會議":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
         else:
@@ -508,7 +507,7 @@ def handle_message(event):
 
     if get_state(user_id) == "ASK_REASON":
         doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-        reason = user_msg
+        reason = text
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
         log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
         clear_state(user_id)
