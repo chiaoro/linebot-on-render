@@ -40,6 +40,10 @@ from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
 from utils.bubble_templates import main_menu_v2_bubble
+from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble
+
+
+
 
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
@@ -298,23 +302,28 @@ def handle_message(event):
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
         return
-
+    
     if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
         session = user_sessions[user_id]
         if session["step"] == 0:
             session["doctor_name"] = text
             session["step"] = 1
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        
         elif session["step"] == 1:
             session["original_date"] = text
             session["step"] = 2
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
+        
         elif session["step"] == 2:
             session["new_date"] = text
             session["step"] = 3
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
+        
         elif session["step"] == 3:
             session["reason"] = text
+    
+            # ⬇️ 發送到 webhook
             webhook_url = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
             payload = {
                 "user_id": user_id,
@@ -325,12 +334,24 @@ def handle_message(event):
                 "reason": session["reason"]
             }
             requests.post(webhook_url, json=payload)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                text=f"""✅ 已收到您的申請（支援醫師調診單）：\n醫師：{session['doctor_name']}\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-            ))
+    
+            # ⬇️ 用 Flex Bubble 呈現
+            bubble = get_adjustment_bubble(
+                original=session["original_date"],
+                method=session["new_date"],
+                reason=session["reason"]
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                FlexSendMessage(alt_text="支援醫師調診單已送出", contents=bubble)
+            )
+    
             del user_sessions[user_id]
         return
 
+
+
+    
     # ✅ 調診/休診/代診/加診（三步驟流程）
     if text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 1, "type": text}
@@ -342,9 +363,7 @@ def handle_message(event):
     
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
-
-
-        
+    
         if session["step"] == 1:
             session["original_date"] = text
             session["step"] = 2
@@ -352,7 +371,7 @@ def handle_message(event):
                 event.reply_token,
                 TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）")
             )
-        
+    
         elif session["step"] == 2:
             session["new_date"] = text
             session["step"] = 3
@@ -360,7 +379,7 @@ def handle_message(event):
                 event.reply_token,
                 TextSendMessage(text="📝 請輸入原因（例如：返台、會議）")
             )
-        
+    
         elif session["step"] == 3:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
@@ -382,9 +401,17 @@ def handle_message(event):
                 )
                 print("✅ webhook 回應：", response.status_code, response.text)
     
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text=f"""✅ 已收到您的申請（{session['type']}）：\n原門診：{session['original_date']}\n處理方式：{session['new_date']}\n原因：{session['reason']}"""
-                ))
+                # ✅ 改成 Flex Bubble 回傳
+                bubble = get_adjustment_bubble(
+                    original=session["original_date"],
+                    method=session["new_date"],
+                    reason=session["reason"]
+                )
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    FlexSendMessage(alt_text="門診調整通知", contents=bubble)
+                )
+    
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
@@ -400,17 +427,17 @@ def handle_message(event):
         user_sessions[user_id] = {"step": 0, "type": "值班調換"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
-
+    
     if text == "值班代理":
         user_sessions[user_id] = {"step": 0, "type": "值班代理"}
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🟡 請問值班班別是？"))
         return
-
+    
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["值班調換", "值班代理"]:
         session = user_sessions[user_id]
         swap_type = session["type"]
         step = session["step"]
-
+    
         if swap_type == "值班調換":
             questions = [
                 "🟡 原本值班醫師是誰？",
@@ -428,21 +455,42 @@ def handle_message(event):
                 "🟡 請問代理原因？"
             ]
             key_list = ["班別", "原值班醫師", "原值班日期", "代理醫師", "原因"]
-
+    
         if step < len(key_list):
             session[key_list[step]] = text
             session["step"] += 1
             if session["step"] < len(key_list):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=questions[session["step"] - 1]))
             else:
+                # ✅ 傳送至 webhook
                 webhook_url = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
                 payload = {
                     "swap_type": swap_type,
                     **{k: session.get(k, "") for k in key_list}
                 }
                 requests.post(webhook_url, data=payload)
-                confirm = "\n".join([f"{k}：{payload[k]}" for k in key_list])
-                line_bot_api.push_message(user_id, TextSendMessage(text=f"✅ 值班{swap_type}資料已提交成功：\n{confirm}"))
+    
+                # ✅ 用 Flex Bubble 呈現結果
+                if swap_type == "值班調換":
+                    bubble = get_duty_swap_bubble(
+                        shift_type=session["班別"],
+                        original_doctor=session["原值班醫師"],
+                        original_date=session["原值班日期"],
+                        target_doctor=session["對方醫師"],
+                        swap_date=session["對方值班日期"],
+                        reason=session["原因"]
+                    )
+                    alt_text = "值班調換已送出"
+                else:
+                    # 代理用文字格式回覆（可日後新增代理的專屬 bubble）
+                    confirm = "\n".join([f"{k}：{payload[k]}" for k in key_list])
+                    line_bot_api.push_message(user_id, TextSendMessage(text=f"✅ 值班代理資料已提交成功：\n{confirm}"))
+                    del user_sessions[user_id]
+                    return
+    
+                flex_message = FlexSendMessage(alt_text=alt_text, contents=bubble)
+                line_bot_api.push_message(user_id, flex_message)
+    
                 del user_sessions[user_id]
         return
 
@@ -478,7 +526,7 @@ def handle_message(event):
                     {
                         "type": "button",
                         "style": "primary",
-                        "color": "#DCD7ED",  # ✅ 紫色
+                        "color": "#CEC9E5",  # ✅ 紫色
                         "action": {
                             "type": "message",
                             "label": "✅ 我要出席",
