@@ -599,7 +599,23 @@ def daily_push():
     except Exception as e:
         return f"❌ 每日推播錯誤：{e}", 500
 
-# ✅ 院務會議請假表單提交
+
+# ✅ 夜點費提醒推播（每天早上 7:00）
+@app.route("/night-shift-reminder", methods=["GET"])
+def night_shift_reminder():
+    try:
+        from utils.night_shift_fee import run_night_shift_reminder  # 確保函式存在
+        run_night_shift_reminder()
+        return "✅ 夜點費提醒完成", 200
+    except Exception as e:
+        return f"❌ night-shift-reminder 錯誤：{e}", 500
+
+
+
+
+
+
+#✅ 院務會議請假表單提交
 @app.route("/meeting-leave", methods=["POST"])
 def meeting_leave():
     try:
