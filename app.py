@@ -39,7 +39,8 @@ from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_bindi
 from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
-from utils.bubble_templates import main_menu_v2_bubble
+from utils.bubble_templates import main_menu_v2_bubble as get_main_menu
+
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
 # ✅載入 .env
@@ -66,24 +67,24 @@ user_sessions = {}
 
 
 # ✅ Flex 主選單
-def get_main_menu():
-    return FlexSendMessage(
-        "主選單",
-        {
-            "type": "bubble",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg", "margin": "md"},
-                    *[
-                        {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary", "margin": "md"}
-                        for label in ["門診調整服務", "值班調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
-                    ]
-                ]
-            }
-        }
-    )
+#def get_main_menu():
+#    return FlexSendMessage(
+#        "主選單",
+#        {
+#            "type": "bubble",
+#            "body": {
+#                "type": "box",
+#                "layout": "vertical",
+#                "contents": [
+#                    {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg", "margin": "md"},
+#                    *[
+#                        {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary", "margin": "md"}
+#                        for label in ["門診調整服務", "值班調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
+#                    ]
+#                ]
+#            }
+#        }
+#    )
 
 # ✅ 子選單定義
 submenu_map = {
