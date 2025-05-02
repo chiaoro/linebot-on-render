@@ -67,25 +67,6 @@ user_sessions = {}
 
 
 # ✅ Flex 主選單
-#def get_main_menu():
-#    return FlexSendMessage(
-#        "主選單",
-#        {
-#            "type": "bubble",
-#            "body": {
-#                "type": "box",
-#                "layout": "vertical",
-#                "contents": [
-#                    {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg", "margin": "md"},
-#                    *[
-#                        {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary","color": "#B8D8BE", "margin": "md"}
-#                        for label in ["門診調整服務", "值班調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
-#                    ]
-#                ]
-#            }
-#        }
-#    )
-
 # ✅ 子選單定義
 submenu_map = {
     "門診調整服務": [
@@ -488,6 +469,7 @@ def handle_message(event):
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#DCD7ED",  # ✅ 紫色
                         "action": {
                             "type": "message",
                             "label": "✅ 我要出席",
@@ -497,6 +479,7 @@ def handle_message(event):
                     {
                         "type": "button",
                         "style": "secondary",
+                        "color": "#F4F2F9",  # ❌ 淺紫色
                         "action": {
                             "type": "message",
                             "label": "❌ 我要請假",
