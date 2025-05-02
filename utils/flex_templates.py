@@ -153,3 +153,40 @@ def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doct
             }]
         }
     }
+
+
+
+def get_support_adjustment_bubble(doctor_name, original, method, reason):
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "✅ 支援醫師調診申請已送出", "weight": "bold", "size": "lg", "color": "#00A37A"}
+            ]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": f"👨‍⚕️ 醫師：{doctor_name}", "wrap": True},
+                {"type": "text", "text": f"📅 原門診：{original}", "wrap": True},
+                {"type": "text", "text": f"📋 處理方式：{method}", "wrap": True},
+                {"type": "text", "text": f"📝 原因：{reason}", "wrap": True}
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "📌 若需修改請洽醫療部秘書",
+                    "size": "sm",
+                    "color": "#888888"
+                }
+            ]
+        }
+    }
