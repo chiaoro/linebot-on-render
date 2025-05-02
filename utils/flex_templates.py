@@ -30,7 +30,7 @@ def get_adjustment_bubble(original, method, reason):
             "layout": "horizontal",
             "contents": [{
                 "type": "text",
-                "text": "如有誤請洽醫療部秘書",
+                "text": "如有誤請洽巧柔",
                 "size": "sm",
                 "color": "#aaaaaa"
             }]
@@ -71,7 +71,7 @@ def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doct
             "layout": "horizontal",
             "contents": [{
                 "type": "text",
-                "text": "如有誤請洽醫療部秘書",
+                "text": "如有誤請洽巧柔",
                 "size": "sm",
                 "color": "#aaaaaa"
             }]
@@ -109,7 +109,7 @@ def get_duty_proxy_bubble(shift_type, original_doctor, original_date, proxy_doct
             "layout": "horizontal",
             "contents": [{
                 "type": "text",
-                "text": "如有誤請洽醫療部秘書",
+                "text": "如有誤請洽巧柔",
                 "size": "sm",
                 "color": "#aaaaaa"
             }]
@@ -147,7 +147,7 @@ def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doct
             "layout": "horizontal",
             "contents": [{
                 "type": "text",
-                "text": "如有誤請洽醫療部秘書",
+                "text": "如有誤請洽巧柔",
                 "size": "sm",
                 "color": "#aaaaaa"
             }]
@@ -183,7 +183,7 @@ def get_support_adjustment_bubble(doctor_name, original, method, reason):
             "contents": [
                 {
                     "type": "text",
-                    "text": "📌 若需修改請洽醫療部秘書",
+                    "text": "📌 若需修改請洽巧柔",
                     "size": "sm",
                     "color": "#888888"
                 }
