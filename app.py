@@ -111,14 +111,16 @@ def handle_message(event):
 
 
 
-    # ✅ 測ID
-    # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
-    if user_msg == "[顯示ID]":
+     # ✅ 測ID
+     # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
+    if text == "[顯示ID]":
         if event.source.type == "group":
             group_id = event.source.group_id
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=f"✅ 群組 ID：\n{group_id}")
+                TextSendMessage(
+                    text=f"✅ 群組 ID：\n{group_id}\n\n👉 可貼入 .env：\nMY_GROUP_ID={group_id}"
+                )
             )
         else:
             line_bot_api.reply_message(
