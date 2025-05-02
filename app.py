@@ -78,7 +78,7 @@ user_sessions = {}
 #                "contents": [
 #                    {"type": "text", "text": "📋 請選擇服務類別", "weight": "bold", "size": "lg", "margin": "md"},
 #                    *[
-#                        {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary", "margin": "md"}
+#                        {"type": "button", "action": {"type": "message", "label": label, "text": label}, "style": "primary","color": "#B8D8BE", "margin": "md"}
 #                        for label in ["門診調整服務", "值班調整服務", "支援醫師服務", "新進醫師服務", "其他表單服務"]
 #                    ]
 #                ]
