@@ -175,11 +175,7 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text="請問是值班【互換】還是【代理】？")
         )
-    elif text.startswith("夜點費申請"):
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="請輸入您要申請的日期（例如：4/15-20、4/18、4/19）")
-        )
+
     else:
         # 其他無效格式，也不回應
         print(f"未定義的指令：{text}")
