@@ -1,24 +1,23 @@
 from linebot.models import FlexSendMessage
 
-def main_menu_bubble():
+def main_menu_v2_bubble():
     return FlexSendMessage(
         alt_text="主選單",
         contents={
             "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": "https://i.imgur.com/HlZsJ9k.png",  # 可改為你想放的 banner
-                "size": "full",
-                "aspectRatio": "20:13",
-                "aspectMode": "cover"
-            },
+            "size": "mega",
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "spacing": "sm",
+                "spacing": "md",
                 "contents": [
-                    { "type": "text", "text": "🔧 主選單", "weight": "bold", "size": "xl" },
-                    { "type": "text", "text": "請選擇您需要的服務", "wrap": True }
+                    {
+                        "type": "text",
+                        "text": "📋 請選擇服務類別",
+                        "weight": "bold",
+                        "size": "xl",
+                        "color": "#222222"
+                    }
                 ]
             },
             "footer": {
@@ -29,17 +28,27 @@ def main_menu_bubble():
                     {
                         "type": "button",
                         "style": "primary",
-                        "action": { "type": "message", "label": "我要申請夜點費", "text": "我要夜點費" }
+                        "action": { "type": "message", "label": "門診調整服務", "text": "門診調整服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
-                        "action": { "type": "message", "label": "我要調整門診", "text": "我要調診" }
+                        "action": { "type": "message", "label": "值班調整服務", "text": "值班調整服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
-                        "action": { "type": "message", "label": "我要請假", "text": "我要請假" }
+                        "action": { "type": "message", "label": "支援醫師服務", "text": "支援醫師服務" }
+                    },
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "action": { "type": "message", "label": "新進醫師服務", "text": "新進醫師服務" }
+                    },
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "action": { "type": "message", "label": "其他表單服務", "text": "其他表單服務" }
                     },
                     {
                         "type": "button",
