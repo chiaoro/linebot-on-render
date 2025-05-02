@@ -28,29 +28,33 @@ def main_menu_v2_bubble():
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#B8D8BE",  # 主選單按鈕色
                         "action": { "type": "message", "label": "門診調整服務", "text": "門診調整服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#B8D8BE",
                         "action": { "type": "message", "label": "值班調整服務", "text": "值班調整服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#B8D8BE",
                         "action": { "type": "message", "label": "支援醫師服務", "text": "支援醫師服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#B8D8BE",
                         "action": { "type": "message", "label": "新進醫師服務", "text": "新進醫師服務" }
                     },
                     {
                         "type": "button",
                         "style": "primary",
+                        "color": "#B8D8BE",
                         "action": { "type": "message", "label": "其他表單服務", "text": "其他表單服務" }
-                    },
-                   
+                    }
                 ]
             }
         }
