@@ -112,12 +112,20 @@ def handle_message(event):
 
 
     # ✅ 測ID
-    if source_type == "group":
-        print(f"📦 群組 ID：{event.source.group_id}")
-    elif source_type == "room":
-        print(f"📦 多人聊天室 ID：{event.source.room_id}")
-    else:
-        print(f"🙋 個人用戶 ID：{user_id}")
+    # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
+    if user_msg == "[顯示ID]":
+        if event.source.type == "group":
+            group_id = event.source.group_id
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"✅ 群組 ID：\n{group_id}")
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚠️ 請在群組中輸入 [顯示ID]，我才會回傳群組 ID")
+            )
+        return
 
 
 
