@@ -1,5 +1,6 @@
 # ✅ 升級版 group_vote_tracker.py - 支援跨天群組統計記錄至 Google Sheets（含快取與 quota 保護）
 
+
 import re
 from datetime import datetime
 import gspread
@@ -16,12 +17,10 @@ gc = gspread.authorize(creds)
 STAT_SHEET_URL = "https://docs.google.com/spreadsheets/d/14TdjFoBVJITE6_lEaGj32NT8S3o-Ysk8ObstdpNxLOI/edit"
 MAPPING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 
-# ✅ 群組統計暫存記憶體
-vote_sessions = {}  # group_id: {"sheet_name": str, "votes": {user_id: count}}
-user_display_cache = {}  # user_id: 暱稱
-stat_sheet = gc.open_by_url(STAT_SHEET_URL)  # 全域只開一次以降低 quota 消耗
+vote_sessions = {}  # group_id: {"sheet_name": str, "votes": {user_id: [count, count, ...]}}
+user_display_cache = {}
+stat_sheet = gc.open_by_url(STAT_SHEET_URL)
 
-# ✅ 從使用者對照表取得暱稱（含快取）
 def get_user_display_name(user_id):
     if user_id in user_display_cache:
         return user_display_cache[user_id]
@@ -37,7 +36,6 @@ def get_user_display_name(user_id):
         pass
     return "未知"
 
-# ✅ 建立唯一分頁名稱：日期_群組名稱(可編號)
 def get_unique_sheet_name(group_name):
     today = datetime.now().strftime("%Y-%m-%d")
     base_name = f"{today}_{group_name}"
@@ -50,7 +48,6 @@ def get_unique_sheet_name(group_name):
             idx += 1
         return f"{base_name}({idx})"
 
-# ✅ 主功能：處理統計訊息
 def handle_group_vote(event, line_bot_api):
     user_msg = event.message.text.strip()
     text = user_msg.replace("【", "").replace("】", "").strip()
@@ -61,7 +58,6 @@ def handle_group_vote(event, line_bot_api):
     group_id = event.source.group_id
     user_id = event.source.user_id
     display_name = get_user_display_name(user_id)
-
     group_name = os.getenv(group_id, group_id)
 
     # ✅ 開啟統計
@@ -71,7 +67,7 @@ def handle_group_vote(event, line_bot_api):
             vote_sessions[group_id] = {"sheet_name": sheet_name, "votes": {}}
             stat_sheet.add_worksheet(title=sheet_name, rows=100, cols=5)
             ws = stat_sheet.worksheet(sheet_name)
-            ws.append_row(["統計時間", "ID", "使用者暱稱", "數量", "累加數量"])
+            ws.append_row(["統計時間", "ID", "使用者暱稱", "數量", "目前總和"])
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🟢 統計已開啟，紀錄於分頁：{sheet_name}"))
         except Exception as e:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 開啟統計失敗：{str(e)}"))
@@ -81,18 +77,19 @@ def handle_group_vote(event, line_bot_api):
     if text == "結束統計":
         if group_id in vote_sessions:
             votes = vote_sessions[group_id]["votes"]
-            total = sum(votes.values())
+            total = sum(sum(vlist) for vlist in votes.values())
             del vote_sessions[group_id]
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計結束，本場總人數：{total} 人 🙌"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"🔴 統計結束，本場總票數：{total} 票 🙌"))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
         return True
 
-    # ✅ 查詢目前人數
+    # ✅ 查詢目前總票數
     if text == "統計人數":
         if group_id in vote_sessions:
-            total = sum(vote_sessions[group_id]["votes"].values())
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"📊 目前累計 {total} 人"))
+            votes = vote_sessions[group_id]["votes"]
+            total = sum(sum(vlist) for vlist in votes.values())
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"📊 目前累計：{total} 票"))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 尚未開啟統計功能。"))
         return True
@@ -103,16 +100,19 @@ def handle_group_vote(event, line_bot_api):
         if plus_match:
             try:
                 count = int(plus_match.group(1))
-                votes = vote_sessions[group_id]["votes"]
-                prev = votes.get(user_id, 0)
-                votes[user_id] = prev + count
-                ws = stat_sheet.worksheet(vote_sessions[group_id]["sheet_name"])
+                session = vote_sessions[group_id]
+                votes = session["votes"]
+                if user_id not in votes:
+                    votes[user_id] = []
+                votes[user_id].append(count)
+                current_total = sum(votes[user_id])
+                ws = stat_sheet.worksheet(session["sheet_name"])
                 ws.append_row([
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     user_id,
                     display_name,
                     count,
-                    votes[user_id]
+                    current_total
                 ])
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 加票失敗：{str(e)}"))
@@ -121,15 +121,16 @@ def handle_group_vote(event, line_bot_api):
         elif text == "-1":
             try:
                 votes = vote_sessions[group_id]["votes"]
-                if user_id in votes and votes[user_id] > 0:
-                    votes[user_id] -= 1
+                if user_id in votes and votes[user_id]:
+                    votes[user_id].append(-1)
+                    current_total = sum(votes[user_id])
                     ws = stat_sheet.worksheet(vote_sessions[group_id]["sheet_name"])
                     ws.append_row([
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         user_id,
                         display_name,
                         -1,
-                        votes[user_id]
+                        current_total
                     ])
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 減票失敗：{str(e)}"))
