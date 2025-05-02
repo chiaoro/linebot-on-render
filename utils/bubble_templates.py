@@ -50,11 +50,7 @@ def main_menu_v2_bubble():
                         "style": "primary",
                         "action": { "type": "message", "label": "其他表單服務", "text": "其他表單服務" }
                     },
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "action": { "type": "message", "label": "🔄 再看一次主選單", "text": "主選單" }
-                    }
+                   
                 ]
             }
         }
