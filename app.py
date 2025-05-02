@@ -368,8 +368,12 @@ def handle_message(event):
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
     # ✅ 啟動流程（這一句允許使用 reply_token）
-    if text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        user_sessions[user_id] = {"step": 0, "type": text}
+    trigger_text = text if isinstance(event.message, TextMessage) else (
+        event.postback.data if isinstance(event, PostbackEvent) else ""
+    )
+    
+    if trigger_text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
+        user_sessions[user_id] = {"step": 0, "type": trigger_text}
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
