@@ -39,7 +39,7 @@ from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_bindi
 from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
-
+from utils.bubble_templates import main_menu_bubble
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
 # ✅載入 .env
@@ -207,23 +207,26 @@ def handle_message(event):
     
     # ✅ 主選單
     if user_msg == "主選單":
-        line_bot_api.reply_message(event.reply_token, get_main_menu())
+        line_bot_api.reply_message(event.reply_token, main_menu_bubble())
         return
 
     # ✅ 子選單
     if user_msg in submenu_map:
         submenu = submenu_map[user_msg]
-        line_bot_api.reply_message(event.reply_token, FlexSendMessage(user_msg, {
+    
+        bubble = {
             "type": "bubble",
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "backgroundColor": "#E6F7FF",  # ✅ 改這裡
+                "backgroundColor": "#E6F7FF",
                 "contents": [
-                    {"type": "text", "text": f"📂 {user_msg}", "weight": "bold", "size": "lg", "margin": "md"}
-                ] + submenu
+                    { "type": "text", "text": f"📂 {user_msg}", "weight": "bold", "size": "lg", "margin": "md" }
+                ] + submenu  # 這邊確保 submenu 是 list of Box/Button
             }
-        }))
+        }
+    
+        line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text=user_msg, contents=bubble))
         return
 
 
