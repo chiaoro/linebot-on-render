@@ -89,7 +89,7 @@ user_sessions = {}
 # ✅ 子選單定義
 submenu_map = {
     "門診調整服務": [
-        {"type": "button", "action": {"type": "message", "label": t, "text": t}, "style": "primary", "margin": "md"}
+        {"type": "button", "action": {"type": "message", "label": t, "text": t}, "style": "primary","color": "#B8D8BE", "margin": "md"}
         for t in ["我要調診", "我要休診", "我要代診", "我要加診"]
     ],
     "值班調整服務": [
