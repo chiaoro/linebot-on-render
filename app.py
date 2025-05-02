@@ -125,9 +125,46 @@ submenu_map = {
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    user_msg = event.message.text.strip()
+    text = event.message.text.strip()
+    source_type = event.source.type  # 'user', 'group', 'room'
+
+    # ✅ Step 1：僅私訊觸發，或特定格式才處理
+    trigger_keywords = ["我要調診", "我要休診", "我要代診", "我要加診", "值班調換", "夜點費申請"]
+
+    if source_type != 'user' and not any(text.startswith(k) for k in trigger_keywords):
+        print(f"❌ 忽略群組內非關鍵字訊息：{text}")
+        return  # 不處理群組內非關鍵字訊息
+
+    # ✅ Step 2：進入你既有的邏輯（例如：「我要調診」流程）
+    if text.startswith("我要調診"):
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）")
+        )
+    elif text.startswith("我要休診") or text.startswith("我要代診") or text.startswith("我要加診"):
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入原因（例如：返台、會議）")
+        )
+    elif text.startswith("值班調換"):
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請問是值班【互換】還是【代理】？")
+        )
+    elif text.startswith("夜點費申請"):
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入您要申請的日期（例如：4/15-20、4/18、4/19）")
+        )
+    else:
+        # 其他無效格式，也不回應
+        print(f"未定義的指令：{text}")
 
 
+
+
+
+    
 
 
     # ✅ 每次進來都補 userId（一定要）
