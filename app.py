@@ -392,7 +392,14 @@ def handle_message(event):
                 "reason": session["reason"],
                 "doctor_name": doctor_name
             }
-    
+        
+            # ✅ 1. 先立即用 reply_token 確保使用者有收到
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="📨 已收到申請，請稍後傳送門診調整通知...")
+            )
+        
+            # ✅ 2. 接著發送 webhook 並推播 Flex Bubble
             try:
                 response = requests.post(
                     webhook_url,
@@ -400,23 +407,23 @@ def handle_message(event):
                     headers={"Content-Type": "application/json"}
                 )
                 print("✅ webhook 回應：", response.status_code, response.text)
-    
+        
                 bubble = get_adjustment_bubble(
                     original=session["original_date"],
                     method=session["new_date"],
                     reason=session["reason"]
                 )
-                line_bot_api.reply_message(
-                    event.reply_token,
+                line_bot_api.push_message(
+                    user_id,
                     FlexSendMessage(alt_text="門診調整通知", contents=bubble)
                 )
-    
+        
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 系統暫時無法提交資料，請稍後再試或聯絡管理員。"
+                line_bot_api.push_message(user_id, TextSendMessage(
+                    text="⚠️ 系統提交資料失敗，請稍後再試或聯絡管理員。"
                 ))
-    
+        
             del user_sessions[user_id]
         return
 
