@@ -354,7 +354,7 @@ def handle_message(event):
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
     if text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
-        user_sessions[user_id] = {"step": 1, "type": text}
+        user_sessions[user_id] = {"step": 0, "type": text}
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
@@ -364,23 +364,23 @@ def handle_message(event):
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
     
-        if session["step"] == 1:
+        if session["step"] == 0:
             session["original_date"] = text
-            session["step"] = 2
+            session["step"] = 1
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）")
             )
     
-        elif session["step"] == 2:
+        elif session["step"] == 1:
             session["new_date"] = text
-            session["step"] = 3
+            session["step"] = 2
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="📝 請輸入原因（例如：返台、會議）")
             )
     
-        elif session["step"] == 3:
+        elif session["step"] == 2:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
@@ -401,7 +401,6 @@ def handle_message(event):
                 )
                 print("✅ webhook 回應：", response.status_code, response.text)
     
-                # ✅ 改成 Flex Bubble 回傳
                 bubble = get_adjustment_bubble(
                     original=session["original_date"],
                     method=session["new_date"],
@@ -422,6 +421,8 @@ def handle_message(event):
         return
 
 
+
+    
     # ✅ 值班調換/代理（四～五步驟）
     if text == "值班調換":
         user_sessions[user_id] = {"step": 0, "type": "值班調換"}
