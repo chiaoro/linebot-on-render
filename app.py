@@ -178,8 +178,8 @@ def handle_message(event):
         
             expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
         
-            # ✅ Webhook 送出
-            webhook_url = os.getenv("NIGHT_FEE_WEBHOOK_URL")
+            # ✅ 正確放入 webhook URL
+            webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {
                 "user_id": user_id,
                 "日期": "、".join(expanded_dates)
@@ -187,10 +187,9 @@ def handle_message(event):
         
             try:
                 requests.post(webhook_url, json=payload)
-                # ✅ 顯示總班數
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text=f"""✅ 夜點費資料已送出：
-     📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
+        📆 日期：{"、".join(expanded_dates)}（共 {len(expanded_dates)} 班）"""
                 ))
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
