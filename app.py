@@ -128,6 +128,30 @@ def handle_message(event):
     text = event.message.text.strip()
     source_type = event.source.type  # 'user', 'group', 'room'
 
+
+
+    # ✅ 測ID
+    if source_type == "group":
+        print(f"📦 群組 ID：{event.source.group_id}")
+    elif source_type == "room":
+        print(f"📦 多人聊天室 ID：{event.source.room_id}")
+    else:
+        print(f"🙋 個人用戶 ID：{user_id}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
     # ✅ Step 1：僅私訊觸發，或特定格式才處理
     trigger_keywords = ["我要調診", "我要休診", "我要代診", "我要加診", "值班調換", "夜點費申請"]
 
