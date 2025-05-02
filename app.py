@@ -40,7 +40,7 @@ from utils.user_binding import ensure_user_id_exists, handle_user_binding
 from utils.date_utils import expand_date_range
 from utils.group_vote_tracker import handle_group_vote
 from utils.bubble_templates import main_menu_v2_bubble
-from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble
+from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble,get_support_adjustment_bubble
 from utils.line_utils import get_event_text, is_trigger
 
 
@@ -299,13 +299,19 @@ def handle_message(event):
     
 
     # ✅ 支援醫師調診單（四步驟流程）
-    # ✅ 啟動流程（第一句使用 reply_message）
-    if text == "支援醫師調診單":
+    # ✅ 統一取得訊息文字（支援文字或按鈕）
+    text = get_event_text(event)
+    
+    # ✅ 啟動支援醫師調診單流程（允許使用 reply_token）
+    if is_trigger(event, ["支援醫師調診單"]):
         user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？"))
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？")
+        )
         return
     
-    # ✅ 後續全部使用 push_message
+    # ✅ 支援醫師調診單步驟邏輯
     if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
         session = user_sessions[user_id]
     
@@ -326,6 +332,7 @@ def handle_message(event):
     
         elif session["step"] == 3:
             session["reason"] = text
+    
             webhook_url = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
             payload = {
                 "user_id": user_id,
@@ -337,15 +344,16 @@ def handle_message(event):
             }
     
             try:
+                # ✅ 發送 webhook
                 requests.post(webhook_url, json=payload)
     
+                # ✅ 組 Flex Bubble 並推播
                 bubble = get_support_adjustment_bubble(
                     doctor_name=session["doctor_name"],
                     original=session["original_date"],
                     method=session["new_date"],
                     reason=session["reason"]
                 )
-    
                 line_bot_api.push_message(
                     user_id,
                     FlexSendMessage(alt_text="支援醫師調診單已送出", contents=bubble)
@@ -444,43 +452,48 @@ def handle_message(event):
     
     
     # ✅ 值班調換/代理（四～五步驟）
-    if text == "值班調換":
+    # ✅ 統一取得使用者輸入（支援文字與 postback）
+    text = get_event_text(event)
+    
+    # ✅ 啟動流程（reply 一次）
+    if is_trigger(event, ["值班調換"]):
         user_sessions[user_id] = {"step": 0, "type": "值班調換"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請輸入您的姓名"))
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="🧑‍⚕️ 請輸入您的姓名")
+        )
         return
     
+    # ✅ 後續步驟統一用 push_message
     if user_id in user_sessions and user_sessions[user_id].get("type") == "值班調換":
         session = user_sessions[user_id]
     
         if session["step"] == 0:
             session["original_doctor"] = text
             session["step"] = 1
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原值班班別與日期（例如：夜班 5/10）"))
+            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請輸入原值班班別與日期（例如：夜班 5/10）"))
     
         elif session["step"] == 1:
-            # 拆解班別與日期
             try:
                 shift_type, date = text.split(" ")
                 session["shift_type"] = shift_type
                 session["original_date"] = date
+                session["step"] = 2
+                line_bot_api.push_message(user_id, TextSendMessage(text="🔁 請輸入對調醫師與調換日期（例如：李大華 5/15）"))
             except:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請用正確格式輸入，例如：夜班 5/10"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入：夜班 5/10"))
                 return
-    
-            session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🔁 請輸入對調醫師姓名與調換日期（例如：李大華 5/17）"))
     
         elif session["step"] == 2:
             try:
-                name, date = text.split(" ")
-                session["target_doctor"] = name
-                session["swap_date"] = date
+                target_doctor, swap_date = text.split(" ")
+                session["target_doctor"] = target_doctor
+                session["swap_date"] = swap_date
+                session["step"] = 3
+                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入調換原因"))
             except:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請用正確格式輸入，例如：李大華 5/17"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入：李大華 5/15"))
                 return
-    
-            session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入調換原因"))
     
         elif session["step"] == 3:
             session["reason"] = text
@@ -496,12 +509,6 @@ def handle_message(event):
                 "reason": session["reason"]
             }
     
-            # ✅ 先 reply 表示成功收到
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="📨 已收到申請，稍後會送出調換通知")
-            )
-    
             try:
                 requests.post(webhook_url, json=payload)
     
@@ -513,7 +520,6 @@ def handle_message(event):
                     swap_date=session["swap_date"],
                     reason=session["reason"]
                 )
-    
                 line_bot_api.push_message(
                     user_id,
                     FlexSendMessage(alt_text="值班調換通知", contents=bubble)
@@ -522,7 +528,7 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
                 ))
     
             del user_sessions[user_id]
@@ -530,35 +536,41 @@ def handle_message(event):
 
 
 
-    if text == "值班代理":
+    text = get_event_text(event)
+    
+    # ✅ 啟動流程（reply 一次）
+    if is_trigger(event, ["值班代理"]):
         user_sessions[user_id] = {"step": 0, "type": "值班代理"}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請輸入您的姓名"))
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="🧑‍⚕️ 請輸入您的姓名")
+        )
         return
     
+    # ✅ 後續步驟全用 push_message
     if user_id in user_sessions and user_sessions[user_id].get("type") == "值班代理":
         session = user_sessions[user_id]
     
         if session["step"] == 0:
             session["original_doctor"] = text
             session["step"] = 1
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原值班班別與日期（例如：早班 5/10）"))
+            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請輸入原值班班別與日期（例如：早班 5/12）"))
     
         elif session["step"] == 1:
             try:
                 shift_type, date = text.split(" ")
                 session["shift_type"] = shift_type
                 session["original_date"] = date
+                session["step"] = 2
+                line_bot_api.push_message(user_id, TextSendMessage(text="🙋‍♂️ 請輸入代理醫師姓名"))
             except:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請用正確格式輸入，例如：早班 5/10"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入：早班 5/12"))
                 return
-    
-            session["step"] = 2
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🧑‍⚕️ 請輸入代理醫師姓名"))
     
         elif session["step"] == 2:
             session["proxy_doctor"] = text
             session["step"] = 3
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因"))
+            line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因"))
     
         elif session["step"] == 3:
             session["reason"] = text
@@ -572,12 +584,6 @@ def handle_message(event):
                 "proxy_doctor": session["proxy_doctor"],
                 "reason": session["reason"]
             }
-    
-            # ✅ 先回覆確認文字（防止 reply_token 失效）
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="📨 已收到申請，稍後會送出代理通知")
-            )
     
             try:
                 requests.post(webhook_url, json=payload)
@@ -598,12 +604,11 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
                 ))
     
             del user_sessions[user_id]
         return
-
 
 
 
