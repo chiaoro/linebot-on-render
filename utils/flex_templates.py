@@ -1,6 +1,7 @@
 # utils/flex_templates.py
 
-def get_adjustment_result_bubble(original, method, reason):
+def get_adjustment_bubble(original, method, reason):
+    """調診／代診結果 Flex Bubble"""
     return {
         "type": "bubble",
         "header": {
@@ -8,7 +9,7 @@ def get_adjustment_result_bubble(original, method, reason):
             "layout": "vertical",
             "contents": [{
                 "type": "text",
-                "text": "✅ 調整單已送出",
+                "text": "✅ 門診調整已送出",
                 "weight": "bold",
                 "color": "#1DB446",
                 "size": "lg"
@@ -19,9 +20,50 @@ def get_adjustment_result_bubble(original, method, reason):
             "layout": "vertical",
             "spacing": "md",
             "contents": [
-                {"type": "text", "text": f"原門診：{original}", "wrap": True},
-                {"type": "text", "text": f"處理方式：{method}", "wrap": True},
-                {"type": "text", "text": f"原因：{reason}", "wrap": True}
+                {"type": "text", "text": f"📅 原門診：{original}", "wrap": True},
+                {"type": "text", "text": f"🛠️ 處理方式：{method}", "wrap": True},
+                {"type": "text", "text": f"📝 調整原因：{reason}", "wrap": True}
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [{
+                "type": "text",
+                "text": "如有誤請洽醫療部秘書",
+                "size": "sm",
+                "color": "#aaaaaa"
+            }]
+        }
+    }
+
+
+def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doctor, swap_date, reason):
+    """值班調換結果 Flex Bubble"""
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [{
+                "type": "text",
+                "text": "✅ 值班調換已送出",
+                "weight": "bold",
+                "color": "#007AFF",
+                "size": "lg"
+            }]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": f"🧑‍⚕️ 原值班醫師：{original_doctor}", "wrap": True},
+                {"type": "text", "text": f"📅 原值班日：{original_date}", "wrap": True},
+                {"type": "text", "text": f"🔁 班別：{shift_type}", "wrap": True},
+                {"type": "text", "text": f"🤝 對調醫師：{target_doctor}", "wrap": True},
+                {"type": "text", "text": f"📅 調換至：{swap_date}", "wrap": True},
+                {"type": "text", "text": f"📝 原因：{reason}", "wrap": True}
             ]
         },
         "footer": {
