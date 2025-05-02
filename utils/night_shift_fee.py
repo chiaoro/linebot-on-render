@@ -1,3 +1,5 @@
+#utils/night_shift_fee.py
+
 import os, json
 from datetime import datetime, date
 from linebot.models import TextSendMessage
@@ -39,3 +41,8 @@ def daily_night_fee_reminder():
             text = f"📌 {doctor}，請於本月 1~5 號繳交 {apply_date.strftime('%Y/%m')} 夜點費資料，謝謝！"
             push_text_to_group(GROUP_ID, text)
             sheet.update_cell(idx, list(records[0].keys()).index("提醒狀態")+1, "已提醒")
+
+
+def run_night_shift_reminder():
+    """提供給 /night-shift-reminder route 使用"""
+    daily_night_fee_reminder()
