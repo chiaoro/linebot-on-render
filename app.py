@@ -185,6 +185,7 @@ def handle_message(event):
 
 
     # ✅ 夜點費申請流程（Flex Bubble + 一步輸入日期 + 自動解析區間）
+    text = event.message.text.strip()
     if user_msg == "夜點費申請":
         user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
         bubble = {
