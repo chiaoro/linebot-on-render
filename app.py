@@ -368,9 +368,11 @@ def handle_message(event):
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
     # ✅ 啟動流程（這一句允許使用 reply_token）
-    trigger_text = text if isinstance(event.message, TextMessage) else (
-        event.postback.data if isinstance(event, PostbackEvent) else ""
-    )
+    trigger_text = ""
+    if isinstance(event, PostbackEvent):
+        trigger_text = event.postback.data
+    elif isinstance(event.message, TextMessage):
+        trigger_text = event.message.text.strip()
     
     if trigger_text in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         user_sessions[user_id] = {"step": 0, "type": trigger_text}
