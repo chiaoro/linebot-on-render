@@ -52,3 +52,37 @@ def get_meeting_leave_menu():
             }
         }
     )
+
+
+
+
+
+
+def get_meeting_leave_success(reason: str) -> FlexSendMessage:
+    return FlexSendMessage(
+        alt_text="✅ 已收到您的請假申請",
+        contents={
+            "type": "bubble",
+            "size": "kilo",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "✅ 已收到您的請假申請",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#00C851"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"理由：{reason}",
+                        "wrap": True,
+                        "color": "#555555"
+                    }
+                ]
+            }
+        }
+    )
