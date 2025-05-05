@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from oauth2client.service_account import ServiceAccountCredentials
 from utils.line_push import push_text_to_user
 from datetime import datetime, timedelta
+from utils.gspread_client import get_gspread_client
+
+
 
 load_dotenv()
 
@@ -30,3 +33,6 @@ def send_meeting_reminder():
         user_id=os.getenv("All_doctor_group_id"),
         text=f"📣【院務會議提醒】\n三天後({target_str})將召開院務會議，請大家確認是否出席唷！"
     )
+
+
+
