@@ -1,6 +1,7 @@
 import gspread
 from utils.gspread_client import get_gspread_client
 
+
 # ✅ 替換成你的實際網址
 STATE_SHEET_URL = "https://docs.google.com/spreadsheets/d/xxxxxxxxxxxxxxxxxxx/edit"
 
