@@ -3,7 +3,7 @@
 import os
 from datetime import datetime, date
 from linebot.models import TextSendMessage
-from utils.gspread_client import gc
+from utils.gspread_client import get_gspread_client
 from utils.line_push_utils import push_text_to_user, push_text_to_group
 
 # 表單與分頁設定
@@ -12,6 +12,8 @@ WORKSHEET_NAME = "夜點費申請紀錄"
 GROUP_ID = os.getenv("All_doctor_group_id")
 
 def handle_night_shift_request(user_id, user_msg):
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(SHEET_URL).worksheet(WORKSHEET_NAME)
     """
     處理醫師送出的夜點費申請資料（文字）
     """
