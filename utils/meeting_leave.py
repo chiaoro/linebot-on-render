@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager_google import set_state, get_state, clear_state
 from linebot.models import TextSendMessage
-
+from utils.gspread_client import get_gspread_client
 
 load_dotenv()
 
@@ -41,3 +41,11 @@ def handle_meeting_leave_response(user_id, user_msg):
     else:
         # 如果沒有在任何流程狀態
         return TextSendMessage(text="⚠️ 請從主選單重新開始填寫會議出席情況。")
+
+
+
+
+def log_something():
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(...).worksheet("記錄表")
+    sheet.append_row(["hello", "world"])
