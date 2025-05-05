@@ -1,6 +1,5 @@
 #utils/google_sheets.py
 
-
 from utils.gspread_client import get_gspread_client
 from datetime import datetime
 
@@ -18,7 +17,7 @@ def get_doctor_name(sheet_url, user_id):
         rows = sheet.get_all_records()
         for row in rows:
             if row.get("userId") == user_id:
-                return row.get("name")
+                return row.get("name", "未知")
         return "未知"
     except Exception as e:
         print(f"❌ get_doctor_name 發生錯誤：{e}")
@@ -31,8 +30,11 @@ def get_doctor_info(sheet_url, user_id):
         sheet = gc.open_by_url(sheet_url).worksheet("UserMapping")
         rows = sheet.get_all_records()
         for row in rows:
-            if row.get("LINE_USER_ID") == user_id:
-                return row.get("醫師姓名"), row.get("科別")
+            keys = row.keys()
+            if "LINE_USER_ID" in keys and row.get("LINE_USER_ID") == user_id:
+                return row.get("醫師姓名", "未知"), row.get("科別", "未知")
+            elif "userId" in keys and row.get("userId") == user_id:
+                return row.get("name", "未知"), row.get("dept", "未知")
         return "未知", "未知"
     except Exception as e:
         print(f"❌ get_doctor_info 發生錯誤：{e}")
@@ -45,7 +47,7 @@ def log_meeting_reply(user_id, doctor_name, dept, status, reason):
         sheet = gc.open_by_url(MEETING_SHEET_URL).worksheet("院務會議請假")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sheet.append_row([now, user_id, doctor_name, dept, status, reason])
-        print(f"📌 已記錄：{doctor_name} ({dept}) - {status}")
+        print(f"📌 已記錄：{doctor_name} ({dept}) - {status} - {reason}")
     except Exception as e:
         print(f"❌ log_meeting_reply 發生錯誤：{e}")
 
@@ -53,9 +55,8 @@ def log_meeting_reply(user_id, doctor_name, dept, status, reason):
 def log_something():
     try:
         gc = get_gspread_client()
-        sheet = gc.open_by_url(MEETING_SHEET_URL).worksheet("紀錄表")  # 確保有此分頁才可用
+        sheet = gc.open_by_url(MEETING_SHEET_URL).worksheet("紀錄表")  # 確保有此分頁
         sheet.append_row(["hello", "world"])
         print("✅ log_something 成功寫入紀錄表")
     except Exception as e:
         print(f"❌ log_something 發生錯誤：{e}")
-
