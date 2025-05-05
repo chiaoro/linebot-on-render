@@ -5,6 +5,10 @@ from datetime import datetime, date
 from linebot.models import TextSendMessage
 from utils.gspread_client import get_gspread_client
 from utils.line_push_utils import push_text_to_user, push_text_to_group
+from linebot.models import FlexSendMessage
+
+
+
 
 # 表單與分頁設定
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1XpX1l7Uf93XWNEYdZsHx-3IXpPf4Sb9Zl0ARGa4Iy5c/edit"
@@ -70,3 +74,36 @@ def run_night_shift_reminder():
     """
     print("📡 執行夜點費提醒...")
     daily_night_fee_reminder()
+
+
+
+
+
+def get_night_fee_success(dates: str, count: int) -> FlexSendMessage:
+    return FlexSendMessage(
+        alt_text="✅ 夜點費資料已送出",
+        contents={
+            "type": "bubble",
+            "size": "kilo",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "✅ 夜點費資料已送出",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#00C851"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"📆 日期：{dates}（共 {count} 班）",
+                        "wrap": True,
+                        "color": "#555555"
+                    }
+                ]
+            }
+        }
+    )
