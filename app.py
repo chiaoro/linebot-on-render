@@ -41,8 +41,8 @@ from utils.group_vote_tracker import handle_group_vote
 from utils.bubble_templates import main_menu_v2_bubble
 from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble,get_support_adjustment_bubble
 from utils.line_utils import get_event_text, is_trigger
-
-
+from utils.google_sheets import get_doctor_info
+from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
 
 
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
