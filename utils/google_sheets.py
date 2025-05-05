@@ -1,7 +1,7 @@
 # utils/google_sheets.py
 
 from utils.google_auth import get_gspread_client
-from utils.gspread_client import gc
+from utils.gspread_client import get_gspread_client
 from datetime import datetime
 
 
