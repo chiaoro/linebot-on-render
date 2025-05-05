@@ -3,8 +3,9 @@
 import os, json
 from dotenv import load_dotenv
 from utils.google_sheets import log_meeting_reply, get_doctor_name
-from utils.state_manager import set_state, get_state, clear_state
+from utils.state_manager_google import set_state, get_state, clear_state
 from linebot.models import TextSendMessage
+
 
 load_dotenv()
 
