@@ -30,7 +30,7 @@ from utils.daily_notifier import run_daily_push
 from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
 from utils.gspread_client import get_gspread_client
-from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
+from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder, run_night_shift_reminder
 from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 from utils.user_binding import handle_user_binding
@@ -226,27 +226,36 @@ def handle_message(event):
         if step == 1:
             date_input = text.strip()
             session["step"] = 2
-        
-            expanded_dates = expand_date_range(date_input)  # 回傳為 list of 字串，如 ["4/25", "4/26"]
-        
-            # ✅ 正確放入 webhook URL
+    
+            try:
+                expanded_dates = expand_date_range(date_input)  # ['4/15', '4/16', ...]
+            except Exception as e:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text="⚠️ 日期格式有誤，請重新輸入。\n範例：4/10、4/12、4/15-18"
+                ))
+                del user_sessions[user_id]
+                return
+    
+            # ✅ 正確 webhook URL
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {
                 "user_id": user_id,
                 "日期": date_input
             }
-        
+    
             try:
-                requests.post(webhook_url, json=payload)
+                response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
-                
+    
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text=f"""✅ 夜點費資料已送出：
-            📆 日期：{date_input}（共 {len(expanded_dates)} 班）"""
+                    text=f"✅ 夜點費資料已送出：\n📆 日期：{date_input}（共 {len(expanded_dates)} 班）"
                 ))
             except Exception as e:
-                print("❌ webhook 發送失敗（靜默）：", str(e))
-                pass  # 不回應使用者任何訊息
+                print("❌ webhook 發送失敗：", str(e))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text="⚠️ 系統發送失敗，請稍後再試或聯絡秘書協助"
+                ))
+    
             del user_sessions[user_id]
             return
 
@@ -687,6 +696,7 @@ def handle_message(event):
     if get_state(user_id) == "ASK_REASON":
         print(f"[DEBUG] 使用者 {user_id} 進入請假原因流程，輸入內容為：{text}")
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+        dept = "未填"  # 或其他你要的預設值
         print(f"[DEBUG] 查到的醫師姓名：{doctor_name}, 科別：{dept}")
         reason = text
         try:
