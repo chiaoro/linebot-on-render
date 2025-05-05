@@ -3,6 +3,7 @@ from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 from utils.line_push import push_text_to_group
+from utils.gspread_client import get_gspread_client
 
 load_dotenv()
 
@@ -53,3 +54,12 @@ def send_monthly_fixed_reminders():
                     print(f"❌ 推播或寫入失敗：第{idx}列，錯誤：{e}")
             else:
                 print(f"⚠️ 找不到對應群組環境變數：{group}")
+
+
+
+
+
+def log_something():
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(...).worksheet("記錄表")
+    sheet.append_row(["hello", "world"])
