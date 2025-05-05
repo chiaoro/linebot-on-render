@@ -53,8 +53,3 @@ def handle_meeting_leave_response(user_id, user_msg):
         return TextSendMessage(text="⚠️ 請從主選單重新開始填寫會議出席情況。")
 
 
-# ✅ 可選：除錯測試用函式
-def log_something():
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(RECORD_SHEET_URL).worksheet("紀錄表")  # 確保這個分頁存在
-    sheet.append_row(["hello", "world"])
