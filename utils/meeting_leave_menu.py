@@ -34,7 +34,7 @@ def get_meeting_leave_menu():
                         "color": "#00C851",
                         "action": {
                             "type": "message",
-                            "label": "✅ 出席",
+                            "label": "✔ 出席",
                             "text": "我要出席院務會議"
                         }
                     },
@@ -44,7 +44,7 @@ def get_meeting_leave_menu():
                         "color": "#ff4444",
                         "action": {
                             "type": "message",
-                            "label": "❌ 請假",
+                            "label": "✖ 請假",
                             "text": "我要請假院務會議"
                         }
                     }
