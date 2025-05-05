@@ -10,8 +10,17 @@ def get_meeting_leave_menu():
                 "layout": "vertical",
                 "spacing": "md",
                 "contents": [
-                    {"type": "text", "text": "📋 院務會議請假", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": "請問您是否出席院務會議？", "wrap": True}
+                    {
+                        "type": "text",
+                        "text": "📋 院務會議請假",
+                        "weight": "bold",
+                        "size": "lg"
+                    },
+                    {
+                        "type": "text",
+                        "text": "請問您是否出席院務會議？",
+                        "wrap": True
+                    }
                 ]
             },
             "footer": {
@@ -23,13 +32,21 @@ def get_meeting_leave_menu():
                         "type": "button",
                         "style": "primary",
                         "color": "#00C851",
-                        "action": {"type": "message", "label": "✅ 出席", "text": "院務會議出席"}
+                        "action": {
+                            "type": "message",
+                            "label": "✅ 出席",
+                            "text": "我要出席院務會議"
+                        }
                     },
                     {
                         "type": "button",
                         "style": "primary",
                         "color": "#ff4444",
-                        "action": {"type": "message", "label": "❌ 請假", "text": "院務會議請假申請"}
+                        "action": {
+                            "type": "message",
+                            "label": "❌ 請假",
+                            "text": "我要請假院務會議"
+                        }
                     }
                 ]
             }
