@@ -3,7 +3,9 @@ from utils.gspread_client import get_gspread_client
 
 
 # ✅ 替換成你的實際網址
-STATE_SHEET_URL = "https://docs.google.com/spreadsheets/d/xxxxxxxxxxxxxxxxxxx/edit"
+STATE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
+STATE_SHEET_NAME = "使用者狀態"
+DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 
 def get_state(user_id):
     gc = get_gspread_client()
