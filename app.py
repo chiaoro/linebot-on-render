@@ -150,8 +150,7 @@ def handle_message(event):
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
-    dates_list = parse_dates(raw_text)  # 你自己邏輯處理過的清單
-    count = len(dates_list)
+
 
      # ✅ 測ID
      # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
@@ -256,24 +255,48 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, flex_msg)
         return
     
-    
-    # ✅ 接收日期並處理
+    # ✅ 夜點費申請：接收使用者輸入的日期
     if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費申請":
         session = user_sessions[user_id]
-        step = session["step"]
-    
-        if step == 1:
-            date_input = text.strip()
-            session["step"] = 2
+        if session.get("step") == 1:
+            raw_input = event.message.text.strip()
+            session["step"] = 2  # 如果之後還有下一步
     
             try:
-                expanded_dates = expand_date_range(date_input)  # ['4/15', '4/16', ...]
+                expanded_dates = expand_date_range(raw_input)  # ex: ['4/18', '4/19', '4/20']
+                count = len(expanded_dates)
             except Exception as e:
+                print(f"[ERROR] expand_date_range failed: {e}")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text="⚠️ 日期格式有誤，請重新輸入。\n範例：4/10、4/12、4/15-18"
                 ))
                 del user_sessions[user_id]
                 return
+    
+            # ✅ 傳送至 Google webhook
+            webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
+            payload = {
+                "user_id": user_id,
+                "日期": raw_input
+            }
+    
+            try:
+                response = requests.post(webhook_url, json=payload)
+                print("📡 webhook 回傳：", response.status_code, response.text)
+    
+                # ✅ Flex Bubble 回應
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    get_night_fee_success(raw_input, count)
+                )
+            except Exception as e:
+                print(f"[ERROR] webhook 發送失敗：{e}")
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text="⚠️ 系統發送失敗，請稍後再試或聯絡秘書協助"
+                ))
+    
+            del user_sessions[user_id]
+            return
     
             # ✅ 正確 webhook URL
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
@@ -285,13 +308,13 @@ def handle_message(event):
             try:
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
-    
+
+                
                 line_bot_api.reply_message(
                     event.reply_token,
                     get_night_fee_success(date_input, len(expanded_dates))
                 )
             except Exception as e:
-                print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
                     text="⚠️ 系統發送失敗，請稍後再試或聯絡秘書協助"
                 ))
