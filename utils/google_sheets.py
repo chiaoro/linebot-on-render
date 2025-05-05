@@ -4,6 +4,7 @@
 from utils.gspread_client import get_gspread_client
 from datetime import datetime
 
+
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 MEETING_SHEET_URL = "https://docs.google.com/spreadsheets/d/1-mI71sC7TE-f8Gb9YPddhVGJrozKxLIdJlSBf2khJsA/edit"
 
@@ -38,3 +39,12 @@ def get_doctor_info(sheet_url, user_id):
             return row.get("醫師姓名"), row.get("科別")
 
     return "未知", "未知"
+
+
+
+
+
+def log_something():
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(...).worksheet("記錄表")
+    sheet.append_row(["hello", "world"])
