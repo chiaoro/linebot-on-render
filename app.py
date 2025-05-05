@@ -21,7 +21,6 @@ from dotenv import load_dotenv
 # --- 自己寫的 utils 模組
 from utils.line_push import push_text_to_user
 from utils.schedule_utils import handle_submission
-from utils.google_auth import get_gspread_client
 from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 from utils.meeting_reminder import send_meeting_reminder
@@ -59,7 +58,6 @@ handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 # ✅ Google Sheets 認證
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = get_gspread_client()
 
 # ✅ 固定網址設定
