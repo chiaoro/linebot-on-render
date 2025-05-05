@@ -624,7 +624,7 @@ def handle_message(event):
 
     
 
-    # ✅ 院務會議請假
+    # ✅ 院務會議請假流程
     if text == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
         bubble = {
@@ -656,7 +656,7 @@ def handle_message(event):
                     {
                         "type": "button",
                         "style": "primary",
-                        "color": "#9F4D95",  # ✅ 紫色
+                        "color": "#9F4D95",
                         "action": {
                             "type": "message",
                             "label": "✅ 我要出席",
@@ -666,7 +666,7 @@ def handle_message(event):
                     {
                         "type": "button",
                         "style": "secondary",
-                        "color": "#F4F2F9",  # ❌ 淺紫色
+                        "color": "#F4F2F9",
                         "action": {
                             "type": "message",
                             "label": "❌ 我要請假",
@@ -679,33 +679,34 @@ def handle_message(event):
         flex_msg = FlexSendMessage(alt_text="📋 院務會議出席確認", contents=bubble)
         line_bot_api.reply_message(event.reply_token, flex_msg)
         return
-
+    
+    # ✅ 出席回覆流程
     if get_state(user_id) == "ASK_LEAVE":
         if text == "我要出席院務會議":
-            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-            log_meeting_reply(user_id, "出席", "")
+            doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+            log_meeting_reply(user_id, doctor_name, dept, "出席", "")
             clear_state(user_id)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您出席院務會議。"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已回覆出席，請當天準時與會。"))
         elif text == "我要請假院務會議":
             set_state(user_id, "ASK_REASON")
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入您無法出席的原因："))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入您無法出席的原因："))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請選擇上方按鈕"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請點選上方按鈕回覆"))
         return
-
+    
+    # ✅ 請假原因輸入後紀錄
     if get_state(user_id) == "ASK_REASON":
-        print(f"[DEBUG] 使用者 {user_id} 進入請假原因流程，輸入內容為：{text}")
+        reason = text.strip()
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-        dept = "未填"  # 或其他你要的預設值
-        print(f"[DEBUG] 查到的醫師姓名：{doctor_name}, 科別：{dept}")
-        reason = text
         try:
             log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
-            print(f"[DEBUG] 寫入成功：{user_id}, {doctor_name}, {dept}, {reason}")
+            print(f"[DEBUG] 已紀錄請假：{doctor_name}（{dept}） - {reason}")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text=f"✅ 已收到您的請假申請，理由：{reason}"))
         except Exception as e:
-            print(f"[ERROR] 寫入請假資料失敗：{e}")
+            print(f"[ERROR] 請假紀錄失敗：{e}")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 系統錯誤，請稍後再試"))
         clear_state(user_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您的請假申請。"))
         return
 
 
