@@ -107,9 +107,9 @@ submenu_map = {
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    text = event.message.text.strip()
-    source_type = event.source.type  # 'user', 'group', 'room'
-
+    source_type = event.source.type         # 'user', 'group', 'room'
+    raw_text = event.message.text.strip()   # 使用者原始輸入
+    text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
 
 
      # ✅ 測ID
@@ -305,7 +305,7 @@ def handle_message(event):
 
     # ✅ 支援醫師調診單（四步驟流程）
     # ✅ 統一取得訊息文字（支援文字或按鈕）
-    text = get_event_text(event)
+
     
     # ✅ 啟動支援醫師調診單流程（允許使用 reply_token）
     if is_trigger(event, ["支援醫師調診單"]):
@@ -382,7 +382,7 @@ def handle_message(event):
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
     # ✅ 啟動流程（這一句允許使用 reply_token）
-    text = get_event_text(event)
+   
     
     if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
         user_sessions[user_id] = {"step": 0, "type": text}
@@ -458,7 +458,8 @@ def handle_message(event):
     
     # ✅ 值班調換/代理（四～五步驟）
     # ✅ 統一取得使用者輸入（支援文字與 postback）
-    text = get_event_text(event)
+
+    
     
     # ✅ 啟動流程（reply 一次）
     if is_trigger(event, ["值班調換"]):
@@ -541,7 +542,7 @@ def handle_message(event):
 
 
 
-    text = get_event_text(event)
+ 
     
     # ✅ 啟動流程（reply 一次）
     if is_trigger(event, ["值班代理"]):
@@ -625,61 +626,14 @@ def handle_message(event):
     # ✅ 院務會議請假流程
     if text == "院務會議請假":
         set_state(user_id, "ASK_LEAVE")
-        bubble = {
-            "type": "bubble",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "📋 院務會議出席確認",
-                        "weight": "bold",
-                        "size": "lg",
-                        "margin": "md"
-                    },
-                    {
-                        "type": "text",
-                        "text": "請問您是否出席本次院務會議？",
-                        "size": "sm",
-                        "wrap": True,
-                        "margin": "md"
-                    }
-                ]
-            },
-            "footer": {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#9F4D95",
-                        "action": {
-                            "type": "message",
-                            "label": "✅ 我要出席",
-                            "text": "我要出席院務會議"
-                        }
-                    },
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "color": "#F4F2F9",
-                        "action": {
-                            "type": "message",
-                            "label": "❌ 我要請假",
-                            "text": "我要請假院務會議"
-                        }
-                    }
-                ]
-            }
-        }
+        bubble = get_meeting_leave_menu()
         flex_msg = FlexSendMessage(alt_text="📋 院務會議出席確認", contents=bubble)
         line_bot_api.reply_message(event.reply_token, flex_msg)
         return
-    
-    # ✅ 出席回覆流程
-    if get_state(user_id) == "ASK_LEAVE":
+
+    state = get_state(user_id)
+
+    if state == "ASK_LEAVE":
         if text == "我要出席院務會議":
             doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
             log_meeting_reply(user_id, doctor_name, dept, "出席", "")
@@ -691,9 +645,8 @@ def handle_message(event):
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請點選上方按鈕回覆"))
         return
-    
-    # ✅ 請假原因輸入後紀錄
-    if get_state(user_id) == "ASK_REASON":
+
+    if state == "ASK_REASON":
         reason = text.strip()
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
         try:
