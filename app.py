@@ -19,29 +19,68 @@ from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 
 # --- 自己寫的 utils 模組
+# --- LINE 處理與對話工具
 from utils.line_push import push_text_to_user
-from utils.schedule_utils import handle_submission
+from utils.line_utils import get_event_text, is_trigger
+
+# --- 使用者狀態管理
 from utils.state_manager import set_state, get_state, clear_state
+from utils.user_binding import (
+    handle_user_binding,
+    send_bind_start_flex,
+    ask_for_name,
+    confirm_binding,
+    ensure_user_id_exists,
+    user_states
+)
+
+# --- Google Sheets 操作
+from utils.gspread_client import get_gspread_client
+from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
+
+# --- 日期與字串處理工具
+from utils.date_utils import expand_date_range
+
+# --- Flex Bubble 模板
+from utils.bubble_templates import main_menu_v2_bubble
+from utils.flex_templates import (
+    get_adjustment_bubble,
+    get_duty_swap_bubble,
+    get_support_adjustment_bubble
+)
+
+# --- 院務會議請假流程
+from utils.meeting_leave import handle_meeting_leave_response
+from utils.meeting_leave_menu import (
+    get_meeting_leave_menu,
+    get_meeting_leave_success
+)
+from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
+
+# --- 夜點費處理
+from utils.night_shift_fee import (
+    handle_night_shift_request,
+    daily_night_fee_reminder,
+    run_night_shift_reminder,
+    get_night_fee_success
+)
+from utils.daily_night_fee_reminder import send_night_fee_reminders
+
+# --- 推播任務（每日 / 固定 / 重要）
 from utils.meeting_reminder import send_meeting_reminder
 from utils.monthly_reminder import send_monthly_fixed_reminders
 from utils.event_reminder import send_important_event_reminder
 from utils.daily_notifier import run_daily_push
-from utils.meeting_leave import handle_meeting_leave_response
-from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
-from utils.gspread_client import get_gspread_client
-from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder, run_night_shift_reminder
-from utils.meeting_leave_menu import get_meeting_leave_menu
-from utils.daily_night_fee_reminder import send_night_fee_reminders
-from utils.user_binding import handle_user_binding
-from utils.user_binding import send_bind_start_flex, ask_for_name, confirm_binding, ensure_user_id_exists, user_states
-from utils.user_binding import ensure_user_id_exists, handle_user_binding
-from utils.date_utils import expand_date_range
+
+# --- 群組統計功能
 from utils.group_vote_tracker import handle_group_vote
-from utils.bubble_templates import main_menu_v2_bubble
-from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble,get_support_adjustment_bubble
-from utils.line_utils import get_event_text, is_trigger
-from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
-from utils.meeting_leave_menu import get_meeting_leave_success  # 別忘了 import
+
+# --- 表單處理功能
+from utils.schedule_utils import handle_submission
+
+
+
+
 
 
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
@@ -111,7 +150,8 @@ def handle_message(event):
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
-
+    dates_list = parse_dates(raw_text)  # 你自己邏輯處理過的清單
+    count = len(dates_list)
 
      # ✅ 測ID
      # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
@@ -246,9 +286,10 @@ def handle_message(event):
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
     
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text=f"✅ 夜點費資料已送出：\n📆 日期：{date_input}（共 {len(expanded_dates)} 班）"
-                ))
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    get_night_fee_success(date_input, len(expanded_dates))
+                )
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
