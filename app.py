@@ -30,7 +30,7 @@ from utils.event_reminder import send_important_event_reminder
 from utils.daily_notifier import run_daily_push
 from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
-from utils.gspread_client import gc
+from utils.gspread_client import get_gspread_client
 from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder
 from utils.meeting_leave_menu import get_meeting_leave_menu
 from utils.daily_night_fee_reminder import send_night_fee_reminders
@@ -61,6 +61,7 @@ SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/au
 creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 gc = gspread.authorize(creds)
+gc = get_gspread_client()
 
 # ✅ 固定網址設定
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"  # 使用者對照表
