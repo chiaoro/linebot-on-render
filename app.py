@@ -41,6 +41,7 @@ from utils.bubble_templates import main_menu_v2_bubble
 from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble,get_support_adjustment_bubble
 from utils.line_utils import get_event_text, is_trigger
 from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
+from utils.meeting_leave_menu import get_meeting_leave_success  # 別忘了 import
 
 
 exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
@@ -651,7 +652,7 @@ def handle_message(event):
         try:
             log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
             print(f"[DEBUG] 已紀錄請假：{doctor_name}（{dept}） - {reason}")
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ 已收到您的請假申請，理由：{reason}"))
+            line_bot_api.reply_message(event.reply_token, get_meeting_leave_success(reason))
         except Exception as e:
             print(f"[ERROR] 請假紀錄失敗：{e}")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 系統錯誤，請稍後再試"))
