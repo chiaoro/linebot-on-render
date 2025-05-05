@@ -21,7 +21,6 @@ from dotenv import load_dotenv
 # --- 自己寫的 utils 模組
 from utils.line_push import push_text_to_user
 from utils.schedule_utils import handle_submission
-from utils.google_sheets import log_meeting_reply, get_doctor_name
 from utils.state_manager import set_state, get_state, clear_state
 from utils.meeting_reminder import send_meeting_reminder
 from utils.monthly_reminder import send_monthly_fixed_reminders
@@ -41,7 +40,6 @@ from utils.group_vote_tracker import handle_group_vote
 from utils.bubble_templates import main_menu_v2_bubble
 from utils.flex_templates import get_adjustment_bubble, get_duty_swap_bubble,get_support_adjustment_bubble
 from utils.line_utils import get_event_text, is_trigger
-from utils.google_sheets import get_doctor_info
 from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
 
 
