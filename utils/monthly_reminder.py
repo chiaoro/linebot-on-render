@@ -58,8 +58,3 @@ def send_monthly_fixed_reminders():
 
 
 
-
-def log_something():
-    gc = get_gspread_client()
-    sheet = gc.open_by_url(...).worksheet("記錄表")
-    sheet.append_row(["hello", "world"])
