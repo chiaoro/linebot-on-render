@@ -34,3 +34,9 @@ def clear_state(user_id):
         if row['使用者ID'] == user_id:
             sheet.delete_rows(i + 2)
             return
+
+
+def log_something():
+    gc = get_gspread_client()
+    sheet = gc.open_by_url(...).worksheet("記錄表")
+    sheet.append_row(["hello", "world"])
