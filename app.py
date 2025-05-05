@@ -687,10 +687,15 @@ def handle_message(event):
         return
 
     if get_state(user_id) == "ASK_REASON":
-        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-        reason = text
+        print(f"[DEBUG] 使用者 {user_id} 進入請假原因流程，輸入內容為：{text}")
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-        log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
+        print(f"[DEBUG] 查到的醫師姓名：{doctor_name}, 科別：{dept}")
+        reason = text
+        try:
+            log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
+            print(f"[DEBUG] 寫入成功：{user_id}, {doctor_name}, {dept}, {reason}")
+        except Exception as e:
+            print(f"[ERROR] 寫入請假資料失敗：{e}")
         clear_state(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 已紀錄您的請假申請。"))
         return
