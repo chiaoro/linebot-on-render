@@ -5,7 +5,7 @@ import os, json
 from datetime import datetime
 from collections import defaultdict
 from io import BytesIO
-from docx import Document
+#from docx import Document
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -42,7 +42,7 @@ try:
 except Exception as e:
     print(f"❌ Google Sheets 載入失敗：{e}")
     exit()
-
+"""
 # ✅ 整理成 {科別: [{姓名, 日期, 班數}]}
 output = defaultdict(list)
 for row in data:
@@ -94,5 +94,6 @@ for dept, records in output.items():
 
     except Exception as e:
         print(f"❌ 產出或上傳失敗（科別：{dept}）：{e}")
+"""
 
 print("🎉 所有科別夜點費申請表已完成產出並備份。")
