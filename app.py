@@ -62,7 +62,6 @@ from utils.night_shift_fee import (
     handle_night_shift_request,
     daily_night_fee_reminder,
     run_night_shift_reminder,
-    get_night_fee_success
 )
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 
