@@ -292,7 +292,7 @@ def handle_message(event):
             except Exception as e:
                 print(f"[ERROR] webhook 發送失敗：{e}")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 系統發送失敗，請稍後再試或聯絡秘書協助"
+                    text="⚠️ 系統發送失敗，請稍後再試或聯絡巧柔協助"
                 ))
     
             del user_sessions[user_id]
@@ -316,7 +316,7 @@ def handle_message(event):
                 )
             except Exception as e:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 系統發送失敗，請稍後再試或聯絡秘書協助"
+                    text="⚠️ 系統發送失敗，請稍後再試或聯絡巧柔協助"
                 ))
     
             del user_sessions[user_id]
@@ -432,7 +432,7 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
             del user_sessions[user_id]
@@ -507,7 +507,7 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
             del user_sessions[user_id]
@@ -599,7 +599,7 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
             del user_sessions[user_id]
@@ -675,7 +675,7 @@ def handle_message(event):
             except Exception as e:
                 print("❌ webhook 發送失敗：", str(e))
                 line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試或聯絡秘書"
+                    text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
             del user_sessions[user_id]
@@ -747,14 +747,7 @@ def callback():
 def home():
     return "LINE Bot is running!", 200
 
-# ✅ 夜點費 Word 文件產生
-@app.route("/generate-night-fee-word", methods=["GET"])
-def generate_night_fee_word():
-    try:
-        exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
-        return "✅ 夜點費申請表產生完成", 200
-    except Exception as e:
-        return f"❌ 夜點費申請表產生錯誤：{e}", 500
+
 
 
 
