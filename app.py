@@ -1,6 +1,6 @@
 
 # --- 標準函式庫
-import os
+import os,re
 import json
 import tempfile
 import requests
