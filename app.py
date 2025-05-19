@@ -445,9 +445,8 @@ def handle_message(event):
 
     
     # ✅ 調診/休診/代診/加診（三步驟流程）
-    # ✅ 啟動流程（這一句允許使用 reply_token）
-   
     
+    # ✅ Step 0：啟動流程（允許使用 reply_token）
     if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
         user_sessions[user_id] = {"step": 0, "type": text}
         line_bot_api.reply_message(
@@ -456,14 +455,15 @@ def handle_message(event):
         )
         return
     
-    # ✅ 後續步驟全改為 push_message（穩定、不會報錯）
+    # ✅ Step 1~2：後續步驟改用 push_message，避免 reply_token 逾時錯誤
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
     
         if session["step"] == 0:
             session["original_date"] = text
             session["step"] = 1
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：改5/23 下午診、休診、XXX代診）"))
+            line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
+            line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
     
         elif session["step"] == 1:
             session["new_date"] = text
@@ -492,7 +492,7 @@ def handle_message(event):
                 )
                 print("✅ webhook 回應：", response.status_code, response.text)
     
-                # ✅ 推送 Flex Bubble
+                # ✅ 推送 Flex Bubble 通知
                 bubble = get_adjustment_bubble(
                     original=session["original_date"],
                     method=session["new_date"],
@@ -509,6 +509,7 @@ def handle_message(event):
                     text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
+            # ✅ 清除 session
             del user_sessions[user_id]
         return
 
