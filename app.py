@@ -449,10 +449,11 @@ def handle_message(event):
 
     
     # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程）
+    # ✅ 日期格式判斷（5/6 上午診）
+    VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}\s*(上午診|下午診|夜診)?$"
     
-    # ✅ Step 0：流程啟動（點選按鈕「我要調診」等）
+    # ✅ Step 0：啟動流程
     if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
-        print("✅ 啟動流程：", text)
         user_sessions[user_id] = {
             "step": 0,
             "type": text,
@@ -460,12 +461,12 @@ def handle_message(event):
         }
         return
     
-    # ✅ Step 1～3：三步驟問答流程
+    # ✅ Step 1~3：依照步驟逐題提問
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
         print("🔍 session 狀態：", session)
     
-        # ✅ Step 0：僅第一次提問「原本門診日期」
+        # ✅ 第一步：問原本門診日期
         if session["step"] == 0 and not session.get("has_asked", False):
             session["has_asked"] = True
             line_bot_api.push_message(
@@ -474,22 +475,28 @@ def handle_message(event):
             )
             return
     
-        # ✅ Step 1：收到原門診 → 提問新的安排
+        # ✅ 第二步：收到原門診，問新門診安排
         elif session["step"] == 0 and "original_date" not in session:
-            session["original_date"] = text
-            session["step"] = 1
-            line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
-            line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
+            if re.match(VALID_DATE_PATTERN, text):
+                session["original_date"] = text
+                session["step"] = 1
+                line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
+            else:
+                line_bot_api.push_message(
+                    user_id,
+                    TextSendMessage(text="⚠️ 請輸入正確格式的門診日期，例如：5/6 上午診")
+                )
             return
     
-        # ✅ Step 2：收到新門診 → 詢問原因
+        # ✅ 第三步：收到新門診，問原因
         elif session["step"] == 1 and "new_date" not in session:
             session["new_date"] = text
             session["step"] = 2
             line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：返台、會議）"))
             return
     
-        # ✅ Step 3：收到原因 → 傳送 webhook + Flex Bubble
+        # ✅ 第四步：收到原因，送出 webhook 與回饋 Bubble
         elif session["step"] == 2:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
@@ -530,6 +537,7 @@ def handle_message(event):
     
             del user_sessions[user_id]
         return
+
     
 
 
