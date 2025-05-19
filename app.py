@@ -444,36 +444,40 @@ def handle_message(event):
     
 
     
-    # ✅ 調診/休診/代診/加診（三步驟流程）
+    # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程）
     
-    # ✅ Step 0：啟動流程（允許使用 reply_token）
+    # ✅ Step 0：啟動流程（改用 push_message，避免漏掉訊息）
     if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
         user_sessions[user_id] = {"step": 0, "type": text}
-        line_bot_api.reply_message(
-            event.reply_token,
+        line_bot_api.push_message(
+            user_id,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
         )
         return
     
-    # ✅ Step 1~2：後續步驟改用 push_message，避免 reply_token 逾時錯誤
+    # ✅ Step 1～2：後續步驟用 push_message
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
     
+        # ✅ Step 1：詢問新的門診安排
         if session["step"] == 0:
             session["original_date"] = text
             session["step"] = 1
             line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
             line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
     
+        # ✅ Step 2：詢問原因
         elif session["step"] == 1:
             session["new_date"] = text
             session["step"] = 2
             line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：返台、會議）"))
     
+        # ✅ Step 3：送出 webhook 並回傳 Flex Bubble
         elif session["step"] == 2:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
             webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
+    
             payload = {
                 "user_id": user_id,
                 "request_type": session["type"],
@@ -484,7 +488,7 @@ def handle_message(event):
             }
     
             try:
-                # ✅ 傳 webhook
+                # ✅ 傳送 webhook
                 response = requests.post(
                     webhook_url,
                     json=payload,
@@ -492,7 +496,7 @@ def handle_message(event):
                 )
                 print("✅ webhook 回應：", response.status_code, response.text)
     
-                # ✅ 推送 Flex Bubble 通知
+                # ✅ Flex Bubble 確認回饋
                 bubble = get_adjustment_bubble(
                     original=session["original_date"],
                     method=session["new_date"],
@@ -509,7 +513,7 @@ def handle_message(event):
                     text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
-            # ✅ 清除 session
+            # ✅ 清除 session，結束流程
             del user_sessions[user_id]
         return
 
