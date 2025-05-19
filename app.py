@@ -471,7 +471,7 @@ def handle_message(event):
         step = session["step"]
     
         # ✅ Step 1：原門診日期
-        if step == 1:
+        if step == 0:
             if re.match(VALID_DATE_PATTERN, text):
                 session["original_date"] = text
                 session["step"] = 1
