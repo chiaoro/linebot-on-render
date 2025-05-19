@@ -449,53 +449,57 @@ def handle_message(event):
 
     
     # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程）
-    # ✅ 日期格式：5/6 上午診
+
+
     VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}\s*(上午診|下午診|夜診)?$"
+    TRIGGER_WORDS = ["我要調診", "我要休診", "我要代診", "我要加診"]
     
-    # ✅ Step 0：啟動流程（不主動問問題，等使用者輸入）
-    if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
+    # ✅ 啟動流程 → 不處理輸入，只先提示下一步
+    if is_trigger(event, TRIGGER_WORDS):
         user_sessions[user_id] = {
             "step": 0,
-            "type": text
+            "type": text,
+            "expecting_input": False
         }
+        # 延遲處理輸入，等下一句話
         line_bot_api.push_message(
             user_id,
             TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
         )
+        # 等下一句話才處理
+        user_sessions[user_id]["expecting_input"] = True
         return
     
-    # ✅ Step 1～3：流程繼續
+    # ✅ 對話持續中
     if user_id in user_sessions:
         session = user_sessions[user_id]
         step = session.get("step", 0)
     
-        # ✅ Step 1：輸入原門診日期
+        # 防止啟動詞直接當答案使用（跳過這回合）
+        if not session.get("expecting_input", False):
+            return
+    
+        # ✅ Step 1：取得原門診
         if step == 0:
             if re.match(VALID_DATE_PATTERN, text):
                 session["original_date"] = text
                 session["step"] = 1
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"
-                ))
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"
-                ))
+                session["expecting_input"] = True
+                line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
             else:
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 請輸入正確格式，例如：5/6 上午診"
-                ))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 請輸入正確格式，例如：5/6 上午診"))
             return
     
-        # ✅ Step 2：輸入新門診安排或休診/代診資訊
+        # ✅ Step 2：取得新門診
         elif step == 1:
             session["new_date"] = text
             session["step"] = 2
-            line_bot_api.push_message(user_id, TextSendMessage(
-                text="📝 請輸入原因（例如：返台、會議）"
-            ))
+            session["expecting_input"] = True
+            line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：返台、會議）"))
             return
     
-        # ✅ Step 3：輸入原因並送出
+        # ✅ Step 3：提交資料
         elif step == 2:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
@@ -509,29 +513,24 @@ def handle_message(event):
                 "doctor_name": doctor_name
             }
     
-            webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
-    
             try:
+                webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
                 response = requests.post(webhook_url, json=payload, headers={"Content-Type": "application/json"})
-                print("✅ webhook 成功：", response.status_code)
     
                 bubble = get_adjustment_bubble(
                     original=session["original_date"],
                     method=session["new_date"],
                     reason=session["reason"]
                 )
-                line_bot_api.push_message(user_id, FlexSendMessage(
-                    alt_text="門診調整通知", contents=bubble
-                ))
+                line_bot_api.push_message(user_id, FlexSendMessage(alt_text="門診調整通知", contents=bubble))
     
             except Exception as e:
-                print("❌ webhook 錯誤：", str(e))
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 提交失敗，請稍後再試或聯絡巧柔"
-                ))
+                print("❌ webhook 發送失敗：", str(e))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 提交失敗，請稍後再試或聯絡巧柔"))
     
             del user_sessions[user_id]
         return
+    
 
     
 
