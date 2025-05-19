@@ -446,33 +446,34 @@ def handle_message(event):
     
     # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程）
     
-    # ✅ Step 0：啟動流程（改用 push_message，避免漏掉訊息）
+    # ✅ Step 0：啟動流程（只設定一次）
     if is_trigger(event, ["我要調診", "我要休診", "我要代診", "我要加診"]):
-        user_sessions[user_id] = {"step": 0, "type": text}
-        line_bot_api.push_message(
-            user_id,
-            TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
-        )
+        if user_id not in user_sessions:
+            user_sessions[user_id] = {"step": 0, "type": text}
+            line_bot_api.push_message(
+                user_id,
+                TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
+            )
         return
     
-    # ✅ Step 1～2：後續步驟用 push_message
+    # ✅ Step 1~3：後續步驟
     if user_id in user_sessions and user_sessions[user_id].get("type") in ["我要調診", "我要休診", "我要代診", "我要加診"]:
         session = user_sessions[user_id]
     
-        # ✅ Step 1：詢問新的門診安排
-        if session["step"] == 0:
+        # ✅ Step 1：記錄原門診
+        if session["step"] == 0 and "original_date" not in session:
             session["original_date"] = text
             session["step"] = 1
             line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"))
             line_bot_api.push_message(user_id, TextSendMessage(text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"))
     
-        # ✅ Step 2：詢問原因
-        elif session["step"] == 1:
+        # ✅ Step 2：記錄新門診/代診方式
+        elif session["step"] == 1 and "new_date" not in session:
             session["new_date"] = text
             session["step"] = 2
             line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：返台、會議）"))
     
-        # ✅ Step 3：送出 webhook 並回傳 Flex Bubble
+        # ✅ Step 3：記錄原因並送出
         elif session["step"] == 2:
             session["reason"] = text
             doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
@@ -513,9 +514,10 @@ def handle_message(event):
                     text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
                 ))
     
-            # ✅ 清除 session，結束流程
+            # ✅ 清除 session
             del user_sessions[user_id]
         return
+
 
 
 
