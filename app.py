@@ -66,11 +66,7 @@ from utils.night_shift_fee import (
 )
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 
-# --- 推播任務（每日 / 固定 / 重要）
-from utils.meeting_reminder import send_meeting_reminder
-from utils.monthly_reminder import send_monthly_fixed_reminders
-from utils.event_reminder import send_important_event_reminder
-from utils.daily_notifier import run_daily_push
+
 
 # --- 群組統計功能
 from utils.group_vote_tracker import handle_group_vote
@@ -776,70 +772,6 @@ def home():
 
 
 
-# ✅ 夜點費每日提醒
-@app.route("/night-fee-daily-reminder", methods=["GET"])
-def night_fee_daily_reminder():
-    try:
-        send_night_fee_reminders()
-        return "✅ 夜點費每日提醒完成", 200
-    except Exception as e:
-        return f"❌ 夜點費提醒錯誤：{e}", 500
-
-
-
-
-# ✅ 院務會議請假提醒推播
-@app.route("/meeting-reminder", methods=["GET"])
-def meeting_reminder():
-    try:
-        send_meeting_reminder()
-        return "✅ 院務會議提醒完成", 200
-    except Exception as e:
-        return f"❌ 院務會議提醒錯誤：{e}", 500
-
-# ✅ 固定日期推播
-@app.route("/monthly-reminder", methods=["GET"])
-def monthly_reminder():
-    try:
-        send_monthly_fixed_reminders()
-        return "✅ 固定日期推播完成", 200
-    except Exception as e:
-        return f"❌ 固定推播錯誤：{e}", 500
-
-# ✅ 重要會議推播
-@app.route("/event-reminder", methods=["GET"])
-def event_reminder():
-    try:
-        send_important_event_reminder()
-        return "✅ 重要會議提醒完成", 200
-    except Exception as e:
-        return f"❌ 重要會議推播錯誤：{e}", 500
-
-# ✅ 每日推播
-@app.route("/daily-push", methods=["GET"])
-def daily_push():
-    try:
-        run_daily_push()
-        return "✅ 每日推播完成", 200
-    except Exception as e:
-        return f"❌ 每日推播錯誤：{e}", 500
-
-
-# ✅ 夜點費提醒推播（每天早上 7:00）
-@app.route("/night-shift-reminder", methods=["GET"])
-def night_shift_reminder():
-    try:
-        from utils.night_shift_fee import run_night_shift_reminder  # 確保函式存在
-        run_night_shift_reminder()
-        return "✅ 夜點費提醒完成", 200
-    except Exception as e:
-        return f"❌ night-shift-reminder 錯誤：{e}", 500
-
-
-
-
-
-
 #✅ 院務會議請假表單提交
 @app.route("/meeting-leave", methods=["POST"])
 def meeting_leave():
@@ -852,14 +784,10 @@ def meeting_leave():
     except Exception as e:
         return f"❌ 院務會議請假處理錯誤：{e}", 500
 
-# ✅ 院務會議請假排程推播
-@app.route("/meeting-leave-scheduler", methods=["GET"])
-def meeting_leave_scheduler():
-    try:
-        run_meeting_leave_scheduler()
-        return "✅ 院務會議請假排程推播完成", 200
-    except Exception as e:
-        return f"❌ 院務會議請假排程錯誤：{e}", 500
+
+
+
+
 
 # ✅ ping 喚醒 Bot
 @app.route("/ping", methods=["GET"])
