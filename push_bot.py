@@ -14,8 +14,8 @@ line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 # ✅ 群組 ID 可從 .env 讀取（你也可以傳入參數指定）
 GROUP_ID = os.getenv("LINE_GROUP_ID")
 
-# ✅ 健康檢查
-@app.route("/ping", methods=["GET"])
+# ✅ 健康檢查（推播小秘專用）
+@app.route("/ping-pushbot", methods=["GET"])
 def ping():
     return "推播小秘運作中！", 200
 
