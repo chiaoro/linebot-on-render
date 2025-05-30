@@ -593,21 +593,24 @@ def handle_message(event):
             return
     
         # Step 2：輸入對調醫師與日期（或代理醫師）
-        elif step == 2:
+        elif step == 1:
             if session["type"] == "值班調換":
-                try:
-                    target_doctor, swap_date = text.split(" ")
-                    session["target_doctor"] = target_doctor
-                    session["swap_date"] = swap_date
-                    session["step"] = 3
-                    line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入調換原因"))
-                except:
-                    line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入：李大華 5/20"))
-            else:
-                session["proxy_doctor"] = text
-                session["step"] = 3
-                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入代理原因"))
-            return
+                match = re.match(r"(\d{1,2}/\d{1,2})\s*(.+)", text)
+                if match:
+                    session["original_date"] = match.group(1)
+                    session["shift_type"] = match.group(2).strip()
+                    session["step"] = 2
+                    line_bot_api.push_message(user_id, TextSendMessage(text="🔁 請輸入對調醫師與調換日期（例如：李大華 5/20）"))
+                else:
+                    line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 請輸入正確格式，例如：6/15 骨科會診"))
+                return
+        
+            else:  # 值班代理不檢查格式
+                session["original_date"] = text
+                session["shift_type"] = "未指定"  # 或者保留空白
+                session["step"] = 2
+                line_bot_api.push_message(user_id, TextSendMessage(text="🙋‍♂️ 請輸入代理醫師姓名"))
+                return
     
         # Step 3：輸入原因後送出
         elif step == 3:
