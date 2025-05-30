@@ -73,13 +73,12 @@ from utils.group_vote_tracker import handle_group_vote
 
 # --- 表單處理功能
 from utils.schedule_utils import handle_submission
+from utils.night_shift_fee_generator import generate_night_fee_docs
 
 
 
 
 
-
-#exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
 # ✅載入 .env
 load_dotenv()
