@@ -79,7 +79,7 @@ from utils.schedule_utils import handle_submission
 
 
 
-exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
+#exec(open("utils/night_shift_fee_generator.py", encoding="utf-8").read())
 
 # ✅載入 .env
 load_dotenv()
