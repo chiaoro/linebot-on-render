@@ -79,7 +79,6 @@ from utils.night_shift_fee_generator import generate_night_fee_docs
 
 
 
-
 # ✅載入 .env
 load_dotenv()
 
@@ -99,6 +98,19 @@ NIGHT_FEE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1rtoP3e7D4FPzXDqv0
 
 # ✅ Global 記憶體
 user_sessions = {}
+
+
+
+# ✅ 工具函式（這是你自己寫的，要放在這裡）
+def is_trigger(event, keywords):
+    if event.type == "message" and isinstance(event.message, TextMessage):
+        return any(event.message.text.strip() == kw for kw in keywords)
+    elif event.type == "postback":
+        return any(event.postback.data.strip() == kw for kw in keywords)
+    return False
+
+
+
 
 
 
@@ -542,12 +554,7 @@ def handle_message(event):
     # ✅ 值班調換/代理（四～五步驟）
     # ✅ 統一取得使用者輸入（支援文字與 postback）
 
-    def is_trigger(event, keywords):
-        if event.type == "message" and isinstance(event.message, TextMessage):
-            return any(event.message.text.strip() == kw for kw in keywords)
-        elif event.type == "postback":
-            return any(event.postback.data.strip() == kw for kw in keywords)
-        return False
+
     
     # ✅ 啟動流程：值班調換或代理
     if is_trigger(event, ["值班調換", "值班代理"]):
