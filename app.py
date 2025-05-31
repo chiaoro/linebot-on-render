@@ -285,9 +285,9 @@ def handle_message(event):
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
     
-                # ✅ 判斷是否成功寫入
-                if response.status_code != 200 or "✅ 已寫入" not in response.text:
-                    raise Exception(f"Webhook response unexpected: {response.text}")
+                # ✅ 判斷是否成功寫入（只要 status 200 即算成功）
+                if response.status_code != 200:
+                    raise Exception(f"Webhook failed with status {response.status_code}: {response.text}")
     
                 # ✅ Flex Bubble 回應
                 line_bot_api.reply_message(
