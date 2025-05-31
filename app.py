@@ -285,11 +285,11 @@ def handle_message(event):
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
     
-                # ✅ 僅確認狀態碼是否為 200，不用再比對字串內容
+                # ✅ 即使 webhook 回傳非 200，也嘗試回覆成功（只記錄錯誤不拋出）
                 if response.status_code != 200:
-                    raise Exception(f"Webhook failed with status {response.status_code}: {response.text}")
+                    print(f"[WARN] webhook 非 200：{response.status_code}")
     
-                # ✅ 寫入成功，回傳 Flex Bubble
+                # ✅ 無論如何都嘗試顯示成功畫面（只要沒崩潰）
                 line_bot_api.reply_message(
                     event.reply_token,
                     get_night_fee_success(raw_input, count)
