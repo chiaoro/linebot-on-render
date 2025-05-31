@@ -209,8 +209,7 @@ def handle_message(event):
     # ✅ 其餘訊息轉交各 handler
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
-    if handle_night_fee(event, user_id, text, line_bot_api):
-        return  
+ 
 #防止小秘在群組亂說話用途↑  
     
 
