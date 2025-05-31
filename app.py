@@ -303,29 +303,7 @@ def handle_message(event):
             del user_sessions[user_id]
             return
     
-            # ✅ 正確 webhook URL
-            webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
-            payload = {
-                "user_id": user_id,
-                "日期": date_input
-            }
-    
-            try:
-                response = requests.post(webhook_url, json=payload)
-                print("📡 webhook 回傳：", response.status_code, response.text)
 
-                
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    get_night_fee_success(date_input, len(expanded_dates))
-                )
-            except Exception as e:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 系統發送失敗，請稍後再試或聯絡巧柔協助"
-                ))
-    
-            del user_sessions[user_id]
-            return
 
 
 
