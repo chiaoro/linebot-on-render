@@ -1,53 +1,47 @@
 # handlers/meeting_leave_handler.py
-import requests
 from linebot.models import TextSendMessage
-from utils.user_binding import user_states
+from utils.state_manager import get_state, set_state, clear_state
+from utils.meeting_leave_menu import get_meeting_leave_menu, get_meeting_leave_success
+from utils.doctor_info import get_doctor_info
+from utils.meeting_logger import log_meeting_reply
+
+DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 
 def handle_meeting_leave(event, user_id, text, line_bot_api):
-    if user_states.get(user_id, {}).get("flow") != "meeting_leave" and text != "我要請假":
-        return False
+    raw_text = event.message.text.strip()
 
-    if text == "我要請假":
-        user_states[user_id] = {"flow": "meeting_leave", "step": 1}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🧑‍⚕️ 請輸入您的姓名"))
+    if raw_text == "院務會議請假":
+        print(f"[DEBUG] 觸發院務會議請假，user_id={user_id}")
+        set_state(user_id, "ASK_LEAVE")
+        line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
         return True
 
-    state = user_states.get(user_id, {})
-    step = state.get("step")
+    state = get_state(user_id)
 
-    if step == 1:
-        state["name"] = text.strip()
-        state["step"] = 2
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入請假日期（例如：5/15）"))
+    if state == "ASK_LEAVE":
+        if raw_text == "我要出席院務會議":
+            doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+            log_meeting_reply(user_id, doctor_name, dept, "出席", "")
+            clear_state(user_id)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已回覆出席，請當天準時與會。"))
+        elif raw_text == "我要請假院務會議":
+            set_state(user_id, "ASK_REASON")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入您無法出席的原因："))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請點選上方按鈕回覆"))
         return True
 
-    if step == 2:
-        state["date"] = text.strip()
-        state["step"] = 3
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✏️ 請輸入請假原因"))
-        return True
-
-    if step == 3:
-        state["reason"] = text.strip()
-
-        payload = {
-            "user_id": user_id,
-            "姓名": state["name"],
-            "日期": state["date"],
-            "原因": state["reason"]
-        }
-
+    if state == "ASK_REASON":
+        reason = raw_text
+        doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
         try:
-            webhook_url = "https://script.google.com/macros/s/你的_webhook_url/exec"
-            response = requests.post(webhook_url, json=payload)
-            if response.status_code == 200:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 請假申請已送出"))
-            else:
-                raise Exception(response.text)
+            log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
+            print(f"[DEBUG] 已紀錄請假：{doctor_name}（{dept}） - {reason}")
+            line_bot_api.reply_message(event.reply_token, get_meeting_leave_success(reason))
         except Exception as e:
+            print(f"[ERROR] 請假紀錄失敗：{e}")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 系統錯誤，請稍後再試"))
-        
-        del user_states[user_id]
+        clear_state(user_id)
         return True
 
     return False
