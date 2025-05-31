@@ -292,7 +292,7 @@ def handle_message(event):
                 # ✅ 無論如何都嘗試顯示成功畫面（只要沒崩潰）
                 line_bot_api.reply_message(
                     event.reply_token,
-                    get_night_fee_success(raw_input, count)
+                    TextSendMessage(text=f"✅ 已成功提交，共 {count} 筆日期")
                 )
             except Exception as e:
                 print(f"[ERROR] webhook 發送失敗：{e}")
