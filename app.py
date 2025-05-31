@@ -261,10 +261,10 @@ def handle_message(event):
         session = user_sessions[user_id]
         if session.get("step") == 1:
             raw_input = event.message.text.strip()
-            session["step"] = 2
+            session["step"] = 2  # 如果之後還有下一步
     
             try:
-                expanded_dates = expand_date_range(raw_input)  # 例：['5/1', '5/2', '5/3']
+                expanded_dates = expand_date_range(raw_input)  # ex: ['4/18', '4/19', '4/20']
                 count = len(expanded_dates)
             except Exception as e:
                 print(f"[ERROR] expand_date_range failed: {e}")
@@ -274,7 +274,7 @@ def handle_message(event):
                 del user_sessions[user_id]
                 return
     
-            # ✅ 傳送至 Google Apps Script webhook
+            # ✅ 傳送至 Google webhook
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {
                 "user_id": user_id,
@@ -285,16 +285,15 @@ def handle_message(event):
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
     
-                # 若非 200 則拋出錯誤以被 except 捕捉
-                if response.status_code != 200:
-                    raise Exception(f"Webhook failed with status {response.status_code}: {response.text}")
+                # ✅ 判斷是否成功寫入
+                if response.status_code != 200 or "✅ 已寫入" not in response.text:
+                    raise Exception(f"Webhook response unexpected: {response.text}")
     
-                # ✅ 回傳成功訊息
+                # ✅ Flex Bubble 回應
                 line_bot_api.reply_message(
                     event.reply_token,
                     get_night_fee_success(raw_input, count)
                 )
-    
             except Exception as e:
                 print(f"[ERROR] webhook 發送失敗：{e}")
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(
