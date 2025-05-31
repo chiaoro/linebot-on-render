@@ -75,6 +75,7 @@ from utils.group_vote_tracker import handle_group_vote
 from utils.schedule_utils import handle_submission
 from utils.night_shift_fee_generator import generate_night_fee_docs
 from handlers.duty_handler import handle_duty_message
+from utils.message_guard import should_ignore_message, handle_direct_command
 
 
 
@@ -193,25 +194,19 @@ def handle_message(event):
 
 
     
-    # ✅ Step 1：僅私訊觸發，或特定格式才處理
-    trigger_keywords = ["我要調診", "我要休診", "我要代診", "我要加診", "值班調換", "夜點費申請"]
-    
-    # ✅ 只處理私訊，或在群組中輸入明確關鍵字者
-    if source_type != 'user' and not any(text.startswith(k) for k in trigger_keywords):
-        print(f"❌ 忽略群組內非關鍵字訊息：{text}")
-        return  # 不處理群組內非關鍵字訊息
-    
-    # ✅ Step 2：處理特殊指令（僅保留「值班調換」直接回答，其餘交由三步驟流程控制）
-    if text == "值班調換" or text == "值班代理":
-        action_type = "值班調換" if text == "值班調換" else "值班代理"
-        user_sessions[user_id] = {"step": 0, "type": action_type}
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🧑‍⚕️ 請輸入您的姓名"))
+    # ✅ 是否略過這條訊息
+    if should_ignore_message(source_type, text):
         return
-    
-    # ✅ Step 3：進入門診三步驟流程，由 user_sessions 控制對話，請搭配你剛剛的三步驟主程式使用
-    if text.startswith("我要調診") or text.startswith("我要休診") or text.startswith("我要代診") or text.startswith("我要加診"):
-        # 不直接回應，進入你的 user_sessions 三步驟邏輯
-        pass
+
+    # ✅ 是否是直接處理的關鍵指令（例如：值班調換）
+    if handle_direct_command(text, user_id, line_bot_api, event, user_sessions):
+        return
+
+    # ✅ 其餘訊息轉交各 handler
+    if handle_duty_message(event, user_id, text, line_bot_api):
+        return
+    if handle_night_fee(event, user_id, text, line_bot_api):
+        return
     
     
 
