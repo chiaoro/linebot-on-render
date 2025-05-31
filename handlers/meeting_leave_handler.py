@@ -20,10 +20,16 @@ def handle_meeting_leave(event, user_id, text, line_bot_api):
 
     if state == "ASK_LEAVE":
         if raw_text == "我要出席院務會議":
-            doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-            log_meeting_reply(user_id, doctor_name, dept, "出席", "")
+            try:
+                doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+                if not doctor_name:
+                    raise ValueError("查無對應醫師資訊")
+                log_meeting_reply(user_id, doctor_name, dept, "出席", "")
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已回覆出席，請當天準時與會。"))
+            except Exception as e:
+                print(f"[ERROR] 出席紀錄失敗：{e}")
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 查無醫師資訊或系統錯誤，請聯絡巧柔"))
             clear_state(user_id)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已回覆出席，請當天準時與會。"))
         elif raw_text == "我要請假院務會議":
             set_state(user_id, "ASK_REASON")
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入您無法出席的原因："))
@@ -33,14 +39,16 @@ def handle_meeting_leave(event, user_id, text, line_bot_api):
 
     if state == "ASK_REASON":
         reason = raw_text
-        doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
         try:
+            doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+            if not doctor_name:
+                raise ValueError("查無對應醫師資訊")
             log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
             print(f"[DEBUG] 已紀錄請假：{doctor_name}（{dept}） - {reason}")
             line_bot_api.reply_message(event.reply_token, get_meeting_leave_success(reason))
         except Exception as e:
             print(f"[ERROR] 請假紀錄失敗：{e}")
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 系統錯誤，請稍後再試"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 查無醫師資訊或系統錯誤，請聯絡巧柔"))
         clear_state(user_id)
         return True
 
