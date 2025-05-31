@@ -1,11 +1,10 @@
-# utils/doctor_info.py
-
 import json
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread.exceptions import WorksheetNotFound
 
+# ✅ 使用環境變數初始化（Render 或部署用）
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 google_creds = json.loads(os.environ['GOOGLE_CREDENTIALS'])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(google_creds, scope)
@@ -13,16 +12,20 @@ gc = gspread.authorize(creds)
 
 def get_doctor_info(sheet_url, user_id):
     try:
-        gc = gspread.service_account(filename="credentials.json")  # 或你的憑證方式
         sheet = gc.open_by_url(sheet_url).worksheet("UserMapping")
     except WorksheetNotFound:
         print("❌ 找不到工作表：UserMapping")
         return None, None
+    except Exception as e:
+        print(f"❌ Google Sheet 連線失敗：{e}")
+        return None, None
 
-    # 例如根據 user_id 查資料的邏輯
-    rows = sheet.get_all_records()
-    for row in rows:
-        if row.get("user_id") == user_id:
-            return row.get("name"), row.get("dept")
+    try:
+        rows = sheet.get_all_records()
+        for row in rows:
+            if row.get("user_id") == user_id:
+                return row.get("name"), row.get("dept")
+    except Exception as e:
+        print(f"❌ 讀取資料失敗：{e}")
 
     return None, None
