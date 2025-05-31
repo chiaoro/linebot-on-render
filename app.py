@@ -284,6 +284,10 @@ def handle_message(event):
             try:
                 response = requests.post(webhook_url, json=payload)
                 print("📡 webhook 回傳：", response.status_code, response.text)
+
+                # 如果 webhook 沒成功回傳 200，要 raise error
+                if response.status_code != 200:
+                    raise Exception(f"Webhook failed with status {response.status_code}: {response.text}")
     
                 # ✅ Flex Bubble 回應
                 line_bot_api.reply_message(
