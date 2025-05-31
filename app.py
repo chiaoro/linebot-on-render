@@ -539,7 +539,6 @@ def handle_message(event):
 
 
 
-
     # ✅ 值班調換/代理（四～五步驟）
     # ✅ 統一取得使用者輸入（支援文字與 postback）
 
