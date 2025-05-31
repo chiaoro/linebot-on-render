@@ -76,6 +76,10 @@ from utils.schedule_utils import handle_submission
 from utils.night_shift_fee_generator import generate_night_fee_docs
 from handlers.duty_handler import handle_duty_message
 from utils.message_guard import should_ignore_message, handle_direct_command
+from handlers.meeting_leave_handler import handle_meeting_leave
+
+
+
 
 
 
@@ -186,7 +190,9 @@ def handle_message(event):
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
 
-
+    # ✅ 優先處理會議請假
+    if handle_meeting_leave(event, user_id, text, line_bot_api):
+    return
 
 
 
