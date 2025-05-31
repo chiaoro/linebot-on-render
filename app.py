@@ -200,11 +200,10 @@ def handle_message(event):
         return  # 不處理群組內非關鍵字訊息
     
     # ✅ Step 2：處理特殊指令（僅保留「值班調換」直接回答，其餘交由三步驟流程控制）
-    if text.startswith("值班調換"):
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="請問是值班【互換】還是【代理】？")
-        )
+    if text == "值班調換" or text == "值班代理":
+        action_type = "值班調換" if text == "值班調換" else "值班代理"
+        user_sessions[user_id] = {"step": 0, "type": action_type}
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🧑‍⚕️ 請輸入您的姓名"))
         return
     
     # ✅ Step 3：進入門診三步驟流程，由 user_sessions 控制對話，請搭配你剛剛的三步驟主程式使用
