@@ -1,16 +1,19 @@
+# utils/doctor_info.py
+
+import json
+import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+google_creds = json.loads(os.environ['GOOGLE_CREDENTIALS'])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(google_creds, scope)
+gc = gspread.authorize(creds)
+
 def get_doctor_info(sheet_url, user_id):
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-    client = gspread.authorize(creds)
-
-    sheet = client.open_by_url(sheet_url).worksheet("UserMapping")
-    data = sheet.get_all_values()
-
-    for row in data[1:]:
-        if row[0] == user_id:
-            return row[1], row[2]  # 回傳 醫師姓名、科別
-
+    sheet = gc.open_by_url(sheet_url).worksheet("使用者對照表")
+    records = sheet.get_all_records()
+    for row in records:
+        if row["user_id"] == user_id:
+            return row["name"], row["dept"]
     return "未知", "未知"
