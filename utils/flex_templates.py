@@ -82,39 +82,56 @@ def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doct
 def get_duty_proxy_bubble(shift_type, original_doctor, original_date, proxy_doctor, reason):
     return {
         "type": "bubble",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [{
-                "type": "text",
-                "text": "✅ 值班代理已送出",
-                "weight": "bold",
-                "color": "#FFA500",
-                "size": "lg"
-            }]
-        },
+        "size": "mega",
         "body": {
             "type": "box",
             "layout": "vertical",
             "spacing": "md",
             "contents": [
-                {"type": "text", "text": f"🧑‍⚕️ 醫師：{original_doctor}", "wrap": True},
-                {"type": "text", "text": f"📅 原值班：{shift_type} {original_date}", "wrap": True},
-                {"type": "text", "text": f"🙋‍♂️ 代理醫師：{proxy_doctor}", "wrap": True},
-                {"type": "text", "text": f"📝 原因：{reason}", "wrap": True}
+                {"type": "text", "text": "🙋‍♂️ 值班代理通知", "weight": "bold", "size": "xl"},
+                {"type": "separator", "margin": "md"},
+                {"type": "box", "layout": "vertical", "margin": "md", "spacing": "sm", "contents": [
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "spacing": "sm",
+                        "contents": [
+                            {"type": "text", "text": "原醫師", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                            {"type": "text", "text": original_doctor, "wrap": True, "size": "sm", "flex": 5}
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "spacing": "sm",
+                        "contents": [
+                            {"type": "text", "text": "值班內容", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                            {"type": "text", "text": f"{original_date} {shift_type}", "wrap": True, "size": "sm", "flex": 5}
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "spacing": "sm",
+                        "contents": [
+                            {"type": "text", "text": "代理醫師", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                            {"type": "text", "text": proxy_doctor, "wrap": True, "size": "sm", "flex": 5}
+                        ]
+                    },
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "spacing": "sm",
+                        "contents": [
+                            {"type": "text", "text": "原因", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                            {"type": "text", "text": reason, "wrap": True, "size": "sm", "flex": 5}
+                        ]
+                    }
+                ]}
             ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "horizontal",
-            "contents": [{
-                "type": "text",
-                "text": "如有誤請洽巧柔",
-                "size": "sm",
-                "color": "#aaaaaa"
-            }]
         }
     }
+
 
 def get_duty_swap_bubble(shift_type, original_doctor, original_date, target_doctor, swap_date, reason):
     return {
