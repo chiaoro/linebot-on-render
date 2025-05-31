@@ -4,6 +4,8 @@ import requests
 from utils.state_manager import user_sessions
 from utils.line_utils import is_trigger
 from utils.flex_templates import get_duty_swap_bubble, get_duty_proxy_bubble
+from utils.session_manager import user_sessions
+
 
 def handle_duty_message(event, user_id, text, line_bot_api):
     # ✅ 啟動流程：值班調換或代理
