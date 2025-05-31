@@ -182,7 +182,7 @@ def handle_message(event):
 
 
 
-    # ✅ 優先處理 duty handler
+    # ✅ 優先處理 duty handler   呼叫值班調整（調換與代理）handlers/duty_handler.py
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
 
@@ -192,8 +192,7 @@ def handle_message(event):
 
 
 
-
-    
+#防止小秘在群組亂說話用途↓
     # ✅ 是否略過這條訊息
     if should_ignore_message(source_type, text):
         return
@@ -206,8 +205,8 @@ def handle_message(event):
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
     if handle_night_fee(event, user_id, text, line_bot_api):
-        return
-    
+        return  
+#防止小秘在群組亂說話用途↑  
     
 
 
