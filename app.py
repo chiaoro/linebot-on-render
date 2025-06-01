@@ -210,24 +210,6 @@ def handle_message(event):
     if handle_adjustment(event, user_id, text, line_bot_api):
         return "OK" 
 
-
-       
-
-#防止小秘在群組亂說話用途↓
-    # ✅ 是否略過這條訊息
-    if should_ignore_message(source_type, text):
-        return
-
-    # ✅ 是否是直接處理的關鍵指令（例如：值班調換）
-    if handle_direct_command(text, user_id, line_bot_api, event, user_sessions):
-        return
- 
-#防止小秘在群組亂說話用途↑  
-    
-
-
-
-
     
 
 
