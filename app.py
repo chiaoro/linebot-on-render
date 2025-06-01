@@ -74,13 +74,26 @@ from utils.group_vote_tracker import handle_group_vote
 # --- 表單處理功能
 from utils.schedule_utils import handle_submission
 from utils.night_shift_fee_generator import generate_night_fee_docs
+
+# --- 值班調整功能
 from handlers.duty_handler import handle_duty_message
 
-from utils.session_manager import user_sessions
+# --- 使用者狀態管理工具
+from utils.session_manager import get_session, set_session, clear_session, user_sessions
+
+# --- 日期處理
 from utils.date_parser import expand_date_range
+
+# --- 院務會議請假處理
 from handlers.meeting_leave_handler import handle_meeting_leave
+
+# --- 夜點費申請處理
 from handlers.night_fee_handler import handle_night_fee
+
+# --- 支援醫師調診
 from handlers.support_adjust_handler import handle_support_adjustment
+
+# --- 調診 / 休診 / 代診 / 加診
 from handlers.adjust_handler import handle_adjustment
 
 
