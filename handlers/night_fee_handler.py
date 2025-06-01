@@ -31,9 +31,6 @@ def handle_night_fee(event, user_id, text, line_bot_api):
     # ✅ 使用者回填日期（處於夜點費流程中）
     if session.get("type") == "夜點費申請" and step == 1:
         raw_input = event.message.text.strip()
-        session["step"] = 2
-        set_session(user_id, session)  # 更新狀態
-
         try:
             expanded_dates = expand_date_range(raw_input)
             count = len(expanded_dates)
