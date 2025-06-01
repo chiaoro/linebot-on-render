@@ -189,7 +189,6 @@ def handle_message(event):
 
 
 
-
     # ✅ 優先處理 duty handler   呼叫值班調整（調換與代理）handlers/duty_handler.py
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
