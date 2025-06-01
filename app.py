@@ -1,4 +1,3 @@
-
 # --- 標準函式庫
 import os
 import re
@@ -19,12 +18,13 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 
-# --- 自己寫的 utils 模組
-# --- LINE 處理與對話工具
+# === 以下為自己寫的 utils 模組 ===
+
+# --- LINE 處理工具
 from utils.line_push import push_text_to_user
 from utils.line_utils import get_event_text, is_trigger
 
-# --- 使用者狀態管理
+# --- 使用者狀態與綁定
 from utils.state_manager import set_state, get_state, clear_state
 from utils.user_binding import (
     handle_user_binding,
@@ -34,12 +34,13 @@ from utils.user_binding import (
     ensure_user_id_exists,
     user_states
 )
+from utils.session_manager import get_session, set_session, clear_session, user_sessions
 
 # --- Google Sheets 操作
 from utils.gspread_client import get_gspread_client
 from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
 
-# --- 日期與字串處理工具
+# --- 日期與文字處理
 from utils.date_utils import expand_date_range
 
 # --- Flex Bubble 模板
@@ -50,7 +51,7 @@ from utils.flex_templates import (
     get_support_adjustment_bubble
 )
 
-# --- 院務會議請假流程
+# --- 功能：院務會議請假
 from utils.meeting_leave import handle_meeting_leave_response
 from utils.meeting_leave_menu import (
     get_meeting_leave_menu,
@@ -58,42 +59,36 @@ from utils.meeting_leave_menu import (
 )
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
 
-# --- 夜點費處理
+# --- 功能：夜點費提醒與產出
 from utils.night_shift_fee import (
     handle_night_shift_request,
     daily_night_fee_reminder,
-    run_night_shift_reminder,
+    run_night_shift_reminder
 )
 from utils.daily_night_fee_reminder import send_night_fee_reminders
-
-
-
-# --- 群組統計功能
-from utils.group_vote_tracker import handle_group_vote
-
-# --- 表單處理功能
-from utils.schedule_utils import handle_submission
 from utils.night_shift_fee_generator import generate_night_fee_docs
 
-# --- 值班調整功能
+# --- 功能：群組投票統計
+from utils.group_vote_tracker import handle_group_vote
+
+# --- 功能：表單填寫處理
+from utils.schedule_utils import handle_submission
+
+# === 以下為 handlers 模組 ===
+
+# --- 值班調整（調換與代理）
 from handlers.duty_handler import handle_duty_message
 
-# --- 使用者狀態管理工具
-from utils.session_manager import get_session, set_session, clear_session, user_sessions
-
-# --- 日期處理
-from utils.date_parser import expand_date_range
-
-# --- 院務會議請假處理
+# --- 院務會議請假主處理
 from handlers.meeting_leave_handler import handle_meeting_leave
 
-# --- 夜點費申請處理
+# --- 夜點費申請主處理
 from handlers.night_fee_handler import handle_night_fee
 
-# --- 支援醫師調診
+# --- 支援醫師調診流程
 from handlers.support_adjust_handler import handle_support_adjustment
 
-# --- 調診 / 休診 / 代診 / 加診
+# --- 門診異動（調診、休診、代診、加診）
 from handlers.adjust_handler import handle_adjustment
 
 
