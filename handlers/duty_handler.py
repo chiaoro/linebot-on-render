@@ -5,6 +5,9 @@ from utils.session_manager import get_session, set_session, clear_session
 from utils.line_utils import is_trigger
 from utils.flex_templates import get_duty_swap_bubble, get_duty_proxy_bubble
 
+# ✅ 這裡填入你提供的 Webhook URL
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
+
 def handle_duty_message(event, user_id, text, line_bot_api):
     session = get_session(user_id)
 
@@ -40,7 +43,7 @@ def handle_duty_message(event, user_id, text, line_bot_api):
                 set_session(user_id, session)
                 line_bot_api.push_message(user_id, TextSendMessage(text="🔁 請輸入對調醫師與調換日期（例如：李大華 5/20）"))
             else:
-                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 請輸入正確格式，例如：6/15 骨科會討"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 請輸入正確格式，例如：6/15 骨科會診"))
         else:
             session["original_date"] = text
             session["shift_type"] = "未指定"
@@ -72,26 +75,23 @@ def handle_duty_message(event, user_id, text, line_bot_api):
     if status == "awaiting_reason":
         session["reason"] = text
 
+        # ✅ 修正這邊為 Google Sheets 接收格式（注意！用 data，不是 json）
         payload = {
-            "request_type": session.get("type", ""),
-            "original_doctor": session.get("original_doctor", ""),
-            "original_date": session.get("original_date", ""),
-            "shift_type": session.get("shift_type", ""),
-            "reason": session.get("reason", "")
+            "swap_type": session.get("type", ""),
+            "原值班醫師": session.get("original_doctor", ""),
+            "原值班日期": session.get("original_date", ""),
+            "班別": session.get("shift_type", ""),
+            "原因": session.get("reason", "")
         }
 
         if session["type"] == "值班調換":
-            payload.update({
-                "target_doctor": session.get("target_doctor", ""),
-                "swap_date": session.get("swap_date", "")
-            })
+            payload["對方醫師"] = session.get("target_doctor", "")
+            payload["對方值班日期"] = session.get("swap_date", "")
         else:
-            payload["proxy_doctor"] = session.get("proxy_doctor", "")
+            payload["代理醫師"] = session.get("proxy_doctor", "")
 
         try:
-            # ✅ 替換成你的 webhook
-            webhook_url = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
-            requests.post(webhook_url, data=payload)
+            requests.post(WEBHOOK_URL, data=payload)
 
             bubble = (
                 get_duty_swap_bubble(
