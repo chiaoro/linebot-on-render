@@ -75,7 +75,7 @@ from utils.group_vote_tracker import handle_group_vote
 from utils.schedule_utils import handle_submission
 from utils.night_shift_fee_generator import generate_night_fee_docs
 from handlers.duty_handler import handle_duty_message
-from utils.message_guard import should_ignore_message, handle_direct_command
+
 from utils.session_manager import user_sessions
 from utils.date_parser import expand_date_range
 from handlers.meeting_leave_handler import handle_meeting_leave
