@@ -207,7 +207,7 @@ def handle_message(event):
         return "OK"
 
     # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程） 
-   if handle_adjustment(event, user_id, text, line_bot_api):
+    if handle_adjustment(event, user_id, text, line_bot_api):
         return "OK" 
 
 
