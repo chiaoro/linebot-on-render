@@ -3,6 +3,7 @@ import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread.exceptions import WorksheetNotFound
+from utils.google_sheets import get_doctor_info
 
 # ✅ 使用環境變數初始化（Render 或部署用）
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -29,3 +30,9 @@ def get_doctor_info(sheet_url, user_id):
         print(f"❌ 讀取資料失敗：{e}")
 
     return None, None
+
+
+
+def get_doctor_name(sheet_url, user_id):
+    doctor_info = get_doctor_info(sheet_url)
+    return doctor_info.get(user_id, "未知醫師")
