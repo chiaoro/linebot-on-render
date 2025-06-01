@@ -78,6 +78,7 @@ from handlers.duty_handler import handle_duty_message
 from utils.message_guard import should_ignore_message, handle_direct_command
 from utils.session_manager import user_sessions
 from handlers.meeting_leave_handler import handle_meeting_leave
+from handlers.night_fee_handler import handle_night_fee
 
 
 
@@ -192,8 +193,9 @@ def handle_message(event):
     # ✅ 優先處理會議請假
     if handle_meeting_leave(event, user_id, text, line_bot_api):
         return
-
-
+    # ✅ 夜點費
+    if handle_night_fee(event, user_id, text, line_bot_api):
+        return "OK"
 
 
 
@@ -236,71 +238,7 @@ def handle_message(event):
     
 
 
-    # ✅ 夜點費申請流程（Flex Bubble + 一步輸入日期 + 自動解析區間）
-    if text == "夜點費申請":
-        user_sessions[user_id] = {"step": 1, "type": "夜點費申請"}
-        bubble = {
-            "type": "bubble",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
-                    {"type": "text", "text": "範例：\n4/10、\n4/15、\n4/17、\n4/18-23", "size": "sm", "color": "#888888", "margin": "md"}
-                ]
-            }
-        }
-        flex_msg = FlexSendMessage(alt_text="🌙 夜點費申請", contents=bubble)
-        line_bot_api.reply_message(event.reply_token, flex_msg)
-        return
-    
-    # ✅ 夜點費申請：接收使用者輸入的日期
-    if user_id in user_sessions and user_sessions[user_id].get("type") == "夜點費申請":
-        session = user_sessions[user_id]
-        if session.get("step") == 1:
-            raw_input = event.message.text.strip()
-            session["step"] = 2  # 如果之後還有下一步
-    
-            try:
-                expanded_dates = expand_date_range(raw_input)  # ex: ['4/18', '4/19', '4/20']
-                count = len(expanded_dates)
-            except Exception as e:
-                print(f"[ERROR] expand_date_range failed: {e}")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 日期格式有誤，請重新輸入。\n範例：4/10、4/12、4/15-18"
-                ))
-                del user_sessions[user_id]
-                return
-    
-            # ✅ 傳送至 Google webhook
-            webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
-            payload = {
-                "user_id": user_id,
-                "日期": raw_input
-            }
-    
-            try:
-                response = requests.post(webhook_url, json=payload)
-                print("📡 webhook 回傳：", response.status_code, response.text)
-    
-                # ✅ 即使 webhook 回傳非 200，也嘗試回覆成功（只記錄錯誤不拋出）
-                if response.status_code != 200:
-                    print(f"[WARN] webhook 非 200：{response.status_code}")
-    
-                # ✅ 無論如何都嘗試顯示成功畫面（只要沒崩潰）
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text=f"✅ 已成功提交，共 {count} 筆日期")
-                )
-            except Exception as e:
-                print(f"[ERROR] webhook 發送失敗：{e}")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(
-                    text="⚠️ 系統發送失敗，請稍後再試或聯絡巧柔協助"
-                ))
-    
-            del user_sessions[user_id]
-            return
+
 
 
 
