@@ -26,7 +26,7 @@ def handle_duty_message(event, user_id, text, line_bot_api):
         session["original_doctor"] = text
         session["status"] = "awaiting_original_info"
         set_session(user_id, session)
-        line_bot_api.push_message(user_id, TextSendMessage(text="🗕️ 請輸入原值班內容（格式：6/15 骨科會討）"))
+        line_bot_api.push_message(user_id, TextSendMessage(text="請輸入原值班內容（格式：6/15 骨科會診）"))
         return True
 
     # Step 1：原值班內容
@@ -90,8 +90,8 @@ def handle_duty_message(event, user_id, text, line_bot_api):
 
         try:
             # ✅ 替換成你的 webhook
-            webhook_url = "https://script.google.com/macros/s/YOUR_WEBHOOK_URL/exec"
-            requests.post(webhook_url, json=payload)
+            webhook_url = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
+            requests.post(webhook_url, data=payload)
 
             bubble = (
                 get_duty_swap_bubble(
