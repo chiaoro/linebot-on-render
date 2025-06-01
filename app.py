@@ -208,7 +208,7 @@ def handle_message(event):
 
     # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程） 
    if handle_adjustment(event, user_id, text, line_bot_api):
-    return "OK" 
+        return "OK" 
 
 
        
@@ -220,10 +220,6 @@ def handle_message(event):
 
     # ✅ 是否是直接處理的關鍵指令（例如：值班調換）
     if handle_direct_command(text, user_id, line_bot_api, event, user_sessions):
-        return
-
-    # ✅ 其餘訊息轉交各 handler
-    if handle_duty_message(event, user_id, text, line_bot_api):
         return
  
 #防止小秘在群組亂說話用途↑  
