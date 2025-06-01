@@ -77,6 +77,7 @@ from utils.night_shift_fee_generator import generate_night_fee_docs
 from handlers.duty_handler import handle_duty_message
 from utils.message_guard import should_ignore_message, handle_direct_command
 from utils.session_manager import user_sessions
+from utils.date_parser import expand_date_range
 from handlers.meeting_leave_handler import handle_meeting_leave
 from handlers.night_fee_handler import handle_night_fee
 from handlers.support_adjust_handler import handle_support_adjustment
