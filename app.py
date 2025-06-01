@@ -79,7 +79,7 @@ from utils.message_guard import should_ignore_message, handle_direct_command
 from utils.session_manager import user_sessions
 from handlers.meeting_leave_handler import handle_meeting_leave
 from handlers.night_fee_handler import handle_night_fee
-
+from handlers.support_adjust_handler import handle_support_adjustment
 
 
 
@@ -243,8 +243,6 @@ def handle_message(event):
 
 
 
-
-
     
     # ✅ 主選單
     if text == "主選單":
@@ -284,82 +282,11 @@ def handle_message(event):
 
 
 
+    # ✅ 支援醫師調診功能
+    if handle_support_adjustment(event, user_id, text, line_bot_api):
+        return "OK"
 
-    
-
-    # ✅ 支援醫師調診單（四步驟流程）
-    # ✅ 統一取得訊息文字（支援文字或按鈕）
-
-    
-    # ✅ 啟動支援醫師調診單流程（允許使用 reply_token）
-    if is_trigger(event, ["支援醫師調診單"]):
-        user_sessions[user_id] = {"step": 0, "type": "支援醫師調診單"}
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="👨‍⚕️ 請問需異動門診醫師姓名？")
-        )
-        return
-    
-    # ✅ 支援醫師調診單步驟邏輯
-    if user_id in user_sessions and user_sessions[user_id].get("type") == "支援醫師調診單":
-        session = user_sessions[user_id]
-    
-        if session["step"] == 0:
-            session["doctor_name"] = text
-            session["step"] = 1
-            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
-    
-        elif session["step"] == 1:
-            session["original_date"] = text
-            session["step"] = 2
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
-    
-        elif session["step"] == 2:
-            session["new_date"] = text
-            session["step"] = 3
-            line_bot_api.push_message(user_id, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
-    
-        elif session["step"] == 3:
-            session["reason"] = text
-    
-            webhook_url = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
-            payload = {
-                "user_id": user_id,
-                "request_type": "支援醫師調診單",
-                "doctor_name": session["doctor_name"],
-                "original_date": session["original_date"],
-                "new_date": session["new_date"],
-                "reason": session["reason"]
-            }
-    
-            try:
-                # ✅ 發送 webhook
-                requests.post(webhook_url, json=payload)
-    
-                # ✅ 組 Flex Bubble 並推播
-                bubble = get_support_adjustment_bubble(
-                    doctor_name=session["doctor_name"],
-                    original=session["original_date"],
-                    method=session["new_date"],
-                    reason=session["reason"]
-                )
-                line_bot_api.push_message(
-                    user_id,
-                    FlexSendMessage(alt_text="支援醫師調診單已送出", contents=bubble)
-                )
-    
-            except Exception as e:
-                print("❌ webhook 發送失敗：", str(e))
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 系統提交失敗，請稍後再試或聯絡巧柔"
-                ))
-    
-            del user_sessions[user_id]
-        return
-
-
-
-
+ 
 
 
 
