@@ -46,7 +46,7 @@ def handle_duty_message(event, user_id, text, line_bot_api):
                 line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 請輸入正確格式，例如：6/15 骨科會診"))
         else:
             session["original_date"] = text
-            session["shift_type"] = "未指定"
+            session["shift_type"] = " "
             session["status"] = "awaiting_proxy_name"
             set_session(user_id, session)
             line_bot_api.push_message(user_id, TextSendMessage(text="🙆‍♂️ 請輸入代理醫師姓名"))
