@@ -80,6 +80,11 @@ from utils.session_manager import user_sessions
 from handlers.meeting_leave_handler import handle_meeting_leave
 from handlers.night_fee_handler import handle_night_fee
 from handlers.support_adjust_handler import handle_support_adjustment
+from handlers.adjust_handler import handle_adjustment
+
+
+
+
 
 
 
@@ -189,14 +194,24 @@ def handle_message(event):
     if handle_duty_message(event, user_id, text, line_bot_api):
         return
 
-    # ✅ 優先處理會議請假
+    # ✅ 優先處理院務會議請假
     if handle_meeting_leave(event, user_id, text, line_bot_api):
         return
+        
     # ✅ 夜點費
     if handle_night_fee(event, user_id, text, line_bot_api):
         return "OK"
+        
+    # ✅ 支援醫師調診功能
+    if handle_support_adjustment(event, user_id, text, line_bot_api):
+        return "OK"
+
+    # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程） 
+   if handle_adjustment(event, user_id, text, line_bot_api):
+    return "OK" 
 
 
+       
 
 #防止小秘在群組亂說話用途↓
     # ✅ 是否略過這條訊息
@@ -282,158 +297,9 @@ def handle_message(event):
 
 
 
-    # ✅ 支援醫師調診功能
-    if handle_support_adjustment(event, user_id, text, line_bot_api):
-        return "OK"
-
- 
-
-
 
 
     
-    
-
-    
-    # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程）
-
-    VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}\s*(上午診|下午診|夜診)?$"
-    TRIGGER_WORDS = ["我要調診", "我要休診", "我要代診", "我要加診"]
-    
-    # ✅ 啟動流程（第一句）
-    if is_trigger(event, TRIGGER_WORDS):
-        user_sessions[user_id] = {
-            "step": 0,
-            "type": text
-        }
-        line_bot_api.push_message(user_id, TextSendMessage(
-            text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"
-        ))
-        return
-    
-    # ✅ 對話進行中
-    if user_id in user_sessions:
-        session = user_sessions[user_id]
-        step = session["step"]
-    
-        # ✅ Step 1：原門診日期
-        if step == 0:
-            if re.match(VALID_DATE_PATTERN, text):
-                session["original_date"] = text
-                session["step"] = 1
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="📆 請問希望的新門診是哪一天？（例如：5/30 下午診）"
-                ))
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="🔁 若為休診，請直接輸入「休診」；若由他人代診，請寫「5/30 下午診 XXX代診」"
-                ))
-            else:
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 格式錯誤，請輸入例如：5/6 上午診"
-                ))
-            return
-    
-        # ✅ Step 2：新門診安排
-        elif step == 1:
-            session["new_date"] = text
-            session["step"] = 2
-            line_bot_api.push_message(user_id, TextSendMessage(
-                text="📝 請輸入原因（例如：返台、會議）"
-            ))
-            return
-    
-        # ✅ Step 3：原因＋提交
-        elif step == 2:
-            session["reason"] = text
-            doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
-            payload = {
-                "user_id": user_id,
-                "request_type": session["type"],
-                "original_date": session["original_date"],
-                "new_date": session["new_date"],
-                "reason": session["reason"],
-                "doctor_name": doctor_name
-            }
-    
-            try:
-                webhook_url = "https://script.google.com/macros/s/AKfycbwgmpLgjrhwquI54fpK-dIA0z0TxHLEfO2KmaX-meqE7ENNUHmB_ec9GC-7MNHNl1eJ/exec"
-                response = requests.post(webhook_url, json=payload, headers={"Content-Type": "application/json"})
-    
-                # ✅ Flex Bubble 回饋
-                bubble = get_adjustment_bubble(
-                    original=session["original_date"],
-                    method=session["new_date"],
-                    reason=session["reason"]
-                )
-                line_bot_api.push_message(user_id, FlexSendMessage(
-                    alt_text="門診調整通知", contents=bubble
-                ))
-    
-            except Exception as e:
-                line_bot_api.push_message(user_id, TextSendMessage(
-                    text="⚠️ 提交失敗，請稍後再試或聯絡巧柔"
-                ))
-    
-            del user_sessions[user_id]
-            return
-    
-        
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-
-#    # ✅ 院務會議請假觸發：進入流程、顯示選單
-#    if text == "院務會議請假":
-#        print(f"[DEBUG] 觸發院務會議請假，user_id={user_id}")
-#        set_state(user_id, "ASK_LEAVE")
-#        line_bot_api.reply_message(event.reply_token, get_meeting_leave_menu())
-#        return
-#    
-#    state = get_state(user_id)
-#    
-#    if state == "ASK_LEAVE":
-#        if text == "我要出席院務會議":
-#            doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-#            log_meeting_reply(user_id, doctor_name, dept, "出席", "")
-#            clear_state(user_id)
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 您已回覆出席，請當天準時與會。"))
-#        elif text == "我要請假院務會議":
-#            set_state(user_id, "ASK_REASON")
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入您無法出席的原因："))
-#        else:
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請點選上方按鈕回覆"))
-#        return
-#    
-#    if state == "ASK_REASON":
-#        reason = raw_text  # ✅ 請假理由保留原始輸入
-#        doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-#        try:
-#            log_meeting_reply(user_id, doctor_name, dept, "請假", reason)
-#            print(f"[DEBUG] 已紀錄請假：{doctor_name}（{dept}） - {reason}")
-#            line_bot_api.reply_message(event.reply_token, get_meeting_leave_success(reason))
-#        except Exception as e:
-#            print(f"[ERROR] 請假紀錄失敗：{e}")
-#            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 系統錯誤，請稍後再試"))
-#        clear_state(user_id)
-#        return
-
-
-
-
-
 
 
 
