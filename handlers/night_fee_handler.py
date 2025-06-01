@@ -2,49 +2,73 @@
 
 from linebot.models import FlexSendMessage, TextSendMessage
 from utils.session_manager import get_session, set_session, clear_session
-from utils.date_parser import parse_dates_from_text
-import re
+from utils.date_parser import expand_date_range  # 你自己的展開區間函式
+import requests
 
 def handle_night_fee(event, user_id, text, line_bot_api):
     session = get_session(user_id)
     step = session.get("step", 0)
 
-    # ✅ 使用者輸入關鍵字「夜點費申請」
+    # ✅ 觸發申請
     if text == "夜點費申請":
-        set_session(user_id, {"step": 1})
-        line_bot_api.reply_message(event.reply_token, get_night_fee_input_flex())
-        return True
-
-    # ✅ 使用者輸入日期（可多筆）
-    if step == 1 and is_valid_date_input(text):
-        parsed_dates = parse_dates_from_text(text)
-        date_str = "、".join(parsed_dates)
-        reply = f"✅ 夜點費申請已收到\n🗓 日期：{date_str}\n我們會儘速處理，謝謝！"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        clear_session(user_id)
-        return True
-
-    return False
-
-# ✅ 檢查日期輸入是否為合法格式（例：5/1、5/2、5/3-5/5）
-def is_valid_date_input(text):
-    return all(re.match(r"^\d{1,2}/\d{1,2}$", d.strip()) or "-" in d for d in re.split(r"[、,，\s]+", text) if d.strip())
-
-# ✅ 回傳 Flex Bubble 畫面
-def get_night_fee_input_flex():
-    return FlexSendMessage(
-        alt_text="🌙 夜點費申請",
-        contents={
+        set_session(user_id, {"step": 1, "type": "夜點費申請"})
+        bubble = {
             "type": "bubble",
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "spacing": "md",
                 "contents": [
                     {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": "請輸入值班日期（可輸入區間）", "wrap": True},
-                    {"type": "text", "text": "範例：\n4/10\n4/15\n4/17\n4/18-23", "size": "sm", "color": "#888", "wrap": True}
+                    {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
+                    {"type": "text", "text": "範例：\n4/10、4/15、4/17、4/18-23", "size": "sm", "color": "#888888", "margin": "md"}
                 ]
             }
         }
-    )
+        flex_msg = FlexSendMessage(alt_text="🌙 夜點費申請", contents=bubble)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
+        return True
+
+    # ✅ 使用者回填日期（處於夜點費流程中）
+    if session.get("type") == "夜點費申請" and step == 1:
+        raw_input = event.message.text.strip()
+        session["step"] = 2
+        set_session(user_id, session)  # 更新狀態
+
+        try:
+            expanded_dates = expand_date_range(raw_input)
+            count = len(expanded_dates)
+        except Exception as e:
+            print(f"[ERROR] expand_date_range failed: {e}")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text="⚠️ 日期格式有誤，請重新輸入。\n範例：4/10、4/12、4/15-18"
+            ))
+            clear_session(user_id)
+            return True
+
+        webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
+        payload = {
+            "user_id": user_id,
+            "日期": raw_input
+        }
+
+        try:
+            response = requests.post(webhook_url, json=payload)
+            print("📡 webhook 回傳：", response.status_code, response.text)
+
+            if response.status_code != 200:
+                print(f"[WARN] webhook 非 200：{response.status_code}")
+
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"✅ 已成功提交，共 {count} 筆日期")
+            )
+        except Exception as e:
+            print(f"[ERROR] webhook 發送失敗：{e}")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                text="⚠️ 系統發送失敗，請稍後再試或聯絡巧柔協助"
+            ))
+
+        clear_session(user_id)
+        return True
+
+    return False
