@@ -13,19 +13,6 @@ DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8B
 
 
 
-def get_doctor_info(sheet_url, user_id):
-    gc = gspread.service_account(filename="credentials.json")
-    sh = gc.open_by_url(sheet_url)
-    ws = sh.worksheet("使用者對照表")
-    data = ws.get_all_values()
-    
-    print(f"[DEBUG] 查詢 user_id: {user_id}")
-    for row in data[1:]:
-        print(f"[DEBUG] 對照 row: {row}")
-        if row[2] == user_id:
-            return row[0], row[1]
-    
-    return None, None
 
 
 
