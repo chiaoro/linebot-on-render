@@ -1,15 +1,35 @@
-# handlers/meeting_leave_handler.py
 from linebot.models import TextSendMessage
 from utils.state_manager import get_state, set_state, clear_state
 from utils.meeting_leave_menu import get_meeting_leave_menu, get_meeting_leave_success
 from utils.doctor_info import get_doctor_info
-from utils.meeting_logger import log_meeting_reply
+import requests
 
+# ✅ Webhook URL（請假資料送出處）
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyk8tqbMREdzaWpwJ5ZE0CJsC_0JmsE1QRW1-S0ALvYVYuCQxlVELCI8GrvpUjF6pPg/exec"
+
+# ✅ 醫師對照表網址（查姓名與科別）
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+
+def log_meeting_reply(user_id, doctor_name, dept, status, reason):
+    payload = {
+        "user_id": user_id,
+        "doctor_name": doctor_name,
+        "department": dept,
+        "status": status,  # 出席或請假
+        "reason": reason
+    }
+    try:
+        response = requests.post(WEBHOOK_URL, json=payload)
+        response.raise_for_status()
+        print(f"[SUCCESS] 已送出紀錄：{response.text}")
+    except Exception as e:
+        print(f"[ERROR] 回報失敗：{e}")
+        raise e
 
 def handle_meeting_leave(event, user_id, text, line_bot_api):
     raw_text = event.message.text.strip()
 
+    # ✅ 初次進入：觸發請假流程
     if raw_text == "院務會議請假":
         print(f"[DEBUG] 觸發院務會議請假，user_id={user_id}")
         set_state(user_id, "ASK_LEAVE")
@@ -18,6 +38,7 @@ def handle_meeting_leave(event, user_id, text, line_bot_api):
 
     state = get_state(user_id)
 
+    # ✅ 使用者點選出席或請假
     if state == "ASK_LEAVE":
         if raw_text == "我要出席院務會議":
             try:
@@ -37,6 +58,7 @@ def handle_meeting_leave(event, user_id, text, line_bot_api):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請點選上方按鈕回覆"))
         return True
 
+    # ✅ 請假者輸入原因
     if state == "ASK_REASON":
         reason = raw_text
         try:
