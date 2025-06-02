@@ -22,15 +22,18 @@ def log_meeting_reply(user_id, doctor_name, dept, status, reason):
         "user_id": user_id,
         "doctor_name": doctor_name,
         "department": dept,
-        "status": status,  # 出席或請假
+        "status": status,
         "reason": reason
     }
+
+    print(f"[DEBUG] 🚀 準備送出資料：{payload}")
+
     try:
         response = requests.post(WEBHOOK_URL, json=payload)
         response.raise_for_status()
-        print(f"[SUCCESS] 已送出紀錄：{response.text}")
+        print(f"[SUCCESS] GAS 回應：{response.text}")
     except Exception as e:
-        print(f"[ERROR] 回報失敗：{e}")
+        print(f"[ERROR] Webhook 傳送失敗：{e}")
         raise e
 
 def handle_meeting_leave(event, user_id, text, line_bot_api):
