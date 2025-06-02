@@ -4,6 +4,7 @@ from linebot.models import FlexSendMessage, TextSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.date_parser import expand_date_range
 import requests
+import re
 
 def handle_night_fee(event, user_id, text, line_bot_api):
     session = get_session(user_id)
@@ -28,7 +29,7 @@ def handle_night_fee(event, user_id, text, line_bot_api):
                 "contents": [
                     {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
                     {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
-                    {"type": "text", "text": "範例：\n4/10、4/15、4/17、4/18-23", "size": "sm", "color": "#888888", "margin": "md"}
+                    {"type": "text", "text": "範例：\n5/5、6、16、17、18、25、27、31", "size": "sm", "color": "#888888", "margin": "md"}
                 ]
             }
         }
