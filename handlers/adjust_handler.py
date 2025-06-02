@@ -6,7 +6,8 @@ from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.line_utils import is_trigger
 from utils.adjust_bubble import get_adjustment_bubble
-from utils.doctor_info import get_doctor_name  # 自動對應醫師姓名
+from utils.doctor_info import get_doctor_info
+
 
 TRIGGER_WORDS = ["我要調診", "我要休診", "我要代診", "我要加診"]
 VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}\s*(上午診|下午診|夜診)?$"
