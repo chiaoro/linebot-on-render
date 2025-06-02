@@ -4,7 +4,7 @@ import re
 import requests
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.doctor_info import get_doctor_info
-from utils.adjustment_bubble import get_adjustment_bubble
+from utils.adjust_bubble import get_adjustment_bubble
 from utils.state_manager import get_state, set_state, clear_state
 
 VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}(?:\s*(上午診|下午診|夜診))?$"
