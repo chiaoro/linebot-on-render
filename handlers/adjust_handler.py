@@ -66,8 +66,7 @@ def handle_adjustment(event, user_id, text, line_bot_api):
             "original_date": session["original_date"],
             "new_date": session["new_date"],
             "reason": session["reason"],
-            "doctor_name": doctor_name,
-            "department": dept
+            "request_type": session["type"]
         }
 
         try:
