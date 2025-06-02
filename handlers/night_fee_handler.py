@@ -29,7 +29,7 @@ def handle_night_fee(event, user_id, text, line_bot_api):
                 "contents": [
                     {"type": "text", "text": "🌙 夜點費申請", "weight": "bold", "size": "lg"},
                     {"type": "text", "text": "請輸入值班日期（可輸入區間）", "margin": "md"},
-                    {"type": "text", "text": "範例：\n5/5、6、16、17、18、25、27、31", "size": "sm", "color": "#888888", "margin": "md"}
+                    {"type": "text", "text": "範例：\n5、6、16、17、18、25、27、31", "size": "sm", "color": "#888888", "margin": "md"}
                 ]
             }
         }
