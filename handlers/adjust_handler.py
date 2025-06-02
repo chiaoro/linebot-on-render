@@ -57,7 +57,7 @@ def handle_adjustment(event, user_id, text, line_bot_api):
 
     elif step == 2:
         session["reason"] = text
-        doctor_name = get_doctor_name(DOCTOR_SHEET_URL, user_id)
+        doctor_name = get_doctor_info(DOCTOR_SHEET_URL, user_id) # ✅ 用 get_doctor_info 並只取姓名
 
         payload = {
             "user_id": user_id,
