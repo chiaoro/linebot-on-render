@@ -191,40 +191,13 @@ def handle_message(event):
 
     # ✅ 處理其他功能（只開放私訊）
     if source_type == "user":
-        # if handle_night_fee(event, user_id, text, line_bot_api): return
-        # if handle_duty_message(event, user_id, text, line_bot_api): return
-        # 你可以加入其他功能模組
+        if handle_duty_message(event, user_id, text, line_bot_api): return
+        if handle_meeting_leave(event, user_id, text, line_bot_api): return
+        if handle_night_fee(event, user_id, text, line_bot_api): return
+        if handle_support_adjustment(event, user_id, text, line_bot_api): return
+        if handle_adjustment(event, user_id, text, line_bot_api): return
         return
 
-
-
-
-
-
-    
-
-
-    # ✅ 優先處理 duty handler   呼叫值班調整（調換與代理）handlers/duty_handler.py
-    if handle_duty_message(event, user_id, text, line_bot_api):
-        return
-
-    # ✅ 優先處理院務會議請假
-    if handle_meeting_leave(event, user_id, text, line_bot_api):
-        return
-        
-    # ✅ 夜點費
-    if handle_night_fee(event, user_id, text, line_bot_api):
-        return "OK"
-        
-    # ✅ 支援醫師調診功能
-    if handle_support_adjustment(event, user_id, text, line_bot_api):
-        return "OK"
-
-    # ✅ 調診 / 休診 / 代診 / 加診（三步驟流程） 
-    if handle_adjustment(event, user_id, text, line_bot_api):
-        return "OK" 
-
-    
 
 
     # ✅ 每次進來都補 userId（一定要）
@@ -237,7 +210,8 @@ def handle_message(event):
         return
     
 
-    # ✅ 處理群組統計功能
+
+    # ✅ 處理群組投票功能（允許群組進行）
     if handle_group_vote(event, line_bot_api):
         return
 
