@@ -1,4 +1,5 @@
 # utils/line_utils.py
+import re
 
 from linebot.models import TextMessage, PostbackEvent
 
