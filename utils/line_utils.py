@@ -22,3 +22,6 @@ def is_trigger(event, keywords):
     """
     text = get_event_text(event)
     return text in keywords
+
+def is_stat_trigger(text):
+    return re.match(r"^(開啟統計|結束統計|[+-]\d+)$", text.strip()) is not None
