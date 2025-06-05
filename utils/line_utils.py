@@ -24,5 +24,16 @@ def is_trigger(event, keywords):
     text = get_event_text(event)
     return text in keywords
 
+
+
+def get_event_text(event):
+    if isinstance(event, PostbackEvent):
+        return event.postback.data.strip()
+    elif hasattr(event, "message") and isinstance(event.message, TextMessage):
+        return event.message.text.strip()
+    return ""
+
+
+
 def is_stat_trigger(text):
     return re.match(r"^(開啟統計|結束統計|[+-]\d+)$", text.strip()) is not None
