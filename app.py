@@ -93,9 +93,19 @@ from handlers.adjust_handler import handle_adjustment
 
 
 from utils.line_utils import get_event_text, is_stat_trigger
+from flask import Flask, request, abort
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage
 
+from handlers.stats_handler import handle_stats
+# from handlers.night_fee_handler import handle_night_fee
+# from handlers.duty_handler import handle_duty_message
+# 其他模組照你需求引入
+from utils.line_utils import get_event_text, get_user_name
 
-
+import os
+import re
 
 
 
@@ -212,9 +222,6 @@ def handle_message(event):
         # if handle_duty_message(event, user_id, text, line_bot_api): return
         # 你可以加入其他模組呼叫
         return
-
-    # ✅ 預設 fallback（選擇性加）
-    print(f"⚠️ 未觸發任何功能：{text}")
 
 
 
