@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 # 👉 LINE 處理工具
 from utils.line_push import push_text_to_user
-from utils.line_utils import get_event_text, is_trigger, is_stat_trigger, get_user_name
+from utils.line_utils import get_event_text, is_trigger, is_stat_trigger
 
 # 👉 使用者狀態與綁定
 from utils.state_manager import set_state, get_state, clear_state
@@ -158,7 +158,7 @@ def handle_message(event):
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
-    user_name = get_user_name(event) or "未知使用者"  # 如果你有做綁定可以取用對應人名
+    user_name = "三總澎湖醫療部小秘❤️"  # 如果你有做綁定可以取用對應人名
 
 
      # ✅ 測ID
