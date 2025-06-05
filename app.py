@@ -1,4 +1,4 @@
-# --- 標準函式庫
+# === 標準函式庫 ===
 import os
 import re
 import json
@@ -9,22 +9,24 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# --- 第三方套件
+# === 第三方套件 ===
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import TextMessage, MessageEvent, TextSendMessage, FlexSendMessage
+from linebot.models import (
+    TextMessage, MessageEvent, TextSendMessage, FlexSendMessage
+)
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 
-# === 以下為自己寫的 utils 模組 ===
+# === 自訂 utils 模組 ===
 
-# --- LINE 處理工具
+# 👉 LINE 處理工具
 from utils.line_push import push_text_to_user
-from utils.line_utils import get_event_text, is_trigger
+from utils.line_utils import get_event_text, is_trigger, is_stat_trigger, get_user_name
 
-# --- 使用者狀態與綁定
+# 👉 使用者狀態與綁定
 from utils.state_manager import set_state, get_state, clear_state
 from utils.user_binding import (
     handle_user_binding,
@@ -36,14 +38,14 @@ from utils.user_binding import (
 )
 from utils.session_manager import get_session, set_session, clear_session, user_sessions
 
-# --- Google Sheets 操作
+# 👉 Google Sheets 操作
 from utils.gspread_client import get_gspread_client
 from utils.google_sheets import get_doctor_info, get_doctor_name, log_meeting_reply
 
-# --- 日期與文字處理
+# 👉 日期與文字處理
 from utils.date_utils import expand_date_range
 
-# --- Flex Bubble 模板
+# 👉 Flex Bubble 模板
 from utils.bubble_templates import main_menu_v2_bubble
 from utils.flex_templates import (
     get_adjustment_bubble,
@@ -51,61 +53,31 @@ from utils.flex_templates import (
     get_support_adjustment_bubble
 )
 
-# --- 功能：院務會議請假
+# 👉 院務會議請假
 from utils.meeting_leave import handle_meeting_leave_response
-from utils.meeting_leave_menu import (
-    get_meeting_leave_menu,
-    get_meeting_leave_success
-)
+from utils.meeting_leave_menu import get_meeting_leave_menu, get_meeting_leave_success
 from utils.meeting_leave_scheduler import run_meeting_leave_scheduler
 
-# --- 功能：夜點費提醒與產出
-from utils.night_shift_fee import (
-    handle_night_shift_request,
-    daily_night_fee_reminder,
-    run_night_shift_reminder
-)
+# 👉 夜點費提醒與產出
+from utils.night_shift_fee import handle_night_shift_request, daily_night_fee_reminder, run_night_shift_reminder
 from utils.daily_night_fee_reminder import send_night_fee_reminders
 from utils.night_shift_fee_generator import generate_night_fee_docs
 
-# --- 功能：群組投票統計
-from utils.group_vote_tracker import handle_group_vote
-
-# --- 功能：表單填寫處理
+# 👉 表單填寫處理（值班、休診、問卷）
 from utils.schedule_utils import handle_submission
 
-# === 以下為 handlers 模組 ===
+# 👉 群組投票（如需啟用）
+from utils.group_vote_tracker import handle_group_vote
 
-# --- 值班調整（調換與代理）
-from handlers.duty_handler import handle_duty_message
+# === handlers 分流功能模組 ===
 
-# --- 院務會議請假主處理
-from handlers.meeting_leave_handler import handle_meeting_leave
+from handlers.duty_handler import handle_duty_message                  # 值班調整（調換與代理）
+from handlers.meeting_leave_handler import handle_meeting_leave        # 院務會議請假主處理
+from handlers.night_fee_handler import handle_night_fee                # 夜點費申請主處理
+from handlers.support_adjust_handler import handle_support_adjustment  # 支援醫師調診流程
+from handlers.adjust_handler import handle_adjustment                  # 門診異動處理
+from handlers.stats_handler import handle_stats                        # 📊 群組統計功能
 
-# --- 夜點費申請主處理
-from handlers.night_fee_handler import handle_night_fee
-
-# --- 支援醫師調診流程
-from handlers.support_adjust_handler import handle_support_adjustment
-
-# --- 門診異動（調診、休診、代診、加診）
-from handlers.adjust_handler import handle_adjustment
-
-
-from utils.line_utils import get_event_text, is_stat_trigger
-from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage
-
-from handlers.stats_handler import handle_stats
-# from handlers.night_fee_handler import handle_night_fee
-# from handlers.duty_handler import handle_duty_message
-# 其他模組照你需求引入
-from utils.line_utils import get_event_text, get_user_name
-
-import os
-import re
 
 
 
