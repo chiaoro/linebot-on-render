@@ -158,8 +158,8 @@ def handle_message(event):
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
-    user_name = "三總澎湖醫療部小秘❤️"  # 如果你有做綁定可以取用對應人名
 
+    user_name = get_safe_user_name(event)
 
      # ✅ 測ID
      # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
