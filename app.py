@@ -92,6 +92,7 @@ from handlers.support_adjust_handler import handle_support_adjustment
 from handlers.adjust_handler import handle_adjustment
 
 
+from utils.line_utils import get_event_text, is_stat_trigger
 
 
 
@@ -175,6 +176,7 @@ def handle_message(event):
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
+    user_name = get_user_name(event) or "未知使用者"  # 如果你有做綁定可以取用對應人名
 
 
      # ✅ 測ID
@@ -195,7 +197,30 @@ def handle_message(event):
             )
         return
 
+    # ✅ 群組訊息過濾器：只處理統計指令
+    if event.source.type != "user" and not is_stat_trigger(text):
+        print(f"❌ 忽略群組非統計訊息：{text}")
+        return
 
+    # ✅ 統計功能處理
+    if handle_stats(event, user_id, text, line_bot_api, user_name):
+        return
+
+    # ✅ 其他功能處理（只開放私訊）
+    if event.source.type == "user":
+        # if handle_night_fee(event, user_id, text, line_bot_api): return
+        # if handle_duty_message(event, user_id, text, line_bot_api): return
+        # 你可以加入其他模組呼叫
+        return
+
+    # ✅ 預設 fallback（選擇性加）
+    print(f"⚠️ 未觸發任何功能：{text}")
+
+
+
+
+
+    
 
 
     # ✅ 優先處理 duty handler   呼叫值班調整（調換與代理）handlers/duty_handler.py
