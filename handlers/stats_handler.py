@@ -53,17 +53,14 @@ def handle_stats(event, user_id, text, line_bot_api, user_name="未知使用者"
         if not attendance_data["active"]:
             line_bot_api.reply_message(reply_token, TextSendMessage("⚠️ 尚未開啟統計功能"))
             return True
-
-        summary_lines = []
-        total = 0
-        for record in attendance_data["records"].values():
-            if record["count"] != 0:
-                summary_lines.append(f"{record['name']}: {record['count']}")
-                total += record["count"]
-
-        summary = "\n".join(summary_lines) if summary_lines else "（尚無回覆）"
-        result_text = f"🔴 統計已結束：\n{summary}\n\n👥 總人數為：{total}人 🙌"
-
+    
+        total = sum(
+            record["count"] for record in attendance_data["records"].values()
+            if record["count"] != 0
+        )
+    
+        result_text = f"🔴 統計已結束：\n\n👥 總人數為：{total}人 🙌"
+    
         line_bot_api.reply_message(reply_token, TextSendMessage(result_text))
         attendance_data["active"] = False
         return True
