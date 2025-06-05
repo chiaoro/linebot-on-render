@@ -2,6 +2,8 @@
 import re
 from utils.google_sheets import get_doctor_name
 from linebot.models import TextMessage, PostbackEvent
+from linebot import LineBotApi
+import os
 
 def get_event_text(event):
     """
@@ -42,14 +44,13 @@ def is_stat_trigger(text):
 
 def get_safe_user_name(event):
     try:
+        user_id = event.source.user_id
         if event.source.type == "user":
-            from linebot import LineBotApi
-            import os
             line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
-            profile = line_bot_api.get_profile(event.source.user_id)
+            profile = line_bot_api.get_profile(user_id)
             return profile.display_name
         else:
-            return get_doctor_name(event.source.user_id)
+            return get_doctor_name(user_id) or "未知使用者"
     except Exception as e:
         print(f"⚠️ 無法取得使用者名稱：{e}")
         return "未知使用者"
