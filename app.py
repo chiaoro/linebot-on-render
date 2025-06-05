@@ -159,12 +159,14 @@ def handle_message(event):
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
 
-    user_name = get_safe_user_name(event)
+    # ✅ 群組訊息過濾器：只允許統計指令，其餘全部略過
+    if source_type != "user" and not is_stat_trigger(text):
+        print(f"❌ 忽略群組非統計訊息：{text}")
+        return
 
-     # ✅ 測ID
-     # ✅ 當你在群組輸入 [顯示ID]，回傳群組 ID
+    # ✅ 顯示群組 ID：輸入 [顯示ID] 即回傳
     if text == "[顯示ID]":
-        if event.source.type == "group":
+        if source_type == "group":
             group_id = event.source.group_id
             line_bot_api.reply_message(
                 event.reply_token,
@@ -179,21 +181,21 @@ def handle_message(event):
             )
         return
 
-    # ✅ 群組訊息過濾器：只處理統計指令
-    if event.source.type != "user" and not is_stat_trigger(text):
-        print(f"❌ 忽略群組非統計訊息：{text}")
-        return
+    # ✅ 從 Google Sheet 對照表取得真實使用者名稱（群組也可）
+    from utils.google_sheets import get_doctor_name, DOCTOR_SHEET_URL
+    user_name = get_doctor_name(DOCTOR_SHEET_URL, user_id) or "未知使用者"
 
-    # ✅ 統計功能處理
+    # ✅ 處理統計功能（支援群組與私訊）
     if handle_stats(event, user_id, text, line_bot_api, user_name):
         return
 
-    # ✅ 其他功能處理（只開放私訊）
-    if event.source.type == "user":
+    # ✅ 處理其他功能（只開放私訊）
+    if source_type == "user":
         # if handle_night_fee(event, user_id, text, line_bot_api): return
         # if handle_duty_message(event, user_id, text, line_bot_api): return
-        # 你可以加入其他模組呼叫
+        # 你可以加入其他功能模組
         return
+
 
 
 
