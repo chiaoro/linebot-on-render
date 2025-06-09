@@ -189,14 +189,6 @@ def handle_message(event):
     if handle_stats(event, user_id, text, line_bot_api, user_name):
         return
 
-    # ✅ 處理其他功能（只開放私訊）
-    if source_type == "user":
-        if handle_duty_message(event, user_id, text, line_bot_api): return
-        if handle_meeting_leave(event, user_id, text, line_bot_api): return
-        if handle_night_fee(event, user_id, text, line_bot_api): return
-        if handle_support_adjustment(event, user_id, text, line_bot_api): return
-        if handle_adjustment(event, user_id, text, line_bot_api): return
-        return
 
 
 
@@ -256,6 +248,14 @@ def handle_message(event):
 
 
 
+    # ✅ 處理其他功能（只開放私訊）
+    if source_type == "user":
+        if handle_duty_message(event, user_id, text, line_bot_api): return
+        if handle_meeting_leave(event, user_id, text, line_bot_api): return
+        if handle_night_fee(event, user_id, text, line_bot_api): return
+        if handle_support_adjustment(event, user_id, text, line_bot_api): return
+        if handle_adjustment(event, user_id, text, line_bot_api): return
+        return
 
     
 
