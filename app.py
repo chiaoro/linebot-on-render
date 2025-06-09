@@ -216,14 +216,6 @@ def handle_message(event):
         return
 
     
-
-
-
-
-
-
-
-
     
     # ✅ 主選單
     if text == "主選單":
