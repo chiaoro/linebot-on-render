@@ -27,19 +27,34 @@ def handle_support_adjustment(event, user_id, text, line_bot_api):
     if step == 0:
         session["doctor_name"] = text
         session["step"] = 1
-        line_bot_api.reply_message(user_id, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        set_session(user_id, session)   # ✅ 一定要存回
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）")
+        )
+        return True
 
     # Step 1：原門診日期
     elif step == 1:
         session["original_date"] = text
         session["step"] = 2
-        line_bot_api.reply_message(user_id, TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）"))
+        set_session(user_id, session)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="⚙️ 請問您希望如何處理？（例如：休診、調整至5/16 上午診）")
+        )
+        return True
 
     # Step 2：新門診安排
     elif step == 2:
         session["new_date"] = text
         session["step"] = 3
-        line_bot_api.reply_message(user_id, TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）"))
+        set_session(user_id, session)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="📝 最後，請輸入原因（例如：需返台、會議）")
+        )
+        return True
 
     # Step 3：填寫原因並送出 webhook
     elif step == 3:
@@ -47,6 +62,8 @@ def handle_support_adjustment(event, user_id, text, line_bot_api):
         send_to_webhook_and_reply(session, user_id, line_bot_api)
         clear_session(user_id)
         return True
+
+    return False
 
     set_session(user_id, session)
     return True
