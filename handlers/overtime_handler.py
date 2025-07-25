@@ -96,7 +96,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
 def submit_overtime(user_id, line_bot_api, reply_token):
     session = get_session(user_id)
     if not session:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料，請重新輸入"))
+        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料或重複申請，請重新輸入"))
         return
 
     date = session.get("date")
@@ -121,7 +121,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
             "reason": reason
         })
         if response.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
+            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已製表並記錄完成。"))
         else:
             line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
     except Exception as e:
