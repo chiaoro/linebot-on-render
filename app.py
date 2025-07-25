@@ -404,17 +404,6 @@ def api_overtime():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    user_id = event.source.user_id
-    data = event.postback.data
-
-    if data == "confirm_overtime":
-        submit_overtime(user_id, line_bot_api, event.reply_token)
-    elif data == "cancel_overtime":
-        from utils.session_manager import clear_session
-        clear_session(user_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 已取消加班申請"))
 
 
 
