@@ -19,7 +19,7 @@ from linebot.models import (
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
-
+from googleapiclient.discovery import build
 # === 自訂 utils 模組 ===
 
 # 👉 LINE 處理工具
@@ -80,6 +80,9 @@ from handlers.stats_handler import handle_stats                        # 📊 �
 from utils.line_utils import get_event_text, get_safe_user_name
 # ✅ 醫師查詢
 from handlers.doctor_query_handler import handle_doctor_query
+from handlers.overtime_handler import handle_overtime
+
+
 
 # ✅載入 .env
 load_dotenv()
@@ -220,6 +223,12 @@ def handle_message(event):
     if handle_doctor_query(event, line_bot_api, user_id, text):
         return
 
+    # ✅ 加班申請流程
+    if handle_overtime(event, user_id, text, line_bot_api):
+        return
+
+
+
 
     
     
@@ -345,6 +354,54 @@ def error_handler():
         raise Exception("測試錯誤")
     except Exception as e:
         return f"❌ 錯誤發生：{str(e)}", 500
+
+
+# ✅ 加班申請
+@app.route('/api/overtime', methods=['POST'])
+def api_overtime():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        date = data.get('date')
+        time_range = data.get('time')
+        reason = data.get('reason')
+
+        if not name or not date or not time_range or not reason:
+            return jsonify({"error": "缺少必要欄位"}), 400
+
+        # ✅ 取得 Google Sheets 服務
+        info = json.loads(SERVICE_ACCOUNT_JSON)
+        creds = service_account.Credentials.from_service_account_info(
+            info,
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        service = build('sheets', 'v4', credentials=creds)
+        sheet = service.spreadsheets()
+
+        # ✅ 寫入 Google Sheets
+        sheet.values().append(
+            spreadsheetId="1pb5calRrKlCWx16XENcit85pF0qLoH1lvMfGI_WZ_n8",  # 你的加班申請表
+            range="加班申請!A:E",
+            valueInputOption="RAW",
+            body={
+                "values": [[
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    name,
+                    date,
+                    time_range,
+                    reason
+                ]]
+            }
+        ).execute()
+
+        return jsonify({"message": "✅ 加班申請已送出"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
 
 # ✅ 啟動 Flask 伺服器
 if __name__ == "__main__":
