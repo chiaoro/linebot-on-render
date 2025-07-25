@@ -146,6 +146,7 @@ submenu_map = {
         {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "夜點費申請", "text": "夜點費申請"}, "style": "secondary","color": "#ee9382", "margin": "md"},
+        {"type": "button", "action": {"type": "message", "label": "加班申請", "text": "加班申請"}, "style": "primary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "醫師資訊查詢（限制使用）", "text": "查詢醫師資料（限制使用）"}, "style": "primary", "color": "#4B89DC", "margin": "md"}
     ]
 }
