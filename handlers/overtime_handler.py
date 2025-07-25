@@ -5,6 +5,8 @@ import requests
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.google_sheets import get_doctor_info
+from datetime import datetime
+import pytz
 
 # ✅ Google Sheet URL
 DOCTOR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
@@ -108,34 +110,42 @@ def handle_overtime(event, user_id, text, line_bot_api):
     return False
 
 
-# ✅ 提交加班申請
 def submit_overtime(user_id, line_bot_api, reply_token):
     session = get_session(user_id)
-    if not session or session.get("type") != "overtime":
-        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 找不到加班申請資料，請重新開始。"))
+    if not session:
+        line_bot_api.reply_message(reply_token, TextSendMessage("❌ 找不到加班資料，請重新輸入"))
         return
 
-    data = session.get("data", {})
+    date = session.get("date")
+    time_range = session.get("time")
+    reason = session.get("reason")
 
-    # ✅ 取得醫師姓名
-    doctor_info = get_doctor_info(DOCTOR_SHEET_URL, user_id)
-    doctor_name, department = doctor_info if doctor_info else ("未知", "未知科別")
+    # ✅ 加入台灣時間
+    from datetime import datetime
+    import pytz
+    tz = pytz.timezone('Asia/Taipei')
+    timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 呼叫 API 寫入 Google Sheets
+    # ✅ 取得醫師姓名與科別
+    from utils.google_sheets import get_doctor_info
+    doctor_name, doctor_dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
+    doctor_name = doctor_name or "未知"
+    doctor_dept = doctor_dept or "未填科別"
+
+    # ✅ 發送到 Google Apps Script
+    payload = {
+        "timestamp": timestamp,
+        "name": doctor_name,
+        "dept": doctor_dept,
+        "date": date,
+        "time": time_range,
+        "reason": reason
+    }
+
     try:
-        payload = {
-            "name": doctor_name,
-            "date": data["date"],
-            "time": data["time"],
-            "reason": data["reason"]
-        }
-        response = requests.post(OVERTIME_API_URL, json=payload)
-        if response.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
-        else:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
+        response = requests.post(GAS_WEBHOOK_URL, json=payload)
+        response.raise_for_status()
+        line_bot_api.reply_message(reply_token, TextSendMessage("✅ 加班申請已送出"))
+        clear_session(user_id)
     except Exception as e:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
-
-    # ✅ 清除 Session
-    clear_session(user_id)
+        line_bot_api.reply_message(reply_token, TextSendMessage(f"❌ 送出失敗：{e}"))
