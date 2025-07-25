@@ -78,13 +78,8 @@ from handlers.support_adjust_handler import handle_support_adjustment  # 支援�
 from handlers.adjust_handler import handle_adjustment                  # 門診異動處理
 from handlers.stats_handler import handle_stats                        # 📊 群組統計功能
 from utils.line_utils import get_event_text, get_safe_user_name
-
-# 自訂模組
-from handlers.doctor_query_handler import handle_doctor_query, is_doctor_query_trigger
 from handlers.doctor_query_handler import (
-    start_doctor_query,  # 啟動詢問流程
-    process_doctor_name, # 查詢醫師資料
-    is_in_doctor_query_session
+    start_doctor_query, process_doctor_name, is_in_doctor_query_session
 )
 
 
@@ -166,10 +161,9 @@ submenu_map = {
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    text = event.message.text.strip()
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
-#    text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
+    text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
 
 
 
