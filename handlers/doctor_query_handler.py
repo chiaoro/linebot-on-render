@@ -1,72 +1,78 @@
 # handlers/doctor_query_handler.py
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+
 from linebot.models import TextSendMessage
-import os
-import json
+from utils.session_manager import user_sessions
+from utils.google_sheets import get_doctor_info
 
-# ✅ 使用者狀態暫存（記錄哪些人正在進行查詢流程）
-user_query_state = {}
-
-# ✅ 取得 Google Sheets 資料
-def fetch_doctor_data(sheet_url, doctor_name):
-    try:
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-        client = gspread.service_account_from_dict(creds)
-        sheet = client.open_by_url(sheet_url).sheet1
-        data = sheet.get_all_records()
-        for row in data:
-            if row.get("姓名") == doctor_name.strip():
-                return row
-        return None
-    except Exception as e:
-        print(f"❌ Google Sheets 錯誤: {e}")
-        return None
-
-# ✅ 檢查是否觸發查詢流程
-def is_doctor_query_trigger(user_id, text, allowed_ids):
-    return text == "醫師資訊查詢（限制使用）" and user_id in allowed_ids
-
-# ✅ 主流程
+# ✅ 醫師查詢流程
 def handle_doctor_query(event, line_bot_api, user_id, text, sheet_url):
-    # ✅ 白名單檢查
-    allowed_ids = os.getenv("ALLOWED_USER_IDS", "").split(",")
-    if user_id not in allowed_ids:
-        return False  # 不處理
+    # === Step 1：啟動查詢 ===
+    if text in ["查詢醫師資料（限制使用）", "醫師資訊查詢（限制使用）"]:
+        from app import ALLOWED_USER_IDS  # 從 app.py 引用白名單
+        if user_id not in ALLOWED_USER_IDS:
+            print(f"❌ 用戶 {user_id} 嘗試使用醫師查詢，但不在白名單")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
+            return True
 
-    # ✅ 如果觸發關鍵字，設定狀態
-    if text == "醫師資訊查詢（限制使用）":
-        user_query_state[user_id] = True
+        # ✅ 設定 session 狀態
+        user_sessions[user_id] = {"step": 1}
+        print(f"✅ 啟動醫師查詢流程，user_id={user_id}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
         return True
 
-    # ✅ 如果使用者正在查詢狀態
-    if user_query_state.get(user_id):
+    # === Step 2：輸入醫師姓名 ===
+    if user_sessions.get(user_id, {}).get("step") == 1:
         doctor_name = text.strip()
-        doctor_data = fetch_doctor_data(sheet_url, doctor_name)
+        print(f"🔍 查詢醫師姓名：{doctor_name}")
 
-        if doctor_data:
-            message = (
-                f"姓名：{doctor_data.get('姓名')}\n"
-                f"出生年月：{doctor_data.get('出生年月')}\n"
-                f"Lind ID：{doctor_data.get('Lind ID')}\n"
-                f"性別：{doctor_data.get('性別')}\n"
-                f"年齡：{doctor_data.get('年齡')}\n"
-                f"公務機：{doctor_data.get('公務機')}\n"
-                f"私人手機：{doctor_data.get('私人手機')}\n"
-                f"地址：{doctor_data.get('地址')}\n"
-                f"在澎地址：{doctor_data.get('在澎地址')}\n"
-                f"email：{doctor_data.get('email')}\n"
-                f"緊急聯絡人姓名：{doctor_data.get('緊急聯絡人姓名')}\n"
-                f"緊急聯絡人關係：{doctor_data.get('緊急聯絡人關係')}\n"
-                f"緊急聯絡人電話：{doctor_data.get('緊急聯絡人電話')}\n"
-            )
+        # ✅ 從 Google Sheet 抓資料
+        doctor_info = get_doctor_info(sheet_url, doctor_name)
+
+        if doctor_info:
+            reply_text = format_doctor_info(doctor_info)
         else:
-            message = "❌ 查無此醫師資料，請確認姓名是否正確"
+            reply_text = f"❌ 找不到醫師：{doctor_name}，請確認姓名是否正確"
 
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
-        user_query_state.pop(user_id, None)  # ✅ 清除狀態
+        # ✅ 回覆並清除 session
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        user_sessions.pop(user_id, None)
         return True
 
     return False
+
+
+# ✅ 格式化醫師資訊
+def format_doctor_info(info):
+    """
+    info: dict, e.g.
+    {
+        '姓名': '王大明',
+        '出生年月': '1984/01/16',
+        '性別': '男',
+        '年齡': '41',
+        '公務機': '15859',
+        '私人手機': '0909394969',
+        '地址': '高雄市...',
+        '在澎地址': '馬公市...',
+        'email': 'example@gmail.com',
+        '緊急聯絡人姓名': '王小明',
+        '緊急聯絡人關係': '父子',
+        '緊急聯絡人電話': '0912345678'
+    }
+    """
+    fields = [
+        ("姓名", info.get("姓名", "")),
+        ("出生年月", info.get("出生年月", "")),
+        ("性別", info.get("性別", "")),
+        ("年齡", info.get("年齡", "")),
+        ("公務機", info.get("公務機", "")),
+        ("私人手機", info.get("私人手機", "")),
+        ("地址", info.get("地址", "")),
+        ("在澎地址", info.get("在澎地址", "")),
+        ("Email", info.get("email", "")),
+        ("緊急聯絡人姓名", info.get("緊急聯絡人姓名", "")),
+        ("緊急聯絡人關係", info.get("緊急聯絡人關係", "")),
+        ("緊急聯絡人電話", info.get("緊急聯絡人電話", "")),
+    ]
+
+    return "\n".join([f"{k}：{v}" for k, v in fields if v])
