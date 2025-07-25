@@ -8,7 +8,8 @@ import pytz
 from datetime import datetime
 
 # ✅ GAS Webhook URL（需放在 Render 的環境變數）
-GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
+OVERTIME_GAS_URL = os.getenv("OVERTIME_GAS_URL")
+
 
 def handle_overtime(event, user_id, text, line_bot_api):
     """
