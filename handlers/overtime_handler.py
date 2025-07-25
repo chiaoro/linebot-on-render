@@ -1,9 +1,9 @@
 # handlers/overtime_handler.py
+import requests
 from linebot.models import TextSendMessage
 from utils.session_manager import get_session, set_session, clear_session
-import requests
 
-API_URL = "https://你的網址.onrender.com/api/overtime"  # 部署後更新
+API_URL = "https://linebot-on-render.onrender.com/api/overtime"  # 部署後記得改
 
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id)
@@ -17,7 +17,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
         )
         return True
 
-    # ✅ 如果不是加班流程，跳過
+    # 如果不是加班流程 → return False
     if not session:
         return False
 
@@ -45,9 +45,8 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
     if step == 3:
         session["reason"] = text
-        session["name"] = "醫師姓名"  # TODO：未來從 LINE Profile 或前面收集
+        session["name"] = "未知醫師"  # TODO: 你可以改成從 Google Sheets 對照 user_id 取真名
 
-        # ✅ 呼叫後端 API
         try:
             res = requests.post(API_URL, json=session)
             if res.status_code == 200:
