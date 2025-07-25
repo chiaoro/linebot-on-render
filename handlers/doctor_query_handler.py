@@ -1,58 +1,27 @@
 # handlers/doctor_query_handler.py
-
 from linebot.models import TextSendMessage
-from utils.session_manager import set_session, get_session, clear_session
-from utils.google_sheets import get_doctor_info
+from utils.session_manager import user_sessions
+import gspread
 
-# ✅ 觸發判斷（保留給 app.py 用，非必要可省略）
-def is_doctor_query_trigger(user_id, text, allowed_users):
-    return user_id in allowed_users and text in ["查詢醫師資料（限制使用）", "醫師資訊查詢（限制使用）"]
-
-# ✅ 啟動醫師查詢流程
+# ✅ 啟動醫師查詢模式
 def start_doctor_query(user_id):
-    set_session(user_id, {"type": "doctor_query", "step": 1})
+    user_sessions[user_id] = {"mode": "doctor_query"}
+    print(f"✅ {user_id} 啟動醫師查詢模式")
 
-# ✅ 是否處於查詢狀態
+# ✅ 判斷是否在查詢流程中
 def is_in_doctor_query_session(user_id):
-    session = get_session(user_id)
-    return session.get("type") == "doctor_query" and session.get("step") == 1
+    return user_id in user_sessions and user_sessions[user_id].get("mode") == "doctor_query"
 
-# ✅ 處理姓名輸入階段（step 1）
-def process_doctor_name(user_id, doctor_name, line_bot_api, reply_token):
-    clear_session(user_id)  # 查詢後直接清除狀態
-    values = get_doctor_info(doctor_name)
+# ✅ 清除查詢狀態
+def clear_doctor_query(user_id):
+    if user_id in user_sessions:
+        del user_sessions[user_id]
 
-    if not values:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 查無醫師：{doctor_name}"))
-        return
-
-    result = format_doctor_info(values)
-    line_bot_api.reply_message(reply_token, TextSendMessage(text=result))
-
-# ✅ 整合資訊格式化
-
-def format_doctor_info(data):
-    keys = [
-        "姓名", "出生年月", "Line ID", "性別", "年齡", "公務機",
-        "私人手機", "地址", "在澎地址", "email",
-        "緊急連絡人姓名", "緊急連絡人關係", "緊急連絡人電話"
-    ]
-
-    result = ["三軍總醫院澎湖分院醫師資料查詢"]
-    for i in range(len(keys)):
-        value = data[i] if i < len(data) and data[i] else ""
-        result.append(f"{keys[i]}：{value}")
-
-    return "\n".join(result)
-
-
-# ✅ 主處理函式
-
+# ✅ 主流程
 def handle_doctor_query(event, line_bot_api, user_id, text, sheet_url):
-    from app import ALLOWED_USER_IDS  # 為了 access 白名單
-
-    # Step 0: 觸發起始查詢
-    if text in ["查詢醫師資料（限制使用）", "醫師資訊查詢（限制使用）"]:
+    # ✅ 白名單檢查
+    from app import ALLOWED_USER_IDS
+    if text == "查詢醫師資料（限制使用）":
         if user_id not in ALLOWED_USER_IDS:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
             return True
@@ -60,9 +29,55 @@ def handle_doctor_query(event, line_bot_api, user_id, text, sheet_url):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
         return True
 
-    # Step 1: 使用者正在輸入醫師姓名
+    # ✅ 第二階段：使用者輸入姓名
     if is_in_doctor_query_session(user_id):
-        process_doctor_name(user_id, text, line_bot_api, event.reply_token)
+        doctor_name = text.strip()
+        info = get_doctor_info_from_sheet(sheet_url, doctor_name)
+
+        if info:
+            reply_text = format_doctor_info(info)
+        else:
+            reply_text = f"❌ 找不到「{doctor_name}」的資料，請確認姓名是否正確。"
+
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        clear_doctor_query(user_id)
         return True
 
     return False
+
+# ✅ 從 Google Sheet 讀取醫師資料
+def get_doctor_info_from_sheet(sheet_url, name):
+    gc = gspread.service_account_from_dict(get_google_credentials())
+    sh = gc.open_by_url(sheet_url)
+    ws = sh.sheet1
+    data = ws.get_all_records()
+
+    for row in data:
+        if row.get("姓名") == name:  # 完全比對
+            return row
+    return None
+
+# ✅ 讀取 Google API 憑證
+def get_google_credentials():
+    import json
+    import os
+    return json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+# ✅ 格式化輸出
+def format_doctor_info(info):
+    return (
+        f"✅ 醫師資訊：\n"
+        f"姓名：{info.get('姓名','')}\n"
+        f"出生年月：{info.get('出生年月','')}\n"
+        f"Lind ID：{info.get('Lind ID','')}\n"
+        f"性別：{info.get('性別','')}\n"
+        f"年齡：{info.get('年齡','')}\n"
+        f"公務機：{info.get('公務機','')}\n"
+        f"私人手機：{info.get('私人手機','')}\n"
+        f"地址：{info.get('地址','')}\n"
+        f"在澎地址：{info.get('在澎地址','')}\n"
+        f"Email：{info.get('email','')}\n"
+        f"緊急聯絡人姓名：{info.get('緊急聯絡人姓名','')}\n"
+        f"緊急聯絡人關係：{info.get('緊急聯絡人關係','')}\n"
+        f"緊急聯絡人電話：{info.get('緊急聯絡人電話','')}"
+    )
