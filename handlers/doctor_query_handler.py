@@ -1,7 +1,8 @@
-# handlers/doctor_query_handler.py
 from linebot.models import TextSendMessage
 from utils.session_manager import user_sessions
 import gspread
+import json
+import os
 
 # ✅ 啟動醫師查詢模式
 def start_doctor_query(user_id):
@@ -18,11 +19,10 @@ def clear_doctor_query(user_id):
         del user_sessions[user_id]
 
 # ✅ 主流程
-def handle_doctor_query(event, line_bot_api, user_id, text, sheet_url):
-    # ✅ 白名單檢查
-    from app import ALLOWED_USER_IDS
+def handle_doctor_query(event, line_bot_api, user_id, text, sheet_url, allowed_ids):
+    # ✅ 進入查詢模式
     if text == "查詢醫師資料（限制使用）":
-        if user_id not in ALLOWED_USER_IDS:
+        if user_id not in allowed_ids:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
             return True
         start_doctor_query(user_id)
@@ -59,8 +59,6 @@ def get_doctor_info_from_sheet(sheet_url, name):
 
 # ✅ 讀取 Google API 憑證
 def get_google_credentials():
-    import json
-    import os
     return json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
 # ✅ 格式化輸出
@@ -69,7 +67,7 @@ def format_doctor_info(info):
         f"✅ 醫師資訊：\n"
         f"姓名：{info.get('姓名','')}\n"
         f"出生年月：{info.get('出生年月','')}\n"
-        f"Lind ID：{info.get('Lind ID','')}\n"
+        f"Line ID：{info.get('Lind ID','')}\n"
         f"性別：{info.get('性別','')}\n"
         f"年齡：{info.get('年齡','')}\n"
         f"公務機：{info.get('公務機','')}\n"
