@@ -259,19 +259,7 @@ def handle_message(event):
         )
         return
 
-    # ✅ 醫師查詢功能
-    if text == "查詢醫師資料（限制使用）":
-        if user_id not in ALLOWED_USER_IDS:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
-            return
-        start_doctor_query(user_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
-        return
 
-    # ✅ 如果使用者正在查詢流程
-    if is_in_doctor_query_session(user_id):
-        process_doctor_name(user_id, text, line_bot_api, event.reply_token)
-        return
 
 
     # ✅ 處理其他功能（只開放私訊）
