@@ -3,7 +3,7 @@ import requests
 from linebot.models import TextSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 
-API_URL = "https://linebot-on-render.onrender.com/api/overtime"  # 部署後記得改
+API_URL = "https://linebot-on-render.onrender.com/api/overtime"  # ✅ 你的 API URL
 
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id)
@@ -45,7 +45,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
     if step == 3:
         session["reason"] = text
-        session["name"] = "未知醫師"  # TODO: 你可以改成從 Google Sheets 對照 user_id 取真名
+        session["name"] = "未知醫師"  # ✅ 可以換成 get_doctor_name(user_id)
 
         try:
             res = requests.post(API_URL, json=session)
