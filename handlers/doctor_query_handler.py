@@ -1,14 +1,21 @@
-from linebot.models import FlexSendMessage
+from linebot.models import FlexSendMessage, TextSendMessage
 from utils.session_manager import user_sessions
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import os
+import json
 
 # ✅ Google Sheets 設定
 SHEET_URL = "https://docs.google.com/spreadsheets/d/14mU_Hqu0M971HAMTZtSFGvvPLu9oPbtx7-9BvqRX9Iw/edit?usp=sharing"
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# ✅ 服務帳戶授權
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
+# ✅ 使用 Render 環境變數 GOOGLE_CREDENTIALS
+google_credentials = os.getenv("GOOGLE_CREDENTIALS")
+if not google_credentials:
+    raise ValueError("❌ GOOGLE_CREDENTIALS 環境變數未設定")
+
+service_account_info = json.loads(google_credentials)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, SCOPE)
 client = gspread.authorize(creds)
 sheet = client.open_by_url(SHEET_URL).sheet1  # 預設第一個工作表
 
@@ -61,11 +68,6 @@ def generate_doctor_flex(info):
                     {"type": "text", "text": f"緊急聯絡人電話：{info.get('緊急連絡人電話', '')}", "wrap": True}
                 ]}
             ]
-        },
-        "styles": {
-            "body": {
-                "backgroundColor": "#FFFFFF"
-            }
         }
     }
 
