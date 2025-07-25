@@ -81,7 +81,11 @@ from utils.line_utils import get_event_text, get_safe_user_name
 
 # 自訂模組
 from handlers.doctor_query_handler import handle_doctor_query, is_doctor_query_trigger
-
+from handlers.doctor_query_handler import (
+    start_doctor_query,  # 啟動詢問流程
+    process_doctor_name, # 查詢醫師資料
+    is_in_doctor_query_session
+)
 
 
 # ✅載入 .env
@@ -165,18 +169,10 @@ def handle_message(event):
     text = event.message.text.strip()
     source_type = event.source.type         # 'user', 'group', 'room'
     raw_text = event.message.text.strip()   # 使用者原始輸入
-    text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
+#    text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
 
 
-        # ✅ 如果是醫師查詢流程
-    if is_doctor_query_trigger(user_id, text, ALLOWED_USER_IDS):
-        handle_doctor_query(event, line_bot_api)
-        return
-    # ✅ 預設回應
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="請輸入：查詢醫師資料（限制使用）")
-    )
+
 
 
     
@@ -266,7 +262,19 @@ def handle_message(event):
         )
         return
 
+    # ✅ 醫師查詢功能
+    if text == "查詢醫師資料（限制使用）":
+        if user_id not in ALLOWED_USER_IDS:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
+            return
+        start_doctor_query(user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
+        return
 
+    # ✅ 如果使用者正在查詢流程
+    if is_in_doctor_query_session(user_id):
+        process_doctor_name(user_id, text, line_bot_api, event.reply_token)
+        return
 
 
     # ✅ 處理其他功能（只開放私訊）
