@@ -83,3 +83,54 @@ def handle_overtime(event, user_id, text, line_bot_api):
                         "color": "#FF0000",
                         "action": {"type": "message", "label": "❌ 取消", "text": "取消加班申請"}
                     }
+                ]
+            }
+        }
+
+        session["doctor_name"] = doctor_name
+        session["doctor_dept"] = doctor_dept
+        session["step"] = 3
+        set_session(user_id, session)
+
+        line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請確認加班申請", contents=confirm_flex))
+        return True
+
+    # Step 3：確認送出
+    if step == 3:
+        if text == "確認送出加班申請":
+            try:
+                info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+                creds = service_account.Credentials.from_service_account_info(
+                    info, scopes=['https://www.googleapis.com/auth/spreadsheets']
+                )
+                service = build('sheets', 'v4', credentials=creds)
+                sheet = service.spreadsheets()
+
+                sheet.values().append(
+                    spreadsheetId=OVERTIME_SHEET_ID,
+                    range="加班申請!A:F",
+                    valueInputOption="RAW",
+                    body={
+                        "values": [[
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),  # 時間戳記
+                            session["doctor_dept"],  # 醫師科別
+                            session["doctor_name"],  # 醫師姓名
+                            session["date"],         # 加班日期
+                            session["time"],         # 加班時間
+                            session["reason"]        # 事由
+                        ]]
+                    }
+                ).execute()
+
+                clear_session(user_id)
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="✅ 加班申請已送出！"))
+            except Exception as e:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 送出失敗：{str(e)}"))
+            return True
+
+        if text == "取消加班申請":
+            clear_session(user_id)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 加班申請已取消"))
+            return True
+
+    return False
