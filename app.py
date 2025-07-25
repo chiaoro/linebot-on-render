@@ -215,7 +215,7 @@ def handle_message(event):
     if handle_group_vote(event, line_bot_api):
         return
 
-       # ✅ ✅ 這裡插入醫師查詢功能（限制使用）
+    # ✅ 醫師資訊查詢（限制使用）
     if handle_doctor_query(event, line_bot_api, user_id, text, DOCTOR_SHEET_URL):
         return
 
