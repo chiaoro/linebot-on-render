@@ -81,6 +81,8 @@ from utils.line_utils import get_event_text, get_safe_user_name
 # ✅ 醫師查詢
 from handlers.doctor_query_handler import handle_doctor_query
 from handlers.overtime_handler import handle_overtime
+from linebot.models import PostbackEvent
+from handlers.overtime_handler import submit_overtime
 
 
 
@@ -401,7 +403,17 @@ def api_overtime():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    data = event.postback.data
 
+    if data == "confirm_overtime":
+        submit_overtime(user_id, line_bot_api, event.reply_token)
+    elif data == "cancel_overtime":
+        from utils.session_manager import clear_session
+        clear_session(user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 已取消加班申請"))
 
 
 
