@@ -93,7 +93,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
         set_session(user_id, session)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="請輸入加班事由")
+            TextSendMessage(text="請輸入加班事由(需詳述,例如開了什麼刀、完成哪幾份病歷、查哪幾間房等等)")
         )
         return True
 
