@@ -361,7 +361,7 @@ def error_handler():
 @app.route('/api/overtime', methods=['POST'])
 def api_overtime():
     try:
-        SERVICE_ACCOUNT_JSON = os.environ.get('SERVICE_ACCOUNT_JSON')
+        SERVICE_ACCOUNT_JSON = os.environ.get('GOOGLE_CREDENTIALS')
         data = request.get_json()
         name = data.get('name')
         date = data.get('date')
