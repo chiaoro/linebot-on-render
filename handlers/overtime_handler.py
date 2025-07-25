@@ -8,7 +8,7 @@ import pytz
 from datetime import datetime
 
 # ✅ GAS Webhook URL（需放在 Render 的環境變數）
-GAS_WEBHOOK_URL = os.getenv("GAS_WEBHOOK_URL")
+GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
 
 def handle_overtime(event, user_id, text, line_bot_api):
     """
@@ -93,47 +93,47 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
 
 def submit_overtime(user_id, line_bot_api, reply_token):
-    """
-    確認送出 → 呼叫 GAS Webhook
-    """
+    # 取出暫存資料
     session = get_session(user_id)
     if not session:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text="❌ Session 已失效"))
+        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料，請重新輸入"))
         return
 
     date = session.get("date")
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ 從使用者對照表取得姓名 & 科別
-    doctor_name, doctor_dept = get_doctor_info(
+    # ✅ 取得醫師姓名與科別
+    doctor_info = get_doctor_info(
         "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit",
         user_id
     )
-    doctor_name = doctor_name or "未知醫師"
-    doctor_dept = doctor_dept or "醫療部"
+    if not doctor_info:
+        doctor_name = "未知醫師"
+        dept = "未知科別"
+    else:
+        doctor_name, dept = doctor_info  # ✅ tuple 解構
 
-    # ✅ 取得台灣時間戳記
+    # ✅ 產生台灣時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 發送到 GAS Webhook
-    payload = {
-        "timestamp": timestamp,
-        "dept": doctor_dept,
-        "name": doctor_name,
-        "date": date,
-        "time": time_range,
-        "reason": reason
-    }
-
+    # ✅ 呼叫 GAS Webhook
     try:
-        response = requests.post(GAS_WEBHOOK_URL, json=payload)
+        response = requests.post(OVERTIME_GAS_URL, json={
+            "timestamp": timestamp,
+            "dept": dept,
+            "name": doctor_name,
+            "date": date,
+            "time": time_range,
+            "reason": reason
+        })
         if response.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
+            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出並同步至後台"))
         else:
             line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
     except Exception as e:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{str(e)}"))
+        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
+    # ✅ 清除 Session
     clear_session(user_id)
