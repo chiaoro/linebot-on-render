@@ -17,7 +17,7 @@ from linebot.models import (
     TextMessage, MessageEvent, TextSendMessage, FlexSendMessage
 )
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 # === 自訂 utils 模組 ===
