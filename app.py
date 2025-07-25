@@ -79,7 +79,7 @@ from handlers.adjust_handler import handle_adjustment                  # 門診�
 from handlers.stats_handler import handle_stats                        # 📊 群組統計功能
 from utils.line_utils import get_event_text, get_safe_user_name
 # ✅ 醫師查詢
-from handlers.doctor_query_handler import handle_doctor_query, is_doctor_query_trigger
+from handlers.doctor_query_handler import handle_doctor_query
 
 # ✅載入 .env
 load_dotenv()
