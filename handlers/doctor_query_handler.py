@@ -78,10 +78,10 @@ def handle_doctor_query(event, line_bot_api, user_id, text):
     if text == "查詢醫師資料（限制使用）":
         if user_id not in ALLOWED_USER_IDS:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 你沒有使用此功能的權限"))
-            return
+            return True  # ✅ 中斷
         start_doctor_query(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
-        return
+        return True  # ✅ 中斷
 
     # ✅ 是否在查詢模式
     if is_in_doctor_query_session(user_id):
@@ -98,3 +98,6 @@ def handle_doctor_query(event, line_bot_api, user_id, text):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 查無此醫師資料，請確認姓名是否正確"))
         
         clear_doctor_query(user_id)
+        return True  # ✅ 中斷
+
+    return False  # ✅ 如果沒觸發此功能
