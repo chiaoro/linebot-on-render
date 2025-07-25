@@ -284,6 +284,16 @@ def handle_message(event):
         return
 
     
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    if event.postback.data == "confirm_overtime":
+        from handlers.overtime_handler import submit_overtime
+        submit_overtime(user_id, line_bot_api, event.reply_token)
+    elif event.postback.data == "cancel_overtime":
+        from utils.session_manager import clear_session
+        clear_session(user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 已取消加班申請"))
 
 
 
@@ -331,6 +341,7 @@ def meeting_leave():
 @app.route("/ping", methods=["GET"])
 def ping():
     return "Bot is awake!", 200
+
 
 
 
