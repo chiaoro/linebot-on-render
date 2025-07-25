@@ -389,7 +389,8 @@ def api_overtime():
             valueInputOption="RAW",
             body={
                 "values": [[
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+                    data.get('dept', ''),  # ✅ 醫師科別
                     name,
                     date,
                     time_range,
