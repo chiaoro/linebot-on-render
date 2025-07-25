@@ -1,18 +1,16 @@
 # handlers/overtime_handler.py
 from linebot.models import TextSendMessage, FlexSendMessage
-from utils.session_manager import get_session, set_session, clear_session
-from utils.google_sheets import get_doctor_info
 import requests
 import os
-from datetime import datetime
+from utils.session_manager import get_session, set_session, clear_session
+from utils.google_sheets import get_doctor_info
 
-# ✅ API URL（Render 伺服器的網址）
-API_URL = os.getenv("API_BASE_URL", "https://linebot-on-render.onrender.com/api/overtime")
+API_URL = os.getenv("API_BASE_URL", "https://linebot-on-render.onrender.com")
 
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id)
 
-    # ✅ 啟動流程
+    # ✅ Step 0：啟動流程
     if text == "加班申請":
         set_session(user_id, {"step": 1, "type": "overtime"})
         line_bot_api.reply_message(
@@ -21,116 +19,146 @@ def handle_overtime(event, user_id, text, line_bot_api):
         )
         return True
 
-    # ✅ 確認是否在流程中
-    if not session or session.get("type") != "overtime":
+    # ✅ 非加班流程則跳過
+    if session.get("type") != "overtime":
         return False
 
     step = session.get("step", 1)
 
-    # Step 1：輸入日期
+    # ✅ Step 1：輸入日期
     if step == 1:
-        session["date"] = text
-        session["step"] = 2
-        set_session(user_id, session)
+        set_session(user_id, {**session, "date": text, "step": 2})
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請輸入加班時間（格式：HH:MM-HH:MM）")
         )
         return True
 
-    # Step 2：輸入時間
+    # ✅ Step 2：輸入時間
     if step == 2:
-        session["time"] = text
-        session["step"] = 3
-        set_session(user_id, session)
+        set_session(user_id, {**session, "time": text, "step": 3})
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="請輸入加班事由")
         )
         return True
 
-    # Step 3：輸入事由並顯示確認畫面
+    # ✅ Step 3：輸入原因並顯示確認 Flex
     if step == 3:
         session["reason"] = text
 
-        # ✅ 查詢醫師姓名與科別
+        # ✅ 取得醫師資訊
         doctor_info = get_doctor_info(
             "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit",
             user_id
         )
-        doctor_name = doctor_info.get("姓名", "未知醫師")
-        doctor_dept = doctor_info.get("科別", "未填科別")
 
-        # ✅ 保存 session
+        # ✅ 判斷回傳格式
+        if isinstance(doctor_info, tuple):
+            doctor_name, doctor_dept = doctor_info
+        else:
+            doctor_name = doctor_info.get("姓名", "未知醫師")
+            doctor_dept = doctor_info.get("科別", "未填科別")
+
         session["doctor_name"] = doctor_name
         session["doctor_dept"] = doctor_dept
-        set_session(user_id, session)
+        set_session(user_id, {**session, "step": 4})
 
-        # ✅ Flex 確認畫面
-        bubble = {
+        # ✅ Flex 確認卡片
+        flex_content = {
             "type": "bubble",
             "body": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": "📋 請確認加班申請", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": f"日期：{session['date']}", "margin": "md"},
-                    {"type": "text", "text": f"時間：{session['time']}", "margin": "md"},
-                    {"type": "text", "text": f"事由：{session['reason']}", "margin": "md"}
-                ]
-            },
-            "footer": {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#1DB446",
-                        "action": {"type": "postback", "label": "✅ 確認送出", "data": "confirm_overtime"}
-                    },
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#FF3B30",
-                        "action": {"type": "postback", "label": "❌ 取消", "data": "cancel_overtime"}
-                    }
+                    {"type": "text", "text": "📄 請確認加班申請", "weight": "bold", "size": "lg"},
+                    {"type": "separator", "margin": "md"},
+                    {"type": "box", "layout": "vertical", "margin": "md", "contents": [
+                        {"type": "text", "text": f"醫師：{doctor_name} ({doctor_dept})"},
+                        {"type": "text", "text": f"日期：{session['date']}"},
+                        {"type": "text", "text": f"時間：{session['time']}"},
+                        {"type": "text", "text": f"事由：{session['reason']}"}
+                    ]},
+                    {"type": "separator", "margin": "md"},
+                    {"type": "box", "layout": "horizontal", "spacing": "md", "margin": "md", "contents": [
+                        {
+                            "type": "button",
+                            "style": "primary",
+                            "color": "#28a745",
+                            "action": {
+                                "type": "postback",
+                                "label": "✅ 確認送出",
+                                "data": "confirm_overtime"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "style": "secondary",
+                            "color": "#dc3545",
+                            "action": {
+                                "type": "postback",
+                                "label": "❌ 取消",
+                                "data": "cancel_overtime"
+                            }
+                        }
+                    ]}
                 ]
             }
         }
 
         line_bot_api.reply_message(
             event.reply_token,
-            FlexSendMessage(alt_text="確認加班申請", contents=bubble)
+            FlexSendMessage(alt_text="請確認加班申請", contents=flex_content)
         )
         return True
 
     return False
 
 
-# ✅ 提交資料到 API
-def submit_overtime(user_id, line_bot_api, reply_token):
+# ✅ PostbackEvent：處理確認 / 取消
+def handle_overtime_postback(event, user_id, line_bot_api):
     session = get_session(user_id)
-    if not session:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text="❌ 找不到申請資料，請重新開始"))
-        return
+    data = event.postback.data
 
-    # ✅ 準備資料
-    data = {
-        "name": session["doctor_name"],
-        "dept": session["doctor_dept"],
-        "date": session["date"],
-        "time": session["time"],
-        "reason": session["reason"]
-    }
+    if session.get("type") != "overtime":
+        return False
 
-    try:
-        res = requests.post(API_URL, json=data)
-        if res.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
-        else:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{res.text}"))
-    except Exception as e:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
-    finally:
+    if data == "confirm_overtime":
+        try:
+            # ✅ 呼叫 API 寫入 Google Sheet
+            payload = {
+                "name": session.get("doctor_name", "未知醫師"),
+                "dept": session.get("doctor_dept", "未填科別"),
+                "date": session["date"],
+                "time": session["time"],
+                "reason": session["reason"]
+            }
+            res = requests.post(f"{API_URL}/api/overtime", json=payload)
+            if res.status_code == 200:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="✅ 加班申請已送出！")
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f"❌ 送出失敗：{res.text}")
+                )
+        except Exception as e:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f"❌ 發生錯誤：{str(e)}")
+            )
+        finally:
+            clear_session(user_id)
+        return True
+
+    elif data == "cancel_overtime":
         clear_session(user_id)
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="❌ 已取消加班申請")
+        )
+        return True
+
+    return False
