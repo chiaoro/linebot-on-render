@@ -35,6 +35,13 @@ def get_doctor_name_by_user_id(user_id):
             return row[1]
     return "未知醫師"
 
+
+# 取得醫師科別
+doctor_info = get_doctor_info("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit", user_id)
+dept = doctor_info.get("科別", "未填科別")
+
+
+
 # ✅ 寫入 Google Sheet
 def save_overtime_to_sheet(user_id, date, time_range, reason):
     doctor_name = get_doctor_name_by_user_id(user_id)
@@ -47,9 +54,10 @@ def save_overtime_to_sheet(user_id, date, time_range, reason):
         valueInputOption="RAW",
         body={
             "values": [[
-                now,
-                doctor_name,
-                date,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                dept,     # ✅ 醫師科別
+                name,     # ✅ 醫師姓名
+                date,     # ✅ 加班日期
                 time_range,
                 reason
             ]]
