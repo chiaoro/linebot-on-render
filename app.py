@@ -216,7 +216,7 @@ def handle_message(event):
         return
 
     # ✅ 醫師資訊查詢（限制使用）
-    if handle_doctor_query(event, line_bot_api, user_id, text, DOCTOR_SHEET_URL):
+    if handle_doctor_query(event, line_bot_api, user_id, text, DOCTOR_SHEET_URL, ALLOWED_USER_IDS):
         return
 
 
