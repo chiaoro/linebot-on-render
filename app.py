@@ -333,14 +333,20 @@ def meeting_leave():
         return f"❌ 院務會議請假處理錯誤：{e}", 500
 
 
+#✅ 支援醫師呼叫
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    data = event.postback.data
 
+    if data == "confirm_support":
+        from handlers.support_adjust_handler import submit_support_adjustment
+        submit_support_adjustment(user_id, line_bot_api, event.reply_token)
+    elif data == "cancel_support":
+        from utils.session_manager import clear_session
+        clear_session(user_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="❌ 已取消申請"))
 
-
-
-# ✅ ping 喚醒 Bot
-@app.route("/ping", methods=["GET"])
-def ping():
-    return "Bot is awake!", 200
 
 
 
