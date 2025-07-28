@@ -3,117 +3,82 @@ import requests
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.line_utils import is_trigger
-import os
+from utils.support_bubble import get_support_adjustment_bubble  # 如果要 Flex
 
-# ✅ Webhook URL
-SUPPORT_GAS_URL = os.getenv("SUPPORT_GAS_URL", "你的GAS網址")
+# ✅ Google Apps Script Webhook
+SUPPORT_ADJUST_WEBHOOK = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
 
 def handle_support_adjustment(event, user_id, text, line_bot_api):
+    """
+    支援醫師調診單流程（完全獨立，避免與其他流程衝突）
+    """
     session = get_session(user_id) or {}
 
-    # ✅ 啟動流程
-    if is_trigger(event, ["支援醫師調診單"]):
-        set_session(user_id, {"step": 1, "type": "支援醫師調診單"})
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請輸入異動醫師姓名"))
-        return True
-
-    # ✅ 若不是該流程，跳過
-    if session.get("type") != "支援醫師調診單":
+    # ✅ 非本流程且不是啟動指令 → 跳過
+    if session.get("type") and session.get("type") != "支援醫師調診單" and not is_trigger(event, ["支援醫師調診單"]):
         return False
 
-    step = session.get("step", 0)
+    # ✅ 啟動流程
+    if text == "支援醫師調診單":
+        set_session(user_id, {"type": "支援醫師調診單", "step": 1})
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="👨‍⚕️ 請輸入需異動門診醫師姓名"))
+        return True
 
-    # Step 1：醫師姓名
-    if step == 1:
-        session["doctor_name"] = text
+    # ✅ Step 1：醫師姓名
+    if session.get("step") == 1:
+        session["doctor_name"] = text.strip()
         session["step"] = 2
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原門診日期（例如：2025-07-28 上午診）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原門診日期與時段（例如：2025-08-05 上午診）"))
         return True
 
-    # Step 2：原門診
-    elif step == 2:
-        session["original_date"] = text
+    # ✅ Step 2：原門診安排
+    if session.get("step") == 2:
+        session["original_date"] = text.strip()
         session["step"] = 3
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="➡️ 請輸入新門診安排或休診（例如：調整至 8/5 上午診 或 休診）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🔄 請輸入新安排（例如：調整至 2025-08-10 下午診，或輸入『休診』）"))
         return True
 
-    # Step 3：新門診
-    elif step == 3:
-        session["new_date"] = text
+    # ✅ Step 3：新門診或休診後 → 要求原因
+    if session.get("step") == 3:
+        session["new_plan"] = text.strip()
         session["step"] = 4
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因（例如：會議、返台）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入調整原因（例如：開會、請假）"))
         return True
 
-    # Step 4：原因 & 確認畫面
-    elif step == 4:
-        session["reason"] = text
-        session["step"] = 5
-        set_session(user_id, session)
+    # ✅ Step 4：原因 + 送出 webhook
+    if session.get("step") == 4:
+        session["reason"] = text.strip()
 
-        # ✅ 顯示確認 Flex
-        flex_content = {
-            "type": "bubble",
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {"type": "text", "text": "📌 請確認調診資訊", "weight": "bold", "size": "lg"},
-                    {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": f"醫師：{session['doctor_name']}"},
-                    {"type": "text", "text": f"原門診：{session['original_date']}"},
-                    {"type": "text", "text": f"異動：{session['new_date']}"},
-                    {"type": "text", "text": f"原因：{session['reason']}"},
-                ]
-            },
-            "footer": {
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#00C300",
-                        "action": {"type": "postback", "label": "✅ 確認送出", "data": "confirm_support"}
-                    },
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#FF0000",
-                        "action": {"type": "postback", "label": "❌ 取消", "data": "cancel_support"}
-                    }
-                ]
-            }
+        # ✅ 呼叫 Google Apps Script
+        payload = {
+            "user_id": user_id,
+            "doctor_name": session.get("doctor_name"),
+            "original_date": session.get("original_date"),
+            "new_plan": session.get("new_plan"),
+            "reason": session.get("reason"),
+            "request_type": "支援醫師調診單"
         }
 
-        line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請確認調診申請", contents=flex_content))
+        try:
+            requests.post(SUPPORT_ADJUST_WEBHOOK, json=payload)
+
+            # ✅ Flex Message 確認送出
+            bubble = get_support_adjustment_bubble(
+                doctor_name=session["doctor_name"],
+                original=session["original_date"],
+                method=session["new_plan"],
+                reason=session["reason"]
+            )
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="✅ 支援醫師調診單已送出", contents=bubble))
+
+        except Exception as e:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"❌ 發送失敗：{e}"))
+
+        # ✅ 清除 Session
+        clear_session(user_id)
         return True
 
     return False
-
-
-def submit_support_adjustment(user_id, line_bot_api, reply_token):
-    session = get_session(user_id)
-    if not session:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到資料，請重新輸入"))
-        return
-
-    payload = {
-        "doctor_name": session["doctor_name"],
-        "original_date": session["original_date"],
-        "new_date": session["new_date"],
-        "reason": session["reason"]
-    }
-
-    try:
-        response = requests.post(SUPPORT_GAS_URL, json=payload)
-        if response.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 調診申請已送出並同步後台"))
-        else:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
-    except Exception as e:
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
-
-    clear_session(user_id)
