@@ -118,7 +118,9 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
 
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit").sheet1
+        sheet = client.open_by_url(
+    "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+).worksheet("UserMapping")
         rows = sheet.get_all_values()
 
         # ✅ 假設欄位：
