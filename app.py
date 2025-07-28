@@ -227,10 +227,16 @@ def handle_message(event):
         return
 
     # ✅ 加班申請流程
-    # ✅ 僅在使用者輸入「加班申請」或已經在加班流程時才進入
-    if text == "加班申請" or ((get_session(user_id) or {}).get("step") in [1, 2, 3, 4] and (get_session(user_id) or {}).get("type") == "加班申請"):
+    # ✅ 僅在啟動「加班申請」或 session 屬於加班流程時，才交給 handle_overtime
+    if text == "加班申請" or ((get_session(user_id) or {}).get("type") == "加班申請"):
         if handle_overtime(event, user_id, text, line_bot_api):
             return
+    
+    # ✅ 僅在啟動「支援醫師調診單」或 session 屬於支援醫師流程時，才交給 handle_support_adjustment
+    if text == "支援醫師調診單" or ((get_session(user_id) or {}).get("type") == "支援醫師調診單"):
+        if handle_support_adjustment(event, user_id, text, line_bot_api):
+            return
+
 
 
 
