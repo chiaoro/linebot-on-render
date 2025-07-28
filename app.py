@@ -226,14 +226,17 @@ def handle_message(event):
     if handle_doctor_query(event, line_bot_api, user_id, text):
         return
 
+
+
+    
     # ✅ 加班申請流程
-    # ✅ 僅在啟動「加班申請」或 session 屬於加班流程時，才交給 handle_overtime
-    if text == "加班申請" or ((get_session(user_id) or {}).get("type") == "加班申請"):
+    # ✅ 判斷是否進入加班流程
+    if (text == "加班申請" and not (get_session(user_id) or {}).get("type")) or ((get_session(user_id) or {}).get("type") == "加班申請"):
         if handle_overtime(event, user_id, text, line_bot_api):
             return
     
-    # ✅ 僅在啟動「支援醫師調診單」或 session 屬於支援醫師流程時，才交給 handle_support_adjustment
-    if text == "支援醫師調診單" or ((get_session(user_id) or {}).get("type") == "支援醫師調診單"):
+    # ✅ 判斷是否進入支援醫師流程
+    if (text == "支援醫師調診單" and not (get_session(user_id) or {}).get("type")) or ((get_session(user_id) or {}).get("type") == "支援醫師調診單"):
         if handle_support_adjustment(event, user_id, text, line_bot_api):
             return
 
