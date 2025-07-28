@@ -108,42 +108,38 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ Google Sheet 參數
-    SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
-
     doctor_name = "未知"
     dept = "醫療部"
     id_number = "未填"
 
     try:
-        # ✅ Google 認證
+        # ✅ 連接 Google Sheets
         creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
 
-        sheet = client.open_by_url(SHEET_URL).sheet1
+        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit").sheet1
         rows = sheet.get_all_values()
 
-        # ✅ 找到對應的 user_id 資料
+        # ✅ 假設欄位：
+        # A: LINE_USER_ID | B: 姓名 | C: 科別 | D: 身分證字號
         for row in rows[1:]:
-            # 假設對照表欄位順序：
-            # A: user_id | B: 姓名 | C: 科別 | D: 身分證字號
-            if row[0].strip() == user_id.strip():
-                doctor_name = row[1] if len(row) > 1 else "未知"
-                dept = row[2] if len(row) > 2 else "醫療部"
-                id_number = row[3] if len(row) > 3 else "未填"
+            if len(row) >= 4 and row[0].strip() == user_id.strip():
+                doctor_name = row[1].strip() if row[1] else "未知"
+                dept = row[2].strip() if row[2] else "醫療部"
+                id_number = row[3].strip() if row[3] else "未填"
                 break
 
-        print(f"DEBUG >> name={doctor_name}, dept={dept}, id={id_number}")
+        print(f"✅ 對應結果：name={doctor_name}, dept={dept}, id={id_number}")
 
     except Exception as e:
         print(f"❌ Google Sheet 讀取失敗：{e}")
 
-    # ✅ 台灣時間戳記
+    # ✅ 產生時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 呼叫 GAS Webhook
+    # ✅ 發送到 GAS
     try:
         payload = {
             "timestamp": timestamp,
@@ -154,7 +150,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
             "time": time_range,
             "reason": reason
         }
-        print(f"DEBUG >> 發送 GAS Payload: {payload}")
+        print(f"📤 發送資料給 GAS：{payload}")
 
         response = requests.post(GAS_WEBHOOK_URL, json=payload)
 
@@ -168,3 +164,4 @@ def submit_overtime(user_id, line_bot_api, reply_token):
 
     # ✅ 清除 Session
     clear_session(user_id)
+
