@@ -249,7 +249,37 @@ def handle_message(event):
     
     # ✅ 主選單
     if text == "主選單":
-        line_bot_api.reply_message(event.reply_token, main_menu_v2_bubble())
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 請選擇服務類別",
+                        "weight": "bold",
+                        "size": "lg",
+                        "margin": "md"
+                    }
+                ] + [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": "#003366",
+                        "action": {"type": "message", "label": key, "text": key},
+                        "margin": "md"
+                    } for key in submenu_map.keys()
+                ]
+            }
+        }
+    
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text="主選單", contents=bubble)
+        )
         return
 
     # ✅ 子選單
