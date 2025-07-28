@@ -227,8 +227,10 @@ def handle_message(event):
         return
 
     # ✅ 加班申請流程
-    if handle_overtime(event, user_id, text, line_bot_api):
-        return
+    # ✅ 僅在使用者輸入「加班申請」或已經在加班流程時才進入
+    if text == "加班申請" or ((get_session(user_id) or {}).get("step") in [1, 2, 3, 4] and (get_session(user_id) or {}).get("type") == "加班申請"):
+        if handle_overtime(event, user_id, text, line_bot_api):
+            return
 
 
 
