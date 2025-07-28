@@ -1,7 +1,6 @@
 # handlers/overtime_handler.py
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
-from utils.google_sheets import get_doctor_info
 import requests
 import os
 import pytz
@@ -36,7 +35,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
         session["time"] = text
         session["step"] = 3
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由(需詳述,例如開了什麼刀、完成哪幾份病歷、查哪幾間房等等)"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（需詳述，例如手術內容、病歷完成情況等）"))
         return True
 
     # Step 3：輸入原因 → 顯示確認卡片
@@ -97,7 +96,6 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     import gspread
     from google.oauth2 import service_account
     import json
-    import os
 
     session = get_session(user_id)
     if not session:
@@ -118,21 +116,27 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
 
+        # ✅ 指定「UserMapping」分頁
         sheet = client.open_by_url(
-    "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
-).worksheet("UserMapping")
-        rows = sheet.get_all_values()
+            "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
+        ).worksheet("UserMapping")
 
-        # ✅ 假設欄位：
-        # A: LINE_USER_ID | B: 姓名 | C: 科別 | D: 身分證字號
+        rows = sheet.get_all_values()
+        print(f"📄 共讀取 {len(rows)-1} 筆資料")
+
+        # ✅ A: LINE_USER_ID | B: 姓名 | C: 科別 | D: 身分證字號
         for row in rows[1:]:
+            print(f"🔍 檢查 row: {row}")
             if len(row) >= 4 and row[0].strip() == user_id.strip():
                 doctor_name = row[1].strip() if row[1] else "未知"
                 dept = row[2].strip() if row[2] else "醫療部"
                 id_number = row[3].strip() if row[3] else "未填"
+                print(f"✅ 找到對應：{doctor_name}, {dept}, {id_number}")
                 break
 
-        print(f"✅ 對應結果：name={doctor_name}, dept={dept}, id={id_number}")
+        if doctor_name == "未知":
+            print(f"⚠️ 沒找到 {user_id} 對應資料")
+            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 系統未找到您的姓名，請確認是否完成帳號綁定。"))
 
     except Exception as e:
         print(f"❌ Google Sheet 讀取失敗：{e}")
@@ -162,6 +166,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
             line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
 
     except Exception as e:
+        print(f"❌ 發送 GAS 錯誤：{e}")
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
     # ✅ 清除 Session
