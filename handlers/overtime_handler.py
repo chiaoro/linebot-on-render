@@ -7,50 +7,51 @@ import os
 import pytz
 from datetime import datetime
 
-# ✅ 環境變數（Render 設定）
-OVERTIME_GAS_URL = os.getenv("OVERTIME_GAS_URL")  # 請在 Render 設定
+# ✅ GAS Webhook URL（Render 環境變數）
+GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
 
 def handle_overtime(event, user_id, text, line_bot_api):
-    """
-    加班申請主流程
-    """
     session = get_session(user_id) or {}
 
-    # ✅ Step 0：啟動流程
-    if text == "加班申請" and not session:
+    # ✅ 啟動加班申請
+    if text == "加班申請":
         set_session(user_id, {"step": 1, "type": "加班申請"})
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班日期（格式：YYYY-MM-DD）"))
         return True
 
-    # ✅ 僅處理該流程
+    # ✅ 僅處理 type = 加班申請
     if session.get("type") != "加班申請":
         return False
 
-    # ✅ Step 1：輸入日期
+    # Step 1：輸入日期
     if session.get("step") == 1:
-        session["step"] = 2
         session["date"] = text
+        session["step"] = 2
         set_session(user_id, session)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班時間（格式：HH:MM-HH:MM）"))
         return True
 
-    # ✅ Step 2：輸入時間
+    # Step 2：輸入時間
     if session.get("step") == 2:
-        session["step"] = 3
         session["time"] = text
+        session["step"] = 3
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（需詳述，例如：完成病例、會議）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由"))
         return True
 
-    # ✅ Step 3：輸入原因並顯示確認卡片
+    # Step 3：輸入原因 → 顯示確認卡片
     if session.get("step") == 3:
-        session["reason"] = text
-        session["step"] = 4
+        date = session["date"]
+        time_range = session["time"]
+        reason = text
+
+        # ✅ 存回 Session
+        session.update({"reason": reason, "step": 4})
         set_session(user_id, session)
 
-        # ✅ 民國日期
-        roc_year = int(session["date"].split("-")[0]) - 1911
-        roc_date = f"{roc_year}年{session['date'].split('-')[1]}月{session['date'].split('-')[2]}日"
+        # ✅ 民國年轉換
+        roc_year = int(date.split("-")[0]) - 1911
+        roc_date = f"{roc_year}年{date.split('-')[1]}月{date.split('-')[2]}日"
 
         # ✅ Flex Message（不顯示姓名 & 科別）
         flex_content = {
@@ -62,8 +63,8 @@ def handle_overtime(event, user_id, text, line_bot_api):
                     {"type": "text", "text": "📝 請確認加班申請", "weight": "bold", "size": "lg"},
                     {"type": "separator", "margin": "md"},
                     {"type": "text", "text": f"日期：{roc_date}", "margin": "sm"},
-                    {"type": "text", "text": f"時間：{session['time']}", "margin": "sm"},
-                    {"type": "text", "text": f"事由：{session['reason']}", "margin": "sm"}
+                    {"type": "text", "text": f"時間：{time_range}", "margin": "sm"},
+                    {"type": "text", "text": f"事由：{reason}", "margin": "sm"}
                 ]
             },
             "footer": {
@@ -93,9 +94,6 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
 
 def submit_overtime(user_id, line_bot_api, reply_token):
-    """
-    ✅ 確認送出後，將資料送到 Google Apps Script + 試算表
-    """
     session = get_session(user_id)
     if not session:
         line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料，請重新輸入"))
@@ -105,7 +103,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ 取得醫師姓名與科別
+    # ✅ 從 Google Sheets 取得姓名與科別
     doctor_info = get_doctor_info(
         "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit",
         user_id
@@ -113,16 +111,15 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     if doctor_info:
         doctor_name, dept = doctor_info
     else:
-        doctor_name = "未知"
-        dept = "未知"
+        doctor_name, dept = "未知", "醫療部"
 
-    # ✅ 台灣時間戳記
+    # ✅ 產生時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
     # ✅ 呼叫 GAS Webhook
     try:
-        response = requests.post(OVERTIME_GAS_URL, json={
+        response = requests.post(GAS_WEBHOOK_URL, json={
             "timestamp": timestamp,
             "dept": dept,
             "name": doctor_name,
