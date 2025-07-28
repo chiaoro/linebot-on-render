@@ -94,6 +94,11 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
 
 def submit_overtime(user_id, line_bot_api, reply_token):
+    import gspread
+    from google.oauth2 import service_account
+    import json
+    import os
+
     session = get_session(user_id)
     if not session:
         line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料，請重新輸入"))
@@ -103,7 +108,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ 從 Google Sheets 取得姓名與科別
+    # ✅ 先用 get_doctor_info 抓 姓名 & 科別
     doctor_info = get_doctor_info(
         "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit",
         user_id
@@ -113,7 +118,24 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     else:
         doctor_name, dept = "未知", "醫療部"
 
-    # ✅ 產生時間戳記
+    # ✅ 額外讀取 Google Sheet → 抓身分證欄位
+    id_number = "未填"
+    try:
+        creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+        creds = service_account.Credentials.from_service_account_info(creds_dict)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit").sheet1
+        rows = sheet.get_all_values()
+
+        for row in rows[1:]:
+            if row[0] == user_id:  # ✅ 假設 A 欄是 LINE_USER_ID
+                if len(row) >= 4:  # ✅ 第4欄是身分證字號
+                    id_number = row[3]
+                break
+    except Exception as e:
+        print(f"⚠️ 讀取身分證字號失敗：{e}")
+
+    # ✅ 產生台灣時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -123,6 +145,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
             "timestamp": timestamp,
             "dept": dept,
             "name": doctor_name,
+            "id_number": id_number,  # ✅ 新增欄位
             "date": date,
             "time": time_range,
             "reason": reason
@@ -134,4 +157,5 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     except Exception as e:
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
+    # ✅ 清除 Session
     clear_session(user_id)
