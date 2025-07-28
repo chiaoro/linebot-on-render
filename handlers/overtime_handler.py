@@ -108,52 +108,61 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ 先用 get_doctor_info 抓 姓名 & 科別
-    doctor_info = get_doctor_info(
-        "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit",
-        user_id
-    )
-    if doctor_info:
-        doctor_name, dept = doctor_info
-    else:
-        doctor_name, dept = "未知", "醫療部"
+    # ✅ Google Sheet 參數
+    SHEET_URL = "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
 
-    # ✅ 額外讀取 Google Sheet → 抓身分證欄位
+    doctor_name = "未知"
+    dept = "醫療部"
     id_number = "未填"
+
     try:
+        # ✅ Google 認證
         creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit").sheet1
+
+        sheet = client.open_by_url(SHEET_URL).sheet1
         rows = sheet.get_all_values()
 
+        # ✅ 找到對應的 user_id 資料
         for row in rows[1:]:
-            if row[0] == user_id:  # ✅ 假設 A 欄是 LINE_USER_ID
-                if len(row) >= 4:  # ✅ 第4欄是身分證字號
-                    id_number = row[3]
+            # 假設對照表欄位順序：
+            # A: user_id | B: 姓名 | C: 科別 | D: 身分證字號
+            if row[0].strip() == user_id.strip():
+                doctor_name = row[1] if len(row) > 1 else "未知"
+                dept = row[2] if len(row) > 2 else "醫療部"
+                id_number = row[3] if len(row) > 3 else "未填"
                 break
-    except Exception as e:
-        print(f"⚠️ 讀取身分證字號失敗：{e}")
 
-    # ✅ 產生台灣時間戳記
+        print(f"DEBUG >> name={doctor_name}, dept={dept}, id={id_number}")
+
+    except Exception as e:
+        print(f"❌ Google Sheet 讀取失敗：{e}")
+
+    # ✅ 台灣時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
     # ✅ 呼叫 GAS Webhook
     try:
-        response = requests.post(GAS_WEBHOOK_URL, json={
+        payload = {
             "timestamp": timestamp,
             "dept": dept,
             "name": doctor_name,
-            "id_number": id_number,  # ✅ 新增欄位
+            "id_number": id_number,
             "date": date,
             "time": time_range,
             "reason": reason
-        })
+        }
+        print(f"DEBUG >> 發送 GAS Payload: {payload}")
+
+        response = requests.post(GAS_WEBHOOK_URL, json=payload)
+
         if response.status_code == 200:
             line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
         else:
             line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
+
     except Exception as e:
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
