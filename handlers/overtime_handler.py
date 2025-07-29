@@ -18,11 +18,9 @@ def handle_overtime(event, user_id, text, line_bot_api):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班日期（格式：YYYY-MM-DD）"))
         return True
 
-    # ✅ 僅處理 type = 加班申請
     if session.get("type") != "加班申請":
         return False
 
-    # Step 1：輸入日期
     if session.get("step") == 1:
         session["date"] = text
         session["step"] = 2
@@ -30,29 +28,24 @@ def handle_overtime(event, user_id, text, line_bot_api):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班時間（格式：HH:MM-HH:MM）"))
         return True
 
-    # Step 2：輸入時間
     if session.get("step") == 2:
         session["time"] = text
         session["step"] = 3
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（需詳述，例如手術內容、病歷完成情況等）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（需詳述）"))
         return True
 
-    # Step 3：輸入原因 → 顯示確認卡片
     if session.get("step") == 3:
         date = session["date"]
         time_range = session["time"]
         reason = text
 
-        # ✅ 存回 Session
         session.update({"reason": reason, "step": 4})
         set_session(user_id, session)
 
-        # ✅ 民國年轉換
         roc_year = int(date.split("-")[0]) - 1911
         roc_date = f"{roc_year}年{date.split('-')[1]}月{date.split('-')[2]}日"
 
-        # ✅ Flex Message（不顯示姓名 & 科別）
         flex_content = {
             "type": "bubble",
             "body": {
@@ -61,27 +54,19 @@ def handle_overtime(event, user_id, text, line_bot_api):
                 "contents": [
                     {"type": "text", "text": "📝 請確認加班申請", "weight": "bold", "size": "lg"},
                     {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": f"日期：{roc_date}", "margin": "sm"},
-                    {"type": "text", "text": f"時間：{time_range}", "margin": "sm"},
-                    {"type": "text", "text": f"事由：{reason}", "margin": "sm"}
+                    {"type": "text", "text": f"日期：{roc_date}"},
+                    {"type": "text", "text": f"時間：{time_range}"},
+                    {"type": "text", "text": f"事由：{reason}"}
                 ]
             },
             "footer": {
                 "type": "box",
                 "layout": "horizontal",
                 "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#00C300",
-                        "action": {"type": "postback", "label": "✅ 確認送出", "data": "confirm_overtime"}
-                    },
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#FF0000",
-                        "action": {"type": "postback", "label": "❌ 取消", "data": "cancel_overtime"}
-                    }
+                    {"type": "button", "style": "primary", "color": "#00C300",
+                     "action": {"type": "postback", "label": "✅ 確認送出", "data": "confirm_overtime"}},
+                    {"type": "button", "style": "primary", "color": "#FF0000",
+                     "action": {"type": "postback", "label": "❌ 取消", "data": "cancel_overtime"}}
                 ]
             }
         }
@@ -106,13 +91,11 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
-    # ✅ 預設值
     doctor_name = "未知"
     dept = "未知"
     id_number = "未填"
 
     try:
-        # ✅ 讀取 Google Sheets 使用者對照表
         creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
@@ -122,30 +105,28 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         ).worksheet("UserMapping")
 
         rows = sheet.get_all_values()
-        print(f"📄 共讀取 {len(rows)-1} 筆使用者資料")
-        print(f"目前 user_id: {user_id}")
+        print(f"📄 共讀取 {len(rows)-1} 筆資料，準備比對 user_id={user_id}")
 
-        # ✅ Debug：列出每行資料
-        for i, row in enumerate(rows[1:], start=2):
-            print(f"第{i}列資料: {row}")
+        for idx, row in enumerate(rows[1:], start=2):
+            if len(row) >= 4:
+                print(f"🔍 檢查第 {idx} 列 → {row}")
             if len(row) >= 4 and row[0].strip() == user_id.strip():
-                doctor_name = row[1].strip() if row[1] else "未知"
-                dept = row[2].strip() if row[2] else "未知"
-                id_number = row[3].strip() if row[3] else "未填"
-                print(f"✅ 匹配成功 → 姓名:{doctor_name}, 科別:{dept}, 身分證:{id_number}")
+                doctor_name = row[1].strip() or "未知"
+                dept = row[2].strip() or "未知"
+                id_number = row[3].strip() or "未填"
+                print(f"✅ 找到對應：{doctor_name}, {dept}, {id_number}")
                 break
 
         if doctor_name == "未知":
-            print("⚠️ 未找到對應 user_id，請檢查 Google Sheets 是否正確")
+            print(f"⚠️ 沒找到 user_id 對應資料 → {user_id}")
+            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 系統未找到您的綁定資料，請確認帳號是否已綁定。"))
 
     except Exception as e:
         print(f"❌ Google Sheet 讀取失敗：{e}")
 
-    # ✅ 產生台灣時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 發送到 GAS
     try:
         payload = {
             "timestamp": timestamp,
@@ -169,5 +150,4 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         print(f"❌ 發送 GAS 錯誤：{e}")
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
-    # ✅ 清除 Session
     clear_session(user_id)
