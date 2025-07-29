@@ -6,8 +6,9 @@ import os
 import pytz
 from datetime import datetime
 
-# ✅ GAS Webhook URL（Render 環境變數）
+# ✅ GAS Webhook URL
 GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
+
 
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id) or {}
@@ -107,10 +108,16 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         rows = sheet.get_all_values()
         print(f"📄 共讀取 {len(rows)-1} 筆資料，準備比對 user_id={user_id}")
 
+        user_id_clean = user_id.strip()
+
+        # ✅ 先輸出前 5 筆供 Debug
+        print(f"✅ 前 5 筆資料：{rows[0:6]}")
+
         for idx, row in enumerate(rows[1:], start=2):
+            line_id = row[0].strip().replace("\u200b", "")  # 移除隱藏字元
             if len(row) >= 4:
-                print(f"🔍 檢查第 {idx} 列 → {row}")
-            if len(row) >= 4 and row[0].strip() == user_id.strip():
+                print(f"🔍 [{idx}] 比對 → {line_id}")
+            if len(row) >= 4 and line_id == user_id_clean:
                 doctor_name = row[1].strip() or "未知"
                 dept = row[2].strip() or "未知"
                 id_number = row[3].strip() or "未填"
