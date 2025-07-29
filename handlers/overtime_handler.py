@@ -9,6 +9,7 @@ from datetime import datetime
 # ✅ GAS Webhook URL（Render 環境變數）
 GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
 
+
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id) or {}
 
@@ -106,8 +107,9 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     time_range = session.get("time")
     reason = session.get("reason")
 
+    # 預設值
     doctor_name = "未知"
-    dept = "醫療部"
+    dept = "未知"
     id_number = "未填"
 
     try:
@@ -124,19 +126,22 @@ def submit_overtime(user_id, line_bot_api, reply_token):
         rows = sheet.get_all_values()
         print(f"📄 共讀取 {len(rows)-1} 筆資料")
 
+        # ✅ Debug
+        print(f"🔍 尋找 user_id: {user_id}")
+
         # ✅ A: LINE_USER_ID | B: 姓名 | C: 科別 | D: 身分證字號
         for row in rows[1:]:
-            print(f"🔍 檢查 row: {row}")
+            print(f"➡️ 檢查 row: {row}")
             if len(row) >= 4 and row[0].strip() == user_id.strip():
                 doctor_name = row[1].strip() if row[1] else "未知"
-                dept = row[2].strip() if row[2] else "醫療部"
+                dept = row[2].strip() if row[2] else "未知"
                 id_number = row[3].strip() if row[3] else "未填"
-                print(f"✅ 找到對應：{doctor_name}, {dept}, {id_number}")
+                print(f"✅ 找到對應 → {doctor_name}, {dept}, {id_number}")
                 break
 
         if doctor_name == "未知":
-            print(f"⚠️ 沒找到 {user_id} 對應資料")
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 系統未找到您的姓名，請確認是否完成帳號綁定。"))
+            print(f"⚠️ 未找到 {user_id}，通知使用者")
+            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 系統未找到您的姓名與科別，請確認是否完成帳號綁定。"))
 
     except Exception as e:
         print(f"❌ Google Sheet 讀取失敗：{e}")
@@ -171,4 +176,3 @@ def submit_overtime(user_id, line_bot_api, reply_token):
 
     # ✅ 清除 Session
     clear_session(user_id)
-
