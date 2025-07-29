@@ -52,7 +52,7 @@ def handle_overtime(event, user_id, text, line_bot_api):
         roc_year = int(date.split("-")[0]) - 1911
         roc_date = f"{roc_year}年{date.split('-')[1]}月{date.split('-')[2]}日"
 
-        # ✅ Flex Message（顯示確認）
+        # ✅ Flex Message（不顯示姓名 & 科別）
         flex_content = {
             "type": "bubble",
             "body": {
@@ -107,40 +107,41 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     reason = session.get("reason")
 
     # ✅ 預設值
-    doctor_name, dept, id_number = "未知", "未知", "未填"
+    doctor_name = "未知"
+    dept = "未知"
+    id_number = "未填"
 
     try:
-        # ✅ Google Sheets 認證
+        # ✅ 讀取 Google Sheets 使用者對照表
         creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(creds_dict)
         client = gspread.authorize(creds)
 
-        # ✅ 打開分頁「UserMapping」
         sheet = client.open_by_url(
             "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
         ).worksheet("UserMapping")
 
         rows = sheet.get_all_values()
-        print(f"📄 讀取 UserMapping，共 {len(rows)-1} 筆")
+        print(f"📄 共讀取 {len(rows)-1} 筆使用者資料")
+        print(f"目前 user_id: {user_id}")
 
-        # ✅ A: LINE_USER_ID | B: 姓名 | C: 科別 | D: 身分證字號
+        # ✅ Debug：列出每行資料
         for i, row in enumerate(rows[1:], start=2):
-            print(f"🔍 檢查第{i}列：{row}")
+            print(f"第{i}列資料: {row}")
             if len(row) >= 4 and row[0].strip() == user_id.strip():
-                doctor_name = row[1].strip() or "未知"
-                dept = row[2].strip() or "未知"
-                id_number = row[3].strip() or "未填"
-                print(f"✅ 找到對應：{doctor_name}, {dept}, {id_number}")
+                doctor_name = row[1].strip() if row[1] else "未知"
+                dept = row[2].strip() if row[2] else "未知"
+                id_number = row[3].strip() if row[3] else "未填"
+                print(f"✅ 匹配成功 → 姓名:{doctor_name}, 科別:{dept}, 身分證:{id_number}")
                 break
 
         if doctor_name == "未知":
-            print(f"⚠️ 沒找到 {user_id} 對應資料")
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 系統未找到您的姓名，請確認是否完成帳號綁定。"))
+            print("⚠️ 未找到對應 user_id，請檢查 Google Sheets 是否正確")
 
     except Exception as e:
         print(f"❌ Google Sheet 讀取失敗：{e}")
 
-    # ✅ 產生時間戳記
+    # ✅ 產生台灣時間戳記
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
