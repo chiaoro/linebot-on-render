@@ -6,7 +6,7 @@ import os
 import pytz
 from datetime import datetime
 
-# ✅ GAS Webhook URL（Render 環境變數）
+# ✅ GAS Webhook URL
 GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
 
 def handle_overtime(event, user_id, text, line_bot_api):
@@ -18,7 +18,6 @@ def handle_overtime(event, user_id, text, line_bot_api):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班日期（格式：YYYY-MM-DD）"))
         return True
 
-    # ✅ 僅處理 type = 加班申請
     if session.get("type") != "加班申請":
         return False
 
@@ -35,24 +34,21 @@ def handle_overtime(event, user_id, text, line_bot_api):
         session["time"] = text
         session["step"] = 3
         set_session(user_id, session)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（需詳述，例如手術內容、病歷完成情況等）"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入加班事由（請詳述內容）"))
         return True
 
-    # Step 3：輸入原因 → 顯示確認卡片
+    # Step 3：確認
     if session.get("step") == 3:
         date = session["date"]
         time_range = session["time"]
         reason = text
 
-        # ✅ 存回 Session
         session.update({"reason": reason, "step": 4})
         set_session(user_id, session)
 
-        # ✅ 民國年轉換
         roc_year = int(date.split("-")[0]) - 1911
         roc_date = f"{roc_year}年{date.split('-')[1]}月{date.split('-')[2]}日"
 
-        # ✅ Flex Message（不顯示姓名 & 科別）
         flex_content = {
             "type": "bubble",
             "body": {
@@ -61,9 +57,9 @@ def handle_overtime(event, user_id, text, line_bot_api):
                 "contents": [
                     {"type": "text", "text": "📝 請確認加班申請", "weight": "bold", "size": "lg"},
                     {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": f"日期：{roc_date}", "margin": "sm"},
-                    {"type": "text", "text": f"時間：{time_range}", "margin": "sm"},
-                    {"type": "text", "text": f"事由：{reason}", "margin": "sm"}
+                    {"type": "text", "text": f"日期：{roc_date}"},
+                    {"type": "text", "text": f"時間：{time_range}"},
+                    {"type": "text", "text": f"事由：{reason}"}
                 ]
             },
             "footer": {
@@ -71,15 +67,11 @@ def handle_overtime(event, user_id, text, line_bot_api):
                 "layout": "horizontal",
                 "contents": [
                     {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#00C300",
+                        "type": "button", "style": "primary", "color": "#00C300",
                         "action": {"type": "postback", "label": "✅ 確認送出", "data": "confirm_overtime"}
                     },
                     {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#FF0000",
+                        "type": "button", "style": "primary", "color": "#FF0000",
                         "action": {"type": "postback", "label": "❌ 取消", "data": "cancel_overtime"}
                     }
                 ]
@@ -93,88 +85,35 @@ def handle_overtime(event, user_id, text, line_bot_api):
 
 
 def submit_overtime(user_id, line_bot_api, reply_token):
-    import gspread
-    from google.oauth2 import service_account
-    import json
-
     session = get_session(user_id)
     if not session:
         line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 沒有找到加班資料，請重新輸入"))
         return
 
-    date = session.get("date")
-    time_range = session.get("time")
-    reason = session.get("reason")
+    date = session["date"]
+    time_range = session["time"]
+    reason = session["reason"]
 
-    # 預設值（如果沒找到）
-    doctor_name = "未知"
-    dept = "未知"
-    id_number = "未填"
-
-    try:
-        # ✅ 連接 Google Sheets
-        creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-        creds = service_account.Credentials.from_service_account_info(creds_dict)
-        client = gspread.authorize(creds)
-
-        # ✅ 讀取 UserMapping 分頁
-        sheet = client.open_by_url(
-            "https://docs.google.com/spreadsheets/d/1fHf5XlbvLMd6ytAh_t8Bsi5ghToiQHZy1NlVfEG7VIo/edit"
-        ).worksheet("UserMapping")
-
-        rows = sheet.get_all_values()
-        header = rows[0]
-
-        # ✅ 動態抓欄位位置
-        idx_userid = header.index("LINE_USER_ID")
-        idx_name = header.index("姓名")
-        idx_dept = header.index("科別")
-        idx_idno = header.index("身分證字號")
-
-        print(f"✅ 欄位位置：USER_ID={idx_userid}, 姓名={idx_name}, 科別={idx_dept}, 身分證={idx_idno}")
-
-        # ✅ 搜尋對應 user_id
-        for row in rows[1:]:
-            if len(row) > idx_userid and row[idx_userid].strip() == user_id.strip():
-                doctor_name = row[idx_name].strip() if len(row) > idx_name else "未知"
-                dept = row[idx_dept].strip() if len(row) > idx_dept else "未知"
-                id_number = row[idx_idno].strip() if len(row) > idx_idno else "未填"
-                print(f"✅ 找到對應資料：{doctor_name}, {dept}, {id_number}")
-                break
-
-        if doctor_name == "未知":
-            print(f"⚠️ 未找到對應的 user_id：{user_id}")
-
-    except Exception as e:
-        print(f"❌ Google Sheets 讀取失敗：{e}")
-
-    # ✅ 產生時間戳記（台灣時區）
+    # ✅ 產生台灣時間
     tz = pytz.timezone('Asia/Taipei')
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    # ✅ 發送資料到 GAS
+    # ✅ 傳送給 GAS（只送 user_id + 申請資訊）
+    payload = {
+        "timestamp": timestamp,
+        "user_id": user_id,
+        "date": date,
+        "time": time_range,
+        "reason": reason
+    }
+
     try:
-        payload = {
-            "timestamp": timestamp,
-            "dept": dept,
-            "name": doctor_name,
-            "id_number": id_number,
-            "date": date,
-            "time": time_range,
-            "reason": reason
-        }
-        print(f"📤 發送資料給 GAS：{payload}")
-
         response = requests.post(GAS_WEBHOOK_URL, json=payload)
-
         if response.status_code == 200:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出"))
+            line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出，請稍候系統處理"))
         else:
             line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 送出失敗：{response.text}"))
-
     except Exception as e:
-        print(f"❌ 發送 GAS 錯誤：{e}")
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"❌ 發生錯誤：{e}"))
 
-    # ✅ 清除 Session
     clear_session(user_id)
