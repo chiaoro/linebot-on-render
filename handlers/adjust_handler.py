@@ -48,7 +48,7 @@ def handle_adjustment(event, user_id, text, line_bot_api):
         session["new_date"] = raw_text
         session["step"] = 2
         set_state(user_id, session)
-        line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：返台、開會）"))
+        line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：開會）請勿只填寫休假、返台~這樣不符合申請規定喔"))
         return
 
     # ✅ Step 3：輸入原因並送出
