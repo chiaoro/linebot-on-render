@@ -61,7 +61,7 @@ def handle_duty_message(event, user_id, text, line_bot_api):
                 session["swap_date"] = parts[1]
                 session["status"] = "awaiting_reason"
                 set_session(user_id, session)
-                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入調換原因"))
+                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入調換原因~(請勿輸入返台、休假，這不符合申請規定唷)"))
             else:
                 line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入：李大華 5/20"))
         else:
