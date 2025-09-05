@@ -6,7 +6,7 @@ from utils.line_utils import is_trigger
 from utils.flex_templates import get_duty_swap_bubble, get_duty_proxy_bubble
 
 # ✅ 這裡填入你提供的 Webhook URL
-WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxonJeiBfqvPQnPyApWAc_3B8mwvC9b1lA6B4E_rQLIULdPzifcAYzYH5c1PrWdEHl1Tw/exec"
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwYua4C91_5J_SArYHWq_BKIPaUC31gNkLKwhvV72USd8bOMI6ydW3KwdT89LPIymfj/exec"
 
 def handle_duty_message(event, user_id, text, line_bot_api):
     session = get_session(user_id)
