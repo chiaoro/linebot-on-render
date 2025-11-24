@@ -147,7 +147,7 @@ submenu_map = {
         {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "uri", "label": "專師每日服務量填寫", "uri": "https://forms.office.com/Pages/ResponsePage.aspx?id=qul4xIkgo06YEwYZ5A7JD8YDS5UtAC5Gqgno_TUvnw1UQk1XR0MyTzVRNFZIOTcxVVFRSFdIMkQ1Ti4u"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "uri", "label": "在職證明申請", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSeI64Av1Fb2Qgm6lCwTaUyvFRejHItS5KTQNujs1rU3NufMEA/viewform"}, "style": "secondary","color": "#ee9382", "margin": "md"},
-        {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://docs.google.com/forms/d/e/1FAIpQLScT2xDChXI7jBVPAf0rzKmtTXXtbZ6JFFD7EGfhmAvwSVfYzQ/viewform"}, "style": "secondary","color": "#ee9382", "margin": "md"},
+        {"type": "button", "action": {"type": "uri", "label": "外科醫師休假登記表", "uri": "https://script.google.com/macros/s/AKfycbzuTvFKHqbkET3fDWzvovJIIpQk6Ek0YLt4FJ3SFPVs_3LdrtiuZ8aBPzYfWz1uQMwj/exec"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "院務會議請假", "text": "院務會議請假"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "夜點費申請", "text": "夜點費申請"}, "style": "secondary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "message", "label": "醫師資訊查詢（限制使用）", "text": "查詢醫師資料（限制使用）"}, "style": "primary", "color": "#4B89DC", "margin": "md"}
