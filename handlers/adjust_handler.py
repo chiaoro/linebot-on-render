@@ -6,6 +6,7 @@ from linebot.models import TextSendMessage, FlexSendMessage
 from utils.doctor_info import get_doctor_info
 from utils.adjust_bubble import get_adjustment_bubble
 from utils.state_manager import get_state, set_state, clear_state
+from utils.command_texts import MENU_COMMANDS
 
 VALID_DATE_PATTERN = r"^\d{1,2}/\d{1,2}(?:\s*(上午診|下午診|夜診))?$"
 TRIGGER_WORDS = ["我要調診", "我要休診", "我要代診", "我要加診"]
@@ -29,6 +30,11 @@ def handle_adjustment(event, user_id, text, line_bot_api):
     session = get_state(user_id)
     if not session:
         return
+
+    # Let new menu commands switch away from a stale clinic-adjustment flow.
+    if raw_text in MENU_COMMANDS:
+        clear_state(user_id)
+        return False
 
     step = session.get("step", 0)
 
@@ -87,4 +93,3 @@ def handle_adjustment(event, user_id, text, line_bot_api):
 
         clear_state(user_id)
         return
-

@@ -4,6 +4,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 import json
+from utils.command_texts import MENU_COMMANDS
 
 # ✅ Google Sheets 設定
 SHEET_URL = "https://docs.google.com/spreadsheets/d/14mU_Hqu0M971HAMTZtSFGvvPLu9oPbtx7-9BvqRX9Iw/edit?usp=sharing"
@@ -82,6 +83,11 @@ def handle_doctor_query(event, line_bot_api, user_id, text):
         start_doctor_query(user_id)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入欲查詢的醫師姓名"))
         return True  # ✅ 中斷
+
+    # Let new menu commands switch away from a stale doctor-query flow.
+    if is_in_doctor_query_session(user_id) and text in MENU_COMMANDS:
+        clear_doctor_query(user_id)
+        return False
 
     # ✅ 是否在查詢模式
     if is_in_doctor_query_session(user_id):

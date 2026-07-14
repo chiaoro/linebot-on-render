@@ -3,11 +3,17 @@ import requests
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.support_bubble import get_support_adjustment_bubble
+from utils.command_texts import MENU_COMMANDS
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
 
 def handle_support_adjustment(event, user_id, text, line_bot_api):
     session = get_session(user_id) or {}
+
+    # Let new menu commands switch away from a stale support-adjustment flow.
+    if session.get("type") == "支援醫師調診單" and text in MENU_COMMANDS:
+        clear_session(user_id)
+        session = {}
 
     # ✅ 啟動流程
     if text == "支援醫師調診單":

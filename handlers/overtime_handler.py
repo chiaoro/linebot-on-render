@@ -5,12 +5,18 @@ import requests
 import os
 import pytz
 from datetime import datetime
+from utils.command_texts import MENU_COMMANDS
 
 # ✅ GAS Webhook URL
 GAS_WEBHOOK_URL = os.getenv("OVERTIME_GAS_URL")
 
 def handle_overtime(event, user_id, text, line_bot_api):
     session = get_session(user_id) or {}
+
+    # Let new menu commands switch away from a stale overtime flow.
+    if session.get("type") == "加班申請" and text in MENU_COMMANDS:
+        clear_session(user_id)
+        session = {}
 
     # ✅ 啟動加班申請
     if text == "加班申請":

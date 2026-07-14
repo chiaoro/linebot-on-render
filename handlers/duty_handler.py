@@ -4,12 +4,18 @@ import requests
 from utils.session_manager import get_session, set_session, clear_session
 from utils.line_utils import is_trigger
 from utils.flex_templates import get_duty_swap_bubble, get_duty_proxy_bubble
+from utils.command_texts import MENU_COMMANDS
 
 # ✅ 這裡填入你提供的 Webhook URL
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwYua4C91_5J_SArYHWq_BKIPaUC31gNkLKwhvV72USd8bOMI6ydW3KwdT89LPIymfj/exec"
 
 def handle_duty_message(event, user_id, text, line_bot_api):
     session = get_session(user_id)
+
+    # Let new menu commands switch away from a stale duty flow.
+    if session.get("type") in ["值班調換", "值班代理"] and text in MENU_COMMANDS:
+        clear_session(user_id)
+        session = {}
 
     # ✅ 啟動流程
     if is_trigger(event, ["值班調換", "值班代理"]):

@@ -2,6 +2,7 @@ from linebot.models import TextSendMessage
 from utils.state_manager import get_state, set_state, clear_state
 from utils.meeting_leave_menu import get_meeting_leave_menu, get_meeting_leave_success
 from utils.doctor_info import get_doctor_info
+from utils.command_texts import MENU_COMMANDS
 import requests
 
 # ✅ Webhook URL（請假資料送出處）
@@ -47,6 +48,11 @@ def handle_meeting_leave(event, user_id, text, line_bot_api):
         return True
 
     state = get_state(user_id)
+
+    # Let new menu commands switch away from a stale meeting-leave flow.
+    if state in ["ASK_LEAVE", "ASK_REASON"] and raw_text in MENU_COMMANDS:
+        clear_state(user_id)
+        return False
 
     # ✅ 使用者點選出席或請假
     if state == "ASK_LEAVE":
