@@ -23,7 +23,10 @@ def handle_adjustment(event, user_id, text, line_bot_api):
             "type": raw_text
         }
         set_state(user_id, session)
-        line_bot_api.push_message(user_id, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        if raw_text == "我要加診":
+            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請輸入加診日期與時段（例如：5/6 上午診）"))
+        else:
+            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
         return
 
     # ✅ 若在流程中
@@ -41,12 +44,22 @@ def handle_adjustment(event, user_id, text, line_bot_api):
     # ✅ Step 1：原門診
     if step == 0:
         if re.match(VALID_DATE_PATTERN, raw_text):
-            session["original_date"] = raw_text
-            session["step"] = 1
-            set_state(user_id, session)
-            line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（或輸入「休診」、「XX代診」）"))
+            if session.get("type") == "我要加診":
+                session["original_date"] = ""
+                session["new_date"] = raw_text
+                session["step"] = 2
+                set_state(user_id, session)
+                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入加診原因（例如：病人需求、支援門診）"))
+            else:
+                session["original_date"] = raw_text
+                session["step"] = 1
+                set_state(user_id, session)
+                line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（或輸入「休診」、「XX代診」）"))
         else:
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入例如：5/6 上午診"))
+            if session.get("type") == "我要加診":
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入加診日期與時段，例如：5/6 上午診"))
+            else:
+                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入例如：5/6 上午診"))
         return
 
     # ✅ Step 2：新門診處理方式
