@@ -47,7 +47,7 @@ def handle_night_fee(event, user_id, text, line_bot_api):
             # ✅ 送出至 webhook
             webhook_url = "https://script.google.com/macros/s/AKfycbxOKltHGgoz05CKpTJIu4kFdzzmKd9bzL7bT5LOqYu5Lql6iaTlgFI9_lHwqFQFV8-J/exec"
             payload = {"user_id": user_id, "日期": raw_input}
-            response = requests.post(webhook_url, json=payload)
+            response = requests.post(webhook_url, json=payload, timeout=10)
 
             print("📡 webhook 回傳：", response.status_code, response.text)
 

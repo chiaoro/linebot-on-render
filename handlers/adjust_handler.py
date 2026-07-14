@@ -89,7 +89,7 @@ def handle_adjustment(event, user_id, text, line_bot_api):
         }
 
         try:
-            response = requests.post(WEBHOOK_URL, json=payload)
+            response = requests.post(WEBHOOK_URL, json=payload, timeout=10)
             response.raise_for_status()
 
             bubble = get_adjustment_bubble(

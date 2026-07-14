@@ -66,7 +66,7 @@ def send_to_webhook(session, user_id, line_bot_api):
         "reason": session.get("reason")
     }
     try:
-        requests.post(WEBHOOK_URL, json=payload)
+        requests.post(WEBHOOK_URL, json=payload, timeout=10)
         bubble = get_support_adjustment_bubble(
             doctor_name=session["doctor_name"],
             original=session["original_date"],

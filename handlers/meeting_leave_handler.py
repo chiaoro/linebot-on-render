@@ -30,7 +30,7 @@ def log_meeting_reply(user_id, doctor_name, dept, status, reason):
     print(f"[DEBUG] 🚀 準備送出資料：{payload}")
 
     try:
-        response = requests.post(WEBHOOK_URL, json=payload)
+        response = requests.post(WEBHOOK_URL, json=payload, timeout=10)
         response.raise_for_status()
         print(f"[SUCCESS] GAS 回應：{response.text}")
     except Exception as e:

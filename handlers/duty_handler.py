@@ -97,7 +97,7 @@ def handle_duty_message(event, user_id, text, line_bot_api):
             payload["代理醫師"] = session.get("proxy_doctor", "")
 
         try:
-            requests.post(WEBHOOK_URL, data=payload)
+            requests.post(WEBHOOK_URL, data=payload, timeout=10)
 
             bubble = (
                 get_duty_swap_bubble(

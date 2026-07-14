@@ -114,7 +114,7 @@ def submit_overtime(user_id, line_bot_api, reply_token):
     }
 
     try:
-        response = requests.post(GAS_WEBHOOK_URL, json=payload)
+        response = requests.post(GAS_WEBHOOK_URL, json=payload, timeout=10)
         if response.status_code == 200:
             line_bot_api.reply_message(reply_token, TextSendMessage(text="✅ 加班申請已送出，後臺已登記。"))
         else:
