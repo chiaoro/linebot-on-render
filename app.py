@@ -25,6 +25,7 @@ from googleapiclient.discovery import build
 # 👉 LINE 處理工具
 from utils.line_push import push_text_to_user
 from utils.line_utils import get_event_text, is_trigger, is_stat_trigger
+from utils.command_texts import MENU_COMMANDS
 
 # 👉 使用者狀態與綁定
 from utils.state_manager import set_state, get_state, clear_state
@@ -170,6 +171,11 @@ def handle_message(event):
     raw_text = event.message.text.strip()   # 使用者原始輸入
     text = get_event_text(event)            # 經處理後的指令文字（按鈕文字也會轉換）
 
+    # Top-level menu commands should switch flows instead of being treated as
+    # the previous flow's answer.
+    if source_type == "user" and text in MENU_COMMANDS:
+        clear_state(user_id)
+        clear_session(user_id)
 
 
 
@@ -474,5 +480,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # 預設 port 5000
     print(f"✅ Flask app starting on port {port}")
     app.run(host="0.0.0.0", port=port)
-
 
