@@ -203,19 +203,77 @@ def handle_message(event):
             )
         return
 
-    # ✅ 從 Google Sheet 對照表取得真實使用者名稱（群組也可）
-    from utils.google_sheets import get_doctor_name, DOCTOR_SHEET_URL
-    user_name = get_doctor_name(DOCTOR_SHEET_URL, user_id) or "未知使用者"
-
-    # ✅ 處理統計功能（支援群組與私訊）
-    if handle_stats(event, user_id, text, line_bot_api, user_name):
+    # ✅ 主選單與子選單先處理，避免每次按選單都先等待 Google Sheets
+    if text == "主選單":
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 請選擇服務類別",
+                        "weight": "bold",
+                        "size": "lg",
+                        "margin": "md"
+                    }
+                ] + [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": "#003366",
+                        "action": {"type": "message", "label": key, "text": key},
+                        "margin": "md"
+                    } for key in submenu_map.keys()
+                ]
+            }
+        }
+    
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text="主選單", contents=bubble)
+        )
         return
 
+    if text in submenu_map:
+        submenu = submenu_map[text]
+    
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "backgroundColor": "#FFFFFF",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"📂 {text}",
+                        "weight": "bold",
+                        "size": "xl",
+                        "color": "#222222",
+                        "margin": "md"
+                    }
+                ] + submenu
+            }
+        }
+    
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text=text, contents=bubble)
+        )
+        return
 
-
-
-    # ✅ 每次進來都補 userId（一定要）
-    ensure_user_id_exists(user_id)
+    # ✅ 只有統計指令才查使用者名稱，避免一般訊息每次都打 Google Sheets
+    if is_stat_trigger(text):
+        from utils.google_sheets import get_doctor_name, DOCTOR_SHEET_URL
+        user_name = get_doctor_name(DOCTOR_SHEET_URL, user_id) or "未知使用者"
+        if handle_stats(event, user_id, text, line_bot_api, user_name):
+            return
     
     # ✅ 嘗試處理綁定流程（若正在進行中）
     reply = handle_user_binding(event, line_bot_api)
@@ -480,4 +538,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # 預設 port 5000
     print(f"✅ Flask app starting on port {port}")
     app.run(host="0.0.0.0", port=port)
-
