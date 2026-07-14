@@ -83,6 +83,7 @@ def handle_user_binding(event, line_bot_api):
 
     # 使用者點擊「我要綁定」
     if msg == "我要綁定":
+        ensure_user_id_exists(user_id)
         user_states[user_id] = "awaiting_name"
         return ask_for_name()
 

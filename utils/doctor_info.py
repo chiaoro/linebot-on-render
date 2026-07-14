@@ -3,6 +3,7 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread.exceptions import WorksheetNotFound
+from utils.sheet_cache import get_sheet_values_by_url
 
 # ✅ 使用 Render 的 GOOGLE_CREDENTIALS 環境變數初始化授權
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -12,7 +13,7 @@ gc = gspread.authorize(creds)
 
 def get_doctor_info(sheet_url, user_id):
     try:
-        sheet = gc.open_by_url(sheet_url).worksheet("UserMapping")  # ✅ 改成正確分頁名稱
+        data = get_sheet_values_by_url(sheet_url, "UserMapping")
     except WorksheetNotFound:
         print("❌ 找不到工作表：UserMapping")
         return None, None
@@ -21,7 +22,6 @@ def get_doctor_info(sheet_url, user_id):
         return None, None
 
     try:
-        data = sheet.get_all_values()
         for i in range(1, len(data)):  # 從第 2 列開始（跳過標題）
             row = data[i]
             line_id = row[0].strip()
