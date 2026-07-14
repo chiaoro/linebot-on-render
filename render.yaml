@@ -3,7 +3,7 @@ services:
     name: 小秘LINE機器人
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 30
     plan: free
     envVars:
       - key: PORT
