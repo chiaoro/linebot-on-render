@@ -144,6 +144,9 @@ submenu_map = {
     "加班申請服務": [
         {"type": "button", "action": {"type": "message", "label": "加班申請", "text": "加班申請"}, "style": "primary","color": "#e07a5f", "margin": "md"}  # ✅ 獨立出來
     ],
+    "班表查詢服務": [
+        {"type": "button", "action": {"type": "uri", "label": "開啟班表查詢儀表板", "uri": "https://script.google.com/macros/s/AKfycbwsVLLPlWiX88JQTVUK9wK-ojaTownfzEuX_bvuYI_xsOWmyqD4YmuD3zhD08CArrpwjA/exec?page=dashboard&v=61"}, "style": "primary", "color": "#3D7EA6", "margin": "md"}
+    ],
     "其他表單服務": [
         {"type": "button", "action": {"type": "uri", "label": "醫師機位候補登記系統", "uri": "https://script.google.com/macros/s/AKfycbwdZ96GyLW1td7Tmputo5NI06X9MKU5Cz3lEAhhto_sCPD9CuDoTCTiTZoYV6CA7CxQ/exec"}, "style": "primary","color": "#ee9382", "margin": "md"},
         {"type": "button", "action": {"type": "uri", "label": "Temp傳檔", "uri": "https://docs.google.com/forms/d/e/1FAIpQLSexoPBHmJYpBlz_IIsSIO2GIB74dOR2FKPu7FIKjAmKIAqOcw/viewform"}, "style": "secondary","color": "#ee9382", "margin": "md"},
