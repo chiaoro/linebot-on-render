@@ -1,39 +1,60 @@
-import os
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import logging
+
 from gspread.exceptions import WorksheetNotFound
+
 from utils.sheet_cache import get_sheet_values_by_url
 
-# ✅ 使用 Render 的 GOOGLE_CREDENTIALS 環境變數初始化授權
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-google_creds = json.loads(os.environ["GOOGLE_CREDENTIALS"])
-creds = ServiceAccountCredentials.from_json_keyfile_dict(google_creds, scope)
-gc = gspread.authorize(creds)
+logger = logging.getLogger(__name__)
+
+
+class DoctorDirectoryUnavailable(RuntimeError):
+    """The doctor mapping sheet could not be read right now."""
+
+
+def _find_doctor(data, user_id):
+    for row in data[1:]:
+        if not row:
+            continue
+
+        line_id = row[0].strip()
+        if line_id != user_id:
+            continue
+
+        name = row[1].strip() if len(row) > 1 else ""
+        dept = row[2].strip() if len(row) > 2 else ""
+        return name or None, dept or "未知"
+
+    return None, None
 
 def get_doctor_info(sheet_url, user_id):
     try:
-        data = get_sheet_values_by_url(sheet_url, "UserMapping")
+        data = get_sheet_values_by_url(
+            sheet_url,
+            "UserMapping",
+            ttl_seconds=1800,
+            stale_if_error_seconds=86400,
+        )
     except WorksheetNotFound:
-        print("❌ 找不到工作表：UserMapping")
-        return None, None
+        logger.error("Doctor directory worksheet is missing")
+        raise DoctorDirectoryUnavailable("醫師名單工作表不存在")
     except Exception as e:
-        print(f"❌ Google Sheet 連線失敗：{e}")
-        return None, None
+        logger.error("Doctor directory read failed: error=%s", type(e).__name__)
+        raise DoctorDirectoryUnavailable("醫師名單服務暫時無法使用") from e
 
+    doctor_name, dept = _find_doctor(data, user_id)
+    if doctor_name:
+        return doctor_name, dept
+
+    # A newly bound user may not be present in the long-lived cache yet.
     try:
-        for i in range(1, len(data)):  # 從第 2 列開始（跳過標題）
-            row = data[i]
-            line_id = row[0].strip()
-            name = row[1].strip() if len(row) > 1 else "未知"
-            dept = row[2].strip() if len(row) > 2 else "未知"
-
-            if line_id == user_id:
-                print(f"[DEBUG] ✅ 找到醫師資訊：{name}（{dept}）")
-                return name, dept
-
+        refreshed_data = get_sheet_values_by_url(
+            sheet_url,
+            "UserMapping",
+            ttl_seconds=1800,
+            stale_if_error_seconds=0,
+            force_refresh=True,
+        )
+        return _find_doctor(refreshed_data, user_id)
     except Exception as e:
-        print(f"❌ 讀取資料失敗：{e}")
-
-    print(f"⚠️ 查無 user_id={user_id} 的醫師資訊")
-    return None, None
+        logger.error("Doctor directory forced refresh failed: error=%s", type(e).__name__)
+        raise DoctorDirectoryUnavailable("醫師名單服務暫時無法使用") from e
