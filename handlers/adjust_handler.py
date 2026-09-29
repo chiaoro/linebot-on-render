@@ -24,15 +24,15 @@ def handle_adjustment(event, user_id, text, line_bot_api):
         }
         set_state(user_id, session)
         if raw_text == "我要加診":
-            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請輸入加診日期與時段（例如：5/6 上午診）"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入加診日期與時段（例如：5/6 上午診）"))
         else:
-            line_bot_api.push_message(user_id, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
-        return
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請問原本門診是哪一天？（例如：5/6 上午診）"))
+        return True
 
     # ✅ 若在流程中
     session = get_state(user_id)
     if not session:
-        return
+        return False
 
     # Let new menu commands switch away from a stale clinic-adjustment flow.
     if raw_text in MENU_COMMANDS:
@@ -49,26 +49,26 @@ def handle_adjustment(event, user_id, text, line_bot_api):
                 session["new_date"] = raw_text
                 session["step"] = 2
                 set_state(user_id, session)
-                line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入加診原因（例如：病人需求、支援門診）"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入加診原因（例如：病人需求、支援門診）"))
             else:
                 session["original_date"] = raw_text
                 session["step"] = 1
                 set_state(user_id, session)
-                line_bot_api.push_message(user_id, TextSendMessage(text="📆 請問希望的新門診是哪一天？（或輸入「休診」、「XX代診」）"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📆 請問希望的新門診是哪一天？（或輸入「休診」、「XX代診」）"))
         else:
             if session.get("type") == "我要加診":
-                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入加診日期與時段，例如：5/6 上午診"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 格式錯誤，請輸入加診日期與時段，例如：5/6 上午診"))
             else:
-                line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 格式錯誤，請輸入例如：5/6 上午診"))
-        return
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 格式錯誤，請輸入例如：5/6 上午診"))
+        return True
 
     # ✅ Step 2：新門診處理方式
     if step == 1:
         session["new_date"] = raw_text
         session["step"] = 2
         set_state(user_id, session)
-        line_bot_api.push_message(user_id, TextSendMessage(text="📝 請輸入原因（例如：開會）請勿只填寫休假、返台~這樣不符合申請規定喔"))
-        return
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因（例如：開會）請勿只填寫休假、返台~這樣不符合申請規定喔"))
+        return True
 
     # ✅ Step 3：輸入原因並送出
     if step == 2:
@@ -76,9 +76,9 @@ def handle_adjustment(event, user_id, text, line_bot_api):
 
         doctor_name, dept = get_doctor_info(DOCTOR_SHEET_URL, user_id)
         if not doctor_name:
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 查無醫師資訊，請確認是否綁定"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 查無醫師資訊，請確認是否綁定"))
             clear_state(user_id)
-            return
+            return True
 
         payload = {
             "user_id": user_id,
@@ -97,12 +97,14 @@ def handle_adjustment(event, user_id, text, line_bot_api):
                 method=session["new_date"],
                 reason=session["reason"]
             )
-            line_bot_api.push_message(user_id, FlexSendMessage(
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(
                 alt_text="門診調整已完成", contents=bubble
             ))
         except Exception as e:
             print(f"[ERROR] Webhook 發送失敗：{e}")
-            line_bot_api.push_message(user_id, TextSendMessage(text="⚠️ 提交失敗，請稍後再試或聯絡巧柔"))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 提交失敗，請稍後再試或聯絡巧柔"))
 
         clear_state(user_id)
-        return
+        return True
+
+    return False
