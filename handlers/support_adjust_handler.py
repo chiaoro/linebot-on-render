@@ -1,11 +1,13 @@
 # handlers/support_adjust_handler.py
 import requests
+import logging
 from linebot.models import TextSendMessage, FlexSendMessage
 from utils.session_manager import get_session, set_session, clear_session
 from utils.support_bubble import get_support_adjustment_bubble
 from utils.command_texts import MENU_COMMANDS
 
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwLGVRboA0UDU_HluzYURY6Rw4Y8PKMfbclmbWdqpx7MAs37o18dqPkAssU1AuZrC8hxQ/exec"
+logger = logging.getLogger(__name__)
 
 def handle_support_adjustment(event, user_id, text, line_bot_api):
     session = get_session(user_id) or {}
@@ -50,13 +52,13 @@ def handle_support_adjustment(event, user_id, text, line_bot_api):
 
     elif step == 3:
         session["reason"] = text
-        send_to_webhook(session, user_id, line_bot_api)
+        send_to_webhook(session, user_id, line_bot_api, event.reply_token)
         clear_session(user_id)
         return True
 
     return False
 
-def send_to_webhook(session, user_id, line_bot_api):
+def send_to_webhook(session, user_id, line_bot_api, reply_token):
     payload = {
         "user_id": user_id,
         "request_type": "支援醫師調診單",
@@ -66,13 +68,25 @@ def send_to_webhook(session, user_id, line_bot_api):
         "reason": session.get("reason")
     }
     try:
-        requests.post(WEBHOOK_URL, json=payload, timeout=10)
+        response = requests.post(WEBHOOK_URL, json=payload, timeout=(5, 15))
+        response.raise_for_status()
+        # Apps Script may return HTTP 200 with an application-level failure.
+        try:
+            result = response.json()
+        except ValueError:
+            result = None
+        if isinstance(result, dict) and (result.get("success") is False or result.get("status") == "error"):
+            raise ValueError("Apps Script reported an error")
         bubble = get_support_adjustment_bubble(
             doctor_name=session["doctor_name"],
             original=session["original_date"],
             method=session["new_date"],
             reason=session["reason"]
         )
-        line_bot_api.push_message(user_id, FlexSendMessage(alt_text="✅ 支援醫師調診單已送出", contents=bubble))
-    except Exception as e:
-        line_bot_api.push_message(user_id, TextSendMessage(text=f"⚠️ 提交失敗，請稍後再試\n錯誤：{e}"))
+        line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="✅ 支援醫師調診單已送出", contents=bubble))
+    except requests.Timeout:
+        logger.warning("Support adjustment webhook timed out; submission status unknown")
+        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 系統等待回覆逾時，申請可能已送達。請先請管理者確認紀錄，避免重複提交。"))
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Support adjustment webhook failed: %s", type(exc).__name__)
+        line_bot_api.reply_message(reply_token, TextSendMessage(text="⚠️ 系統未能確認提交結果，請聯絡管理者查核紀錄後再決定是否重送。"))
