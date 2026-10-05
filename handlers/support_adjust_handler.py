@@ -30,27 +30,40 @@ def handle_support_adjustment(event, user_id, text, line_bot_api):
     step = session.get("step", 0)
 
     if step == 0:
-        session["doctor_name"] = text
+        if not text.strip():
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請輸入支援醫師姓名"))
+            return True
+        session["doctor_name"] = text.strip()
         session["step"] = 1
+        set_session(user_id, session)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🏥 請輸入這位支援醫師的科別（例如：婦產科）"))
+        return True
+
+    elif step == 1:
+        if not text.strip():
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 請輸入支援醫師科別"))
+            return True
+        session["department"] = text.strip()
+        session["step"] = 2
         set_session(user_id, session)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📅 請輸入原門診日期（例如：5/6 上午診）"))
         return True
 
-    elif step == 1:
+    elif step == 2:
         session["original_date"] = text
-        session["step"] = 2
+        session["step"] = 3
         set_session(user_id, session)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚙️ 請輸入新門診安排（例如：休診 或 調整至5/16 上午診）"))
         return True
 
-    elif step == 2:
+    elif step == 3:
         session["new_date"] = text
-        session["step"] = 3
+        session["step"] = 4
         set_session(user_id, session)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="📝 請輸入原因（例如：需返台、會議）"))
         return True
 
-    elif step == 3:
+    elif step == 4:
         session["reason"] = text
         send_to_webhook(session, user_id, line_bot_api, event.reply_token)
         clear_session(user_id)
@@ -63,6 +76,7 @@ def send_to_webhook(session, user_id, line_bot_api, reply_token):
         "user_id": user_id,
         "request_type": "支援醫師調診單",
         "doctor_name": session.get("doctor_name"),
+        "department": session.get("department"),
         "original_date": session.get("original_date"),
         "new_date": session.get("new_date"),
         "reason": session.get("reason")
@@ -79,6 +93,7 @@ def send_to_webhook(session, user_id, line_bot_api, reply_token):
             raise ValueError("Apps Script reported an error")
         bubble = get_support_adjustment_bubble(
             doctor_name=session["doctor_name"],
+            department=session["department"],
             original=session["original_date"],
             method=session["new_date"],
             reason=session["reason"]
